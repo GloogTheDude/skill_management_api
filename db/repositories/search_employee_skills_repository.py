@@ -21,20 +21,20 @@ class SearchEmployeeSkillRepository:
 
     def fetch_skills_employee(self):
         training_stmt = (
-        select(
-            Employee.id_employee,
-            Employee.first_name,
-            Employee.last_name,
-            Skill.id_skill,
-            Skill.name_skill,
-            TrainingSkill.granted_level.label("level"),
-        )
-        .join(Participation, Participation.id_employee == Employee.id_employee)
-        .join(Training, Training.id_training == Participation.id_training)
-        .join(TrainingSkill, TrainingSkill.id_training == Training.id_training)
-        .join(Skill, Skill.id_skill == TrainingSkill.id_skill)
-        .where(Employee.is_deleted.is_(False))
-        )
+            select(
+                Employee.id_employee,
+                Employee.first_name,
+                Employee.last_name,
+                Skill.id_skill,
+                Skill.name_skill,
+                TrainingSkill.granted_level.label("level"),
+            )
+            .join(Participation, Participation.id_employee == Employee.id_employee)
+            .join(Training, Training.id_training == Participation.id_training)
+            .join(TrainingSkill, TrainingSkill.id_training == Training.id_training)
+            .join(Skill, Skill.id_skill == TrainingSkill.id_skill)
+            .where(Employee.is_deleted.is_(False))
+            )
 
         diploma_stmt = (
             select(
