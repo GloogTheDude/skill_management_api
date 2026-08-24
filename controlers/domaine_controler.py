@@ -32,7 +32,7 @@ def get_domaines(session:Session=Depends(get_session)):
     return service.get_all()
 
 
-@router.put('/domaines/{id_domaine}')
+@router.put('/domaines')
 def update_domaine(dto:QueryDomaineDTO,
                    session:Session=Depends(get_session)):
     repo = DomaineRepository(session)

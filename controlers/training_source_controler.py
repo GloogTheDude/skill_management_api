@@ -25,14 +25,14 @@ def get_training_sources_by_id(id_training_source:int,
     return service.get_by_id(id_training_source)
 
 
-@router.get('/training_sources/')
+@router.get('/training_sources')
 def get_training_sources(session:Session = Depends(get_session)):
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
     return service.get_all()
 
 
-@router.put('/training_sources/')
+@router.put('/training_sources')
 def update_training_sources(dto:QueryTrainingSourceDTO,
                             session:Session = Depends(get_session)):
     repo = TrainingSourceRepository(session)

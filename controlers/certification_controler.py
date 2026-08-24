@@ -31,7 +31,7 @@ def get_certifications(session:Session=Depends(get_session)):
     service= CertificationService(repo)
     return service.get_all()
 
-@router.put('/certifications/{id_certification}')
+@router.put('/certifications')
 def update_certification(dto:QueryCertificationDTO,
                          session:Session=Depends(get_session)):
     repo = CertificationRepository(session)
