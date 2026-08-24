@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from core.database import get_session
 from db.repositories.certification_repository import CertificationRepository
 from dto.certification_dto import QueryCertificationDTO
-from services.old.certification_service import CertificationService
+from services.certification_service import CertificationService
 
 
 router = APIRouter(prefix="/certification",tags=["certification"])
