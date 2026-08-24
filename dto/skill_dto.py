@@ -46,7 +46,7 @@ class ResponseSkillDTO:
     def from_entity(cls:type[ResponseSkillDTO], skill:Skill):
         return cls(
             id_skill=skill.id_skill,
-            name_skill=skill.name_skill,
+            name_skill=skill.name_skill, # type: ignore
             id_domaine= skill.id_domaine,
             name_domaine= skill.domaine.nom_domaine
         )

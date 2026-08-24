@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from core.cache import custom_key_builder
 
 from controlers import (
-    skill_controller,
+    skill_controler,
+    domaine_controler,
 )
 
 load_dotenv()
@@ -42,7 +43,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(skill_controller.router)
+app.include_router(skill_controler.router)
 
 
 if __name__ == "__main__":
