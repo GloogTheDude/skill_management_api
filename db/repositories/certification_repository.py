@@ -1,17 +1,11 @@
 from typing import Any
 
-from sqlalchemy import select, func, or_
-from sqlalchemy.orm import Session
-
+from sqlalchemy import select
 
 from db.repositories.base_repository import BaseRepository
 from errors.domaine_errors import ErrorIDDomaineMissing
+from models.certification import Certification
 from models.domaine import Domaine
-from models.employee_certification import EmployeeCertification
-from models.certification import Certification 
-from models.certification_skill import CertificationSkill
-from models.skill import Skill
-from models.employee import Employee
 
 class CertificationRepository(BaseRepository[Certification]):
     model = Certification
