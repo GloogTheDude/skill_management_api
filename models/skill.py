@@ -7,7 +7,7 @@ class Skill(Base):
     __tablename__ = "skill"
 
     id_skill: Mapped[int] = mapped_column(primary_key=True)
-    name_skill: Mapped[str | None] = mapped_column(String(50))
+    name_skill: Mapped[str | None] = mapped_column(String(50), nullable=False)
     is_deleted: Mapped[bool] = mapped_column(
                                             Boolean,
                                             default=False,
@@ -16,7 +16,7 @@ class Skill(Base):
                                         )
     id_domaine: Mapped[int] = mapped_column(
                             ForeignKey("domaine.id_domaine"),
-                            nullable=True
+                            nullable=False
                         )
 
     validations = relationship("SkillValidation", back_populates="skill")

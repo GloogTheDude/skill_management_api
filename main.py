@@ -1,40 +1,54 @@
-from core.database import SessionLocal
-from db.repositories.employee_repository import EmployeeRepository
-from services.login_service import LoginService
-from controllers.login_controller import LoginController
-from controllers.employee_controller import EmployeeController
-from controllers.manager_controller import ManagerController
-from controllers.hr_controller import HRController
+import os
+from contextlib import asynccontextmanager
+
+import uvicorn
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, Response
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
+from sqlalchemy.orm import Session
+from core.cache import custom_key_builder
+
+from controlers import (
+    skill_controller,
+)
+
+load_dotenv()
 
 
-def main():
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    redis = aioredis.from_url(
+        os.getenv("LOCAL_REDIS_URL", "redis://127.0.0.1:6379/0")
+    )
+
+    FastAPICache.init(
+        RedisBackend(redis),
+        prefix="api2-cache",
+        key_builder=custom_key_builder,
+    )
     
+    app.state.redis = redis
 
-    mail = input("Mail: ")
-    password = input("Password: ")
+    print("Redis cache initialized")
 
-    with SessionLocal() as session:
-        employee_repo = EmployeeRepository(session)
-        login_serv = LoginService(employee_repo)
-        login_control = LoginController(login_serv)
-        succes,employee_dto,extra = login_control.login(mail, password)
-        print(extra)
-    
-    if succes and employee_dto:
-        print(f"access_label = {employee_dto.access_label}")
-        role = employee_dto.access_label
-        if role == "Employee":
-            employee_controller = EmployeeController(employee_dto)
-            employee_controller.get_main_employee_menu()
-        elif role == "Manager":
-            manager_controller = ManagerController(employee_dto)
-            manager_controller.get_main_manager_menu()
-        elif role == "HR":
-            hr_controller = HRController(employee_dto)
-            hr_controller.get_main_hr_menu()
-    else:
-        print("not a valid login/password")
+    yield
+
+    await redis.close()
+    print("FastAPI shutting down")
+
+
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(skill_controller.router)
 
 
 if __name__ == "__main__":
-    main()
+    uvicorn.run(
+        "main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+    )

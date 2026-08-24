@@ -21,3 +21,12 @@ SessionLocal = sessionmaker(
     autoflush=False,
     autocommit=False,
 )
+
+def get_session():
+    with SessionLocal() as session:
+        try:
+            yield session
+            session.commit()
+        except:
+            session.rollback()
+            raise
