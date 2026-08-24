@@ -54,12 +54,14 @@ class SkillService():
             )
         return True
 
-    def get_all(self)->list[ResponseSkillDTO]:
+    def get_all(self)->list[ResponseSkillDTO]|list:
         rows = self.skill_repository.get_all()
         arr = []
         for row in rows:
             arr.append(ResponseSkillDTO.from_entity(row))
         return arr
-            
+
+    def get_by_id(self, id_skill:int)->Skill|None:
+        return self.skill_repository.get_by_id(id_skill)
             
         
