@@ -10,7 +10,6 @@ from services.base_crud_service import BaseCrudService
 
 
 class CertificationService(BaseCrudService[Certification]):
-    model=Certification
 
     def get_all(self)->list[ResponseCertificationDTO]:
         certifications = self._get_all_entities()
