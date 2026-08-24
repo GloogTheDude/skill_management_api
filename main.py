@@ -20,7 +20,7 @@ def main():
         succes,employee_dto,extra = login_control.login(mail, password)
         print(extra)
     
-    if succes:
+    if succes and employee_dto:
         print(f"access_label = {employee_dto.access_label}")
         role = employee_dto.access_label
         if role == "Employee":

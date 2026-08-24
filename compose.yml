@@ -1,0 +1,43 @@
+services:
+  db:
+    container_name: module_certificator_postgres
+    image: postgres:18
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: module_certificator_db
+      POSTGRES_USER: module_certificator_user
+      POSTGRES_PASSWORD: module_certificator_password
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U module_certificator_user -d module_certificator_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  cache:
+    container_name: module_certificator_redis
+    image: redis:8.10.0
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis-data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  redis-data:
