@@ -2,7 +2,7 @@ from db.repositories.domaine_repository import DomaineRepository
 from dto.domaine_dto import QueryDomaineDTO, ResponseDomaineDTO
 from models.domaine import Domaine
 
-from services.base_service import BaseCrudService  
+from services.base_crud_service import BaseCrudService  
 
 
 class DomaineService(BaseCrudService[Domaine]):

@@ -1,17 +1,15 @@
 from abc import ABC
-from typing import Annotated, Any, Generic, Type, TypeVar
+from typing import Any, Generic, Type, TypeVar
 
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from core.database import get_session
 from errors.generic_errors import EntityAlreadyDeleted
 T = TypeVar('T')
 
 class BaseRepository(ABC, Generic[T]):
     model:Type[T]
 
-    def __init__(self, session):
+    def __init__(self, session:Session):
         super().__init__()
         self._session = session
 

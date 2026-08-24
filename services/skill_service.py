@@ -7,7 +7,7 @@ from errors.domaine_errors import ErrorIDDomaineMissing
 from errors.generic_errors import EntityAlreadyDeleted
 from errors.skill_errors import ErrorIDSkillMissing, ErrorSkillAlreadyDeleted
 from models.skill import Skill
-from services.base_service import BaseCrudService
+from services.base_crud_service import BaseCrudService
 
 
 class SkillService(BaseCrudService[Skill]):

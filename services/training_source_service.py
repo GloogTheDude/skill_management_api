@@ -1,7 +1,7 @@
 from db.repositories.training_source_repository import TrainingSourceRepository
 from dto.training_source_dto import QueryTrainingSourceDTO, ResponseTrainingSourceDTO
 from models.training_source import TrainingSource
-from services.base_service import BaseCrudService
+from services.base_crud_service import BaseCrudService
 
 
 class TrainingSourceService(BaseCrudService[TrainingSource]):

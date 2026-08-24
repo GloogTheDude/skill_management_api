@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from core.cache import custom_key_builder
 
 from controlers import (
+    certification_controler,
     skill_controler,
     domaine_controler,
     training_source_controler
@@ -47,6 +48,8 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(skill_controler.router)
 app.include_router(domaine_controler.router)
 app.include_router(training_source_controler.router)
+app.include_router(certification_controler.router)
+
 
 
 if __name__ == "__main__":

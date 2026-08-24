@@ -1,4 +1,4 @@
-from dto.certification_dto import CertificationCrudDTO
+from dto.certification_dto import ResponseCertificationDTO
 
 
 class CertificationMenu:
@@ -19,7 +19,7 @@ class CertificationMenu:
         return user_choice
 
     @staticmethod
-    def display_certifications(certifications: list[CertificationCrudDTO]) -> None:
+    def display_certifications(certifications: list[ResponseCertificationDTO]) -> None:
         print("===== CERTIFICATIONS =====")
 
         if not certifications:
