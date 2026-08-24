@@ -13,6 +13,7 @@ from core.cache import custom_key_builder
 from controlers import (
     skill_controler,
     domaine_controler,
+    training_source_controler
 )
 
 load_dotenv()
@@ -44,6 +45,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(skill_controler.router)
+app.include_router(domaine_controler.router)
+app.include_router(training_source_controler.router)
 
 
 if __name__ == "__main__":

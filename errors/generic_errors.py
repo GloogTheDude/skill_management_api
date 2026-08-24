@@ -1,0 +1,2 @@
+class EntityAlreadyDeleted(Exception):
+    pass
