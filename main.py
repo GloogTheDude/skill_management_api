@@ -14,7 +14,8 @@ from controlers import (
     certification_controler,
     skill_controler,
     domaine_controler,
-    training_source_controler
+    training_source_controler,
+    diploma_controler
 )
 
 load_dotenv()
@@ -49,6 +50,7 @@ app.include_router(skill_controler.router)
 app.include_router(domaine_controler.router)
 app.include_router(training_source_controler.router)
 app.include_router(certification_controler.router)
+app.include_router(diploma_controler.router)
 
 
 

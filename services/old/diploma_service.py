@@ -1,7 +1,7 @@
 from db.repositories.diploma_repository import DiplomaRepository
 from db.repositories.domaine_repository import DomaineRepository
 from db.repositories.diploma_skill_repository import DiplomaSkillRepository
-from dto.diploma_dto import DiplomaCrudDTO
+from dto.diploma_dto import ResponseDiplomaDTO
 from models.diploma import Diploma
 from models.diploma_skill import DiplomaSkill
 
@@ -23,11 +23,11 @@ class DiplomaService:
     def get_by_id(self, id_diploma: int) -> Diploma | None:
         return self.diploma_repository.get_by_id(id_diploma)
 
-    def get_all_for_crud(self) -> list[DiplomaCrudDTO]:
+    def get_all_for_crud(self) -> list[ResponseDiplomaDTO]:
         rows = self.diploma_repository.get_all_for_crud()
 
         return [
-            DiplomaCrudDTO(
+            ResponseDiplomaDTO(
                 id_diploma=id_diploma,
                 subject_diploma=subject_diploma,
                 level_diploma=level_diploma,

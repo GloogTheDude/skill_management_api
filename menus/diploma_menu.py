@@ -1,4 +1,4 @@
-from dto.diploma_dto import DiplomaCrudDTO
+from dto.diploma_dto import ResponseDiplomaDTO
 from models.diploma import Diploma
 
 
@@ -20,7 +20,7 @@ class DiplomaMenu:
         return user_choice
 
     @staticmethod
-    def display_diplomas(diplomas: list[DiplomaCrudDTO]) -> None:
+    def display_diplomas(diplomas: list[ResponseDiplomaDTO]) -> None:
         print("===== DIPLOMAS =====")
 
         if not diplomas:

@@ -28,3 +28,9 @@ class QueryCertificationDTO(BaseModel):
     subject_certification: str | None = None
     validity_month: int | None = None
     id_domaine: int
+
+
+class CreateCertificationDTO(BaseModel):
+    subject_certification: str | None = None
+    validity_month: int | None = None
+    id_domaine: int

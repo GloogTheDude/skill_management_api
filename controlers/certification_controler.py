@@ -3,20 +3,20 @@ from sqlalchemy.orm import Session
 
 from core.database import get_session
 from db.repositories.certification_repository import CertificationRepository
-from dto.certification_dto import QueryCertificationDTO
+from dto.certification_dto import CreateCertificationDTO, QueryCertificationDTO
 from services.certification_service import CertificationService
 
 
 router = APIRouter(prefix="/certification",tags=["certification"])
 
 @router.post('')
-def create_certification(subject_certification:str=Query(),
-                         validity_month:int=Query(),
-                         id_domaine:int=Query(),
+def create_certification(dto:CreateCertificationDTO,
                          session:Session=Depends(get_session)):
     repo = CertificationRepository(session)
     service= CertificationService(repo)
-    return service.create(subject_certification, validity_month, id_domaine)
+    return service.create(dto.subject_certification, # type: ignore
+                          dto.validity_month, # type: ignore
+                          dto.id_domaine) # type: ignore
 
 @router.get('/{id_certification}')
 def get_certification_by_id(id_certification:int,
