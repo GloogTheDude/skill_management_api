@@ -11,35 +11,35 @@ from services.domaine_service import DomaineService
 
 router = APIRouter(prefix="/domaine",tags=["domaine"])
 
-@router.post('/domaines')
+@router.post('')
 def create_domaine(name_domaine:str=Body(),
                    session:Session=Depends(get_session)):
     repo = DomaineRepository(session)
     service= DomaineService(repo)
     return service.create(name_domaine)
 
-@router.get('/domaines/{id_domaine}')
+@router.get('/{id_domaine}')
 def get_domaine_by_id(id_domaine:int,
                       session:Session=Depends(get_session)):
     repo = DomaineRepository(session)
     service= DomaineService(repo)
     return service.get_by_id(id_domaine)
 
-@router.get('/domaines')
+@router.get('')
 def get_domaines(session:Session=Depends(get_session)):
     repo = DomaineRepository(session)
     service= DomaineService(repo)
     return service.get_all()
 
 
-@router.put('/domaines')
+@router.put('')
 def update_domaine(dto:QueryDomaineDTO,
                    session:Session=Depends(get_session)):
     repo = DomaineRepository(session)
     service= DomaineService(repo)
     service.update(dto)
 
-@router.delete('/domaines/{id_domaine}')
+@router.delete('/{id_domaine}')
 def delete_domaine(id_domaine:int,
                    session:Session=Depends(get_session)):
     repo = DomaineRepository(session)

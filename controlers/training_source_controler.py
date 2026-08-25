@@ -10,14 +10,14 @@ from services.training_source_service import TrainingSourceService
 
 router = APIRouter(prefix="/training_source",tags=["training_source"])
 
-@router.post("/training_sources")
+@router.post("")
 def create_training_source(name_source:str,
                            session:Session = Depends(get_session)):
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
     service.create(name_source)
 
-@router.get('/training_sources/{id_training_sources}')
+@router.get('/{id_training_sources}')
 def get_training_sources_by_id(id_training_source:int,
                     session:Session = Depends(get_session)):
     repo = TrainingSourceRepository(session)
@@ -25,21 +25,21 @@ def get_training_sources_by_id(id_training_source:int,
     return service.get_by_id(id_training_source)
 
 
-@router.get('/training_sources')
+@router.get('')
 def get_training_sources(session:Session = Depends(get_session)):
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
     return service.get_all()
 
 
-@router.put('/training_sources')
+@router.put('')
 def update_training_sources(dto:QueryTrainingSourceDTO,
                             session:Session = Depends(get_session)):
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
     service.update(dto)
 
-@router.delete('/training_sources/{id_training_source}')
+@router.delete('/{id_training_source}')
 def delete_training_sources(id_training_source:int,
                             session:Session = Depends(get_session)):
     repo = TrainingSourceRepository(session)
