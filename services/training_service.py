@@ -1,6 +1,6 @@
 
 
-from dto.training_dto import QueryTrainingDTO, CreateTrainingDTO, ResponseTrainingDTO
+from dto.training_dto import UpdateTrainingDTO, CreateTrainingDTO, ResponseTrainingDTO
 from models.training import Training
 from services.base_crud_service import BaseCrudService
 
@@ -19,7 +19,6 @@ class TrainingService(BaseCrudService[Training]):
 
     def create(self,dto:CreateTrainingDTO)->ResponseTrainingDTO:
         training = Training(
-            #id_training=dto.id_training,
             title=dto.title,
             id_domaine=dto.id_domaine,
             id_source=dto.id_source,
@@ -32,18 +31,11 @@ class TrainingService(BaseCrudService[Training]):
         )
         return ResponseTrainingDTO.from_entity(self.repository.add(training)) 
 
-    def update(self,id_training: int,dto: QueryTrainingDTO) -> ResponseTrainingDTO:
+    def update(self,id_training: int,dto: UpdateTrainingDTO) -> ResponseTrainingDTO:
+        data = dto.model_dump(exclude_unset=True)
         training = self.repository.update(
             id_training,
-            title=dto.title,
-            id_domaine=dto.id_domaine,
-            id_source=dto.id_source,
-            id_certification=dto.id_certification,
-            id_diploma=dto.id_diploma,
-            start_=dto.start_,
-            end_=dto.end_,
-            cost_hour=dto.cost_hour,
-            duration_hours=dto.duration_hours,
+            **data
         )
 
         return ResponseTrainingDTO.from_entity(training)

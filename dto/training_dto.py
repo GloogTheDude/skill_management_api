@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -7,10 +6,9 @@ from pydantic import BaseModel
 from models.training import Training
 
 
-@dataclass #rework
-class ResponseTrainingDTO:
-    id_training: int |None
-    title: str | None
+class ResponseTrainingDTO(BaseModel):
+    id_training: int
+    title: str | None 
     domaine_name: str | None
     source_name: str | None
     certification_name: str | None
@@ -44,17 +42,16 @@ class ResponseTrainingDTO:
 
 
 
-class QueryTrainingDTO (BaseModel):
-    id_training: int |None
-    title: str | None
-    id_domaine: int | None
-    id_source: int | None
-    id_certification: int | None
-    id_diploma: int | None
-    start_: date | None
-    end_: date | None
-    cost_hour: Decimal | None
-    duration_hours: Decimal | None
+class UpdateTrainingDTO (BaseModel):
+    title: str | None = None
+    id_domaine: int | None = None
+    id_source: int | None = None
+    id_certification: int | None = None
+    id_diploma: int | None = None
+    start_: date | None = None
+    end_: date | None = None
+    cost_hour: Decimal | None = None
+    duration_hours: Decimal | None = None
 
 class CreateTrainingDTO(BaseModel):
     title: str
@@ -64,5 +61,5 @@ class CreateTrainingDTO(BaseModel):
     id_diploma: int | None = None
     start_: date
     end_: date
-    cost_hour: float
-    duration_hours: int
+    cost_hour: Decimal
+    duration_hours: Decimal
