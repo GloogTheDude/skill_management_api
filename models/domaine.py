@@ -7,7 +7,7 @@ class Domaine(Base):
     __tablename__ = "domaine"
 
     id_domaine: Mapped[int] = mapped_column(primary_key=True)
-    nom_domaine: Mapped[str | None] = mapped_column(String(50))
+    nom_domaine: Mapped[str] = mapped_column(String(50))
     is_deleted: Mapped[bool] = mapped_column(
                                             Boolean,
                                             default=False,

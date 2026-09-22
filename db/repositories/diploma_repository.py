@@ -1,12 +1,8 @@
 from typing import Any
-
 from sqlalchemy import select
-from sqlalchemy.orm import Session
-
 from db.repositories.base_repository import BaseRepository
 from errors.domaine_errors import ErrorIDDomaineMissing
 from models.diploma import Diploma
-from models.training import Training
 from models.domaine import Domaine
 
 

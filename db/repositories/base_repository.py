@@ -17,7 +17,6 @@ class BaseRepository(ABC, Generic[T]):
         stmt = select(self.model)
         if hasattr(self.model, "is_deleted"):
             stmt = stmt.where(self.model.is_deleted.is_(False)) # type: ignore
-
         return list(self._session.scalars(stmt).all())
 
     def get_one(self, ident: Any) -> T:

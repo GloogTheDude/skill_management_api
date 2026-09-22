@@ -7,7 +7,7 @@ class TrainingSource(Base):
     __tablename__ = "training_source"
 
     id_source: Mapped[int] = mapped_column(primary_key=True)
-    name_source: Mapped[str | None] = mapped_column(String(50))
+    name_source: Mapped[str] = mapped_column(String(50))
     is_deleted: Mapped[bool] = mapped_column(
         Boolean,
         default=False,

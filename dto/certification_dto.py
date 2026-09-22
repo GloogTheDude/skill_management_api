@@ -1,12 +1,9 @@
-from dataclasses import dataclass
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from models.certification import Certification
 
 
-@dataclass
-class ResponseCertificationDTO:
+class ResponseCertificationDTO(BaseModel):
     id_certification: int
     subject_certification: str | None
     validity_month: int | None
@@ -14,23 +11,26 @@ class ResponseCertificationDTO:
     domaine_name: str | None
 
     @classmethod
-    def from_entity(cls:type[ResponseCertificationDTO], certif:Certification):
+    def from_entity(
+        cls: type["ResponseCertificationDTO"],
+        certif: Certification,
+    ):
         return cls(
-            id_certification = certif.id_certification,
-            subject_certification= certif.subject_certification,
+            id_certification=certif.id_certification,
+            subject_certification=certif.subject_certification,
             validity_month=certif.validity_month,
-            id_domaine= certif.id_domaine,
-            domaine_name=certif.domaine.nom_domaine
+            id_domaine=certif.id_domaine,
+            domaine_name=certif.domaine.nom_domaine,
         )
-
-class QueryCertificationDTO(BaseModel):
-    id_certification: int
-    subject_certification: str | None = None
-    validity_month: int | None = None
-    id_domaine: int
 
 
 class CreateCertificationDTO(BaseModel):
     subject_certification: str | None = None
     validity_month: int | None = None
-    id_domaine: int
+    id_domaine: int = Field(gt=0)
+
+
+class UpdateCertificationDTO(BaseModel):
+    subject_certification: str | None = None
+    validity_month: int | None = None
+    id_domaine: int | None = Field(default=None, gt=0)
