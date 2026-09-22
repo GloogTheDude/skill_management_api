@@ -40,7 +40,7 @@ class BaseRepository(ABC, Generic[T]):
         self._session.flush()
         return entity
 
-    def soft_delete(self, ident: int) -> T:
+    def soft_delete(self, ident: Any) -> T:
         entity = self.get_one(ident)
 
         if not hasattr(entity, "is_deleted"):

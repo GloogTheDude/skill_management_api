@@ -16,7 +16,7 @@ class DiplomaService(BaseCrudService[Diploma]):
 
     def get_by_id(
         self,
-        id_diploma
+        id_diploma:int
     )->ResponseDiplomaDTO:
         diploma = self._get_entity_by_id(id_diploma)
         return ResponseDiplomaDTO.from_entity(diploma)

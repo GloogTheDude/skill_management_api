@@ -1,4 +1,3 @@
-from db.repositories.training_source_repository import TrainingSourceRepository
 from dto.training_source_dto import CreateTrainingSourceDTO, UpdateTrainingSourceDTO, ResponseTrainingSourceDTO
 from models.training_source import TrainingSource
 from services.base_crud_service import BaseCrudService

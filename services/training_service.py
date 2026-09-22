@@ -1,5 +1,4 @@
 
-
 from dto.training_dto import UpdateTrainingDTO, CreateTrainingDTO, ResponseTrainingDTO
 from models.training import Training
 from services.base_crud_service import BaseCrudService

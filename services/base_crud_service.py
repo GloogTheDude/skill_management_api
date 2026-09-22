@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from db.repositories.base_repository import BaseRepository
 
@@ -12,8 +12,8 @@ class BaseCrudService(Generic[T]):
     def _get_all_entities(self) -> list[T]:
         return self.repository.get_all()
 
-    def _get_entity_by_id(self, ident: int) -> T:
+    def _get_entity_by_id(self, ident: Any) -> T:
         return self.repository.get_one(ident)
 
-    def delete(self, ident: int) -> T:
+    def delete(self, ident: Any) -> T:
         return self.repository.soft_delete(ident)

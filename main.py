@@ -17,7 +17,8 @@ from controlers import (
     domaine_controler,
     training_source_controler,
     diploma_controler,
-    training_controller
+    training_controller,
+    training_skill_controler
 )
 
 from errors.handlers import (
@@ -68,6 +69,7 @@ app.include_router(training_source_controler.router)
 app.include_router(certification_controler.router)
 app.include_router(diploma_controler.router)
 app.include_router(training_controller.router)
+app.include_router(training_skill_controler.router)
 
 
 
