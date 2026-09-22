@@ -13,12 +13,14 @@ from core.cache import custom_key_builder
 
 from controlers import (
     certification_controler,
+    certification_skill_controler,
     skill_controler,
     domaine_controler,
     training_source_controler,
     diploma_controler,
     training_controller,
-    training_skill_controler
+    training_skill_controler,
+    diploma_skill_controller,
 )
 
 from errors.handlers import (
@@ -70,6 +72,8 @@ app.include_router(certification_controler.router)
 app.include_router(diploma_controler.router)
 app.include_router(training_controller.router)
 app.include_router(training_skill_controler.router)
+app.include_router(certification_skill_controler.router)
+app.include_router(diploma_skill_controller.router)
 
 
 
