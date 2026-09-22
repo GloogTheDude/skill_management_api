@@ -19,7 +19,7 @@ def create_diploma(dto:QueryDiplomaDTO,
                           dto.level_diploma,
                           dto.id_domaine)
 
-@router.get('/id_diploma')
+@router.get('/{id_diploma}')
 def get_diploma_by_id(id_diploma:int,
                       session:Session=Depends(get_session)):
     repo = DiplomaRepository(session)

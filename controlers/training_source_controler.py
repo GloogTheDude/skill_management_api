@@ -15,7 +15,7 @@ def create_training_source(name_source:str,
                            session:Session = Depends(get_session)):
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
-    service.create(name_source)
+    return service.create(name_source)
 
 @router.get('/{id_training_sources}')
 def get_training_sources_by_id(id_training_source:int,

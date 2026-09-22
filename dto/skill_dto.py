@@ -32,11 +32,22 @@ class SkillCrudDTO:
     domaine_name: str | None
 
 class CreateSkillDTO(BaseModel):
-    name: str = Field(min_length=1,max_length=100,description='skill\'s name')
-    id_domaine:int = Field(description='domaine\'s ID')
+    name_skill: str = Field(
+        min_length=1,
+        max_length=100,
+        description="Skill's name",
+    )
+    id_domaine: int = Field(
+        gt=0,
+        description="Domaine's ID",
+    )
 
-@dataclass
-class ResponseSkillDTO:
+class UpdateSkillDTO(BaseModel):
+    name_skill:str|None = None
+    id_domaine:int|None = None
+
+
+class ResponseSkillDTO(BaseModel):
     id_skill:int
     name_skill:str
     id_domaine:int
@@ -51,7 +62,7 @@ class ResponseSkillDTO:
             name_domaine= skill.domaine.nom_domaine
         )
 
-class QuerySkillDTO(BaseModel):
-    id_skill:int = Field(description="id skill", gt=0)
-    name_skill: str = Field(description="name skill", min_length= 1)
-    id_domaine:int = Field(description="id domaine", gt=0)
+# class QuerySkillDTO(BaseModel):
+#     id_skill:int = Field(description="id skill", gt=0)
+#     name_skill: str = Field(description="name skill", min_length= 1)
+#     id_domaine:int = Field(description="id domaine", gt=0)

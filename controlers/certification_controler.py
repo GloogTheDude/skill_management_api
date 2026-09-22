@@ -38,7 +38,7 @@ def update_certification(dto:QueryCertificationDTO,
     service= CertificationService(repo)
     return service.update(dto)
 
-@router.delete('{id_certification}')
+@router.delete('/{id_certification}')
 def delete_certification(id_certification:int,
                          session:Session=Depends(get_session)):
     repo = CertificationRepository(session)
