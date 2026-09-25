@@ -10,7 +10,7 @@ class Employee(Base):
     id_employee: Mapped[int] = mapped_column(primary_key=True)
     first_name: Mapped[str | None] = mapped_column(String(50))
     last_name: Mapped[str | None] = mapped_column(String(50))
-    hash_password: Mapped[str | None] = mapped_column(String(50))
+    hash_password: Mapped[str | None] = mapped_column(String(255))
     mail: Mapped[str | None] = mapped_column(String(50))
     is_deleted: Mapped[bool] = mapped_column(
                                     Boolean,

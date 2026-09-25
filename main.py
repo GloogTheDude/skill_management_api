@@ -22,6 +22,9 @@ from controlers import (
     training_skill_controler,
     diploma_skill_controller,
     validation_type_controller,
+    employee_controller,
+    role_controller,
+    access_level_controller
 )
 
 from errors.handlers import (
@@ -76,6 +79,9 @@ app.include_router(training_skill_controler.router)
 app.include_router(certification_skill_controler.router)
 app.include_router(diploma_skill_controller.router)
 app.include_router(validation_type_controller.router)
+app.include_router(employee_controller.router)
+app.include_router(role_controller.router)
+app.include_router(access_level_controller.router)
 
 
 
