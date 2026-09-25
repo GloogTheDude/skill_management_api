@@ -21,6 +21,7 @@ from controlers import (
     training_controller,
     training_skill_controler,
     diploma_skill_controller,
+    validation_type_controller,
 )
 
 from errors.handlers import (
@@ -74,6 +75,7 @@ app.include_router(training_controller.router)
 app.include_router(training_skill_controler.router)
 app.include_router(certification_skill_controler.router)
 app.include_router(diploma_skill_controller.router)
+app.include_router(validation_type_controller.router)
 
 
 
