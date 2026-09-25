@@ -26,6 +26,7 @@ from controlers import (
     role_controller,
     access_level_controller,
     skill_validation_controller,
+    employee_diploma_controller,
 )
 
 from errors.handlers import (
@@ -84,6 +85,7 @@ app.include_router(employee_controller.router)
 app.include_router(role_controller.router)
 app.include_router(access_level_controller.router)
 app.include_router(skill_validation_controller.router)
+app.include_router(employee_diploma_controller.router)
 
 
 
