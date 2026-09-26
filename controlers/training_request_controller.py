@@ -1,0 +1,121 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from core.database import get_session
+from db.repositories.employee_repository import EmployeeRepository
+from db.repositories.participation_repository import ParticipationRepository
+from db.repositories.training_repository import TrainingRepository
+from db.repositories.training_request_repository import TrainingRequestRepository
+from dto.training_request_api_dto import (
+    ApproveTrainingRequestDTO,
+    CreatePersonalizedTrainingRequestDTO,
+    CreatePlannedTrainingRequestDTO,
+    RejectTrainingRequestDTO,
+    ResponseTrainingRequestDTO,
+)
+from errors.training_request_errors import (
+    ActiveParticipationConflict,
+    RelatedEntityNotFound,
+    TrainingRequestConflict,
+    TrainingRequestNotFound,
+)
+from services.training_request_service import TrainingRequestService
+from services.training_request_workflow_service import TrainingRequestWorkflowService
+
+
+router = APIRouter(prefix="/training-requests", tags=["training-requests"])
+
+
+def _repositories(session: Session):
+    return (
+        TrainingRequestRepository(session),
+        EmployeeRepository(session),
+        TrainingRepository(session),
+        ParticipationRepository(session),
+    )
+
+
+def _workflow(session: Session) -> TrainingRequestWorkflowService:
+    return TrainingRequestWorkflowService(*_repositories(session))
+
+
+@router.post("/planned", response_model=ResponseTrainingRequestDTO, status_code=201)
+def create_planned(
+    dto: CreatePlannedTrainingRequestDTO,
+    session: Session = Depends(get_session),
+):
+    try:
+        return TrainingRequestService(
+            TrainingRequestRepository(session),
+            EmployeeRepository(session),
+            TrainingRepository(session),
+        ).create_planned(dto)
+    except RelatedEntityNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/personalized", response_model=ResponseTrainingRequestDTO, status_code=201)
+def create_personalized(
+    dto: CreatePersonalizedTrainingRequestDTO,
+    session: Session = Depends(get_session),
+):
+    try:
+        return TrainingRequestService(
+            TrainingRequestRepository(session),
+            EmployeeRepository(session),
+            TrainingRepository(session),
+        ).create_personalized(dto)
+    except RelatedEntityNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("", response_model=list[ResponseTrainingRequestDTO])
+def get_training_requests(
+    session: Session = Depends(get_session),
+):
+    return TrainingRequestService(TrainingRequestRepository(session)).get_all()
+
+
+@router.get("/{id_training_request}", response_model=ResponseTrainingRequestDTO)
+def get_training_request(
+    id_training_request: int,
+    session: Session = Depends(get_session),
+):
+    try:
+        return TrainingRequestService(TrainingRequestRepository(session)).get_by_id(
+            id_training_request
+        )
+    except TrainingRequestNotFound as exc:
+        raise HTTPException(status_code=404, detail="Training request not found.") from exc
+
+
+@router.post("/{id_training_request}/approve", response_model=ResponseTrainingRequestDTO)
+def approve_training_request(
+    id_training_request: int,
+    dto: ApproveTrainingRequestDTO,
+    session: Session = Depends(get_session),
+):
+    try:
+        return _workflow(session).approve(id_training_request, dto)
+    except TrainingRequestNotFound as exc:
+        raise HTTPException(status_code=404, detail="Training request not found.") from exc
+    except RelatedEntityNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except (TrainingRequestConflict, ActiveParticipationConflict) as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/{id_training_request}/reject", response_model=ResponseTrainingRequestDTO)
+def reject_training_request(
+    id_training_request: int,
+    dto: RejectTrainingRequestDTO,
+    session: Session = Depends(get_session),
+):
+    try:
+        return _workflow(session).reject(id_training_request, dto)
+    except TrainingRequestNotFound as exc:
+        raise HTTPException(status_code=404, detail="Training request not found.") from exc
+    except RelatedEntityNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except TrainingRequestConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc

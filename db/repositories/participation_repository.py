@@ -12,6 +12,16 @@ from models.training import Training
 class ParticipationRepository(BaseRepository[Participation]):
     model = Participation
 
+    def get_existing(
+        self,
+        id_employee: int,
+        id_training: int,
+    ) -> Participation | None:
+        return self._session.get(
+            Participation,
+            (id_employee, id_training),
+        )
+
     def get_completable(
         self,
     ) -> list[tuple[Participation, Employee, Training]]:

@@ -1,6 +1,5 @@
-from sqlalchemy import select, func, or_, insert
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 
 from core.constants import PARTICIPATIONSTATUS, TRAININGREQUESTSTATUS
 
@@ -16,13 +15,45 @@ class TrainingRequestRepository():
 
     def add_request_preplanned_training(self,
                                         training_request: TrainingRequest):
-        try:
-            self.session.add(training_request)
-            self.session.commit()
+        self.session.add(training_request)
+        self.session.flush()
+        return training_request
 
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
+    def add(self, training_request: TrainingRequest):
+        return self.add_request_preplanned_training(training_request)
+
+    def get_all_active(self):
+        stmt = select(TrainingRequest).where(
+            TrainingRequest.is_deleted.is_(False),
+        )
+        return list(self.session.scalars(stmt).all())
+
+    def get_one(self, id_request: int):
+        return self.session.get_one(TrainingRequest, id_request)
+
+    def get_active_by_id(self, id_request: int):
+        request = self.session.get(TrainingRequest, id_request)
+        if request is None or request.is_deleted:
+            return None
+        return request
+
+    def get_all_with_details(self):
+        stmt = (
+            select(TrainingRequest, Training.title, Domaine.nom_domaine)
+            .outerjoin(TrainingRequest.training)
+            .outerjoin(Training.domaine)
+            .where(TrainingRequest.is_deleted.is_(False))
+        )
+        return list(self.session.execute(stmt).all())
+
+    def get_by_id_with_details(self, id_request: int):
+        stmt = (
+            select(TrainingRequest, Training.title, Domaine.nom_domaine)
+            .outerjoin(TrainingRequest.training)
+            .outerjoin(Training.domaine)
+            .where(TrainingRequest.id_training_request == id_request)
+        )
+        return self.session.execute(stmt).one_or_none()
     
     def get_employee_request(self, id_employee: int):
         stmt = (
@@ -109,8 +140,7 @@ class TrainingRequestRepository():
         if id_validator is not None:
             request.id_validator = id_validator
 
-        self.session.commit()
-        self.session.refresh(request)
+        self.session.flush()
 
         return request
     
