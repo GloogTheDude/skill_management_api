@@ -1,27 +1,25 @@
-from dataclasses import dataclass
 from datetime import date
+from dataclasses import dataclass
 
-from pydantic import BaseModel, EmailStr,Field
+from pydantic import BaseModel, Field
 
 from models.skill import Skill
 
 
-@dataclass
-class SkillSourceDTO:
+class SkillSourceDTO(BaseModel):
     source_type: str
     source_id: int
-    level: int
+    level: int | None
     is_active: bool
     acquired_at: date | None = None
     expires_at: date | None = None
 
 
-@dataclass
-class SkillProfileDTO:
+class SkillProfileDTO(BaseModel):
     skill_id: int
     skill_name: str
-    skill_domaine:str
-    displayed_level: int
+    skill_domaine: str | None
+    displayed_level: int | None
     primary_source: SkillSourceDTO | None
     sources: list[SkillSourceDTO]
 
