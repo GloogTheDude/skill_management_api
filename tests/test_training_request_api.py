@@ -137,6 +137,21 @@ def test_create_planned_forces_server_values(session):
     assert result.id_validator is None
 
 
+def test_create_personalized_preserves_description_and_forces_server_values(session):
+    result = request_service(session).create_personalized(
+        CreatePersonalizedTrainingRequestDTO(
+            id_employee=1,
+            request_desc="Formation Kubernetes",
+        )
+    )
+
+    assert result.status == TRAININGREQUESTSTATUS.PENDING.value
+    assert result.id_training is None
+    assert result.request_desc == "Formation Kubernetes"
+    assert result.reason is None
+    assert result.id_validator is None
+
+
 def test_create_personalized_rejects_blank_description():
     with pytest.raises(ValueError):
         CreatePersonalizedTrainingRequestDTO(id_employee=1, request_desc="  ")
