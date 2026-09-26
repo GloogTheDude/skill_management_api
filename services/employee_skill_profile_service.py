@@ -7,6 +7,10 @@ from db.repositories.acquisition_skill_repository import AcquisitionSkillReposit
 from db.repositories.employee_repository import EmployeeRepository
 from dto.skill_dto import SkillProfileDTO, SkillSourceDTO
 from models.skill import Skill
+from services.skill_profile_aggregation import (
+    add_skill_source,
+    should_replace_primary_source,
+)
 
 
 class EmployeeSkillProfileService:
@@ -122,34 +126,17 @@ class EmployeeSkillProfileService:
         domaine: str | None,
         source: SkillSourceDTO,
     ) -> None:
-        profile = profiles.get(skill.id_skill)
-        if profile is None:
-            profiles[skill.id_skill] = SkillProfileDTO(
-                skill_id=skill.id_skill,
-                skill_name=skill.name_skill,
-                skill_domaine=domaine,
-                displayed_level=source.level,
-                primary_source=source,
-                sources=[source],
-            )
-            return
-
-        profile.sources.append(source)
-        if cls._should_replace_primary_source(source, profile.primary_source):
-            profile.primary_source = source
-            profile.displayed_level = source.level
+        add_skill_source(
+            profiles,
+            skill_id=skill.id_skill,
+            skill_name=skill.name_skill,
+            skill_domaine=domaine,
+            source=source,
+        )
 
     @staticmethod
     def _should_replace_primary_source(
         new_source: SkillSourceDTO,
         current_source: SkillSourceDTO | None,
     ) -> bool:
-        if current_source is None:
-            return True
-        if new_source.is_active != current_source.is_active:
-            return new_source.is_active
-        if new_source.level is None:
-            return False
-        if current_source.level is None:
-            return True
-        return new_source.level > current_source.level
+        return should_replace_primary_source(new_source, current_source)
