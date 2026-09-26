@@ -20,34 +20,6 @@ class EmployeeCertificationService(
     BaseCrudService[EmployeeCertification]
 ):
 
-    def add(
-        self,
-        id_employee: int,
-        id_certification: int,
-        start_: date | None,
-        end_: date | None,
-        organism: str | None,
-        validity_month: int | None,
-        evaluation: str | None = None,
-    ) -> EmployeeCertification:
-        """Keep the legacy completion workflow compatible during migration."""
-        expiration = (
-            None
-            if validity_month is None or end_ is None
-            else end_ + relativedelta(months=validity_month)
-        )
-        employee_certification = EmployeeCertification(
-            id_employee=id_employee,
-            id_certification=id_certification,
-            start_=start_,
-            end_=end_,
-            expiration=expiration,
-            organism=organism,
-            evaluation=evaluation,
-            is_deleted=False,
-        )
-        return self.repository.add(employee_certification)
-
     def get_close_to_expiration(self) -> list[CloseToExpirationDTO]:
         """Keep the legacy HR workflow compatible during migration."""
         today = date.today()

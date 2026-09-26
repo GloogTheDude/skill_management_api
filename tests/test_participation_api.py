@@ -70,6 +70,15 @@ def session():
                 id_role=1,
                 is_deleted=False,
             ),
+            Employee(
+                id_employee=2,
+                first_name="Grace",
+                last_name="Hopper",
+                hash_password="hash",
+                mail="grace@example.com",
+                id_role=1,
+                is_deleted=False,
+            ),
             Diploma(
                 id_diploma=1,
                 subject_diploma="Computer Science",
@@ -108,6 +117,7 @@ def add_training_and_participation(
     session,
     *,
     training_id,
+    employee_id=1,
     status=PARTICIPATIONSTATUS.IN_PROGRESS.value,
     id_diploma=None,
     id_certification=None,
@@ -127,7 +137,7 @@ def add_training_and_participation(
         is_deleted=is_deleted,
     )
     participation = Participation(
-        id_employee=1,
+        id_employee=employee_id,
         id_training=training_id,
         status=status,
         is_deleted=participation_is_deleted,
@@ -312,6 +322,12 @@ def test_get_completable_filters_status_and_dates(session):
     add_training_and_participation(session, training_id=1, end_=date.today())
     add_training_and_participation(
         session,
+        training_id=6,
+        employee_id=2,
+        end_=date.today(),
+    )
+    add_training_and_participation(
+        session,
         training_id=2,
         status=PARTICIPATIONSTATUS.REGISTERED.value,
         end_=date.today(),
@@ -338,5 +354,8 @@ def test_get_completable_filters_status_and_dates(session):
         ParticipationRepository(session)
     ).get_completable()
 
-    assert len(result) == 1
-    assert result[0].id_training == 1
+    assert len(result) == 2
+    assert {
+        (participation.id_employee, participation.id_training)
+        for participation in result
+    } == {(1, 1), (2, 6)}

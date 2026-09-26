@@ -1,5 +1,3 @@
-from datetime import date
-
 from dto.employee_diploma_dto import (
     CreateEmployeeDiplomaDTO,
     ResponseEmployeeDiplomaDTO,
@@ -10,28 +8,6 @@ from services.base_crud_service import BaseCrudService
 
 
 class EmployeeDiplomaService(BaseCrudService[EmployeeDiploma]):
-
-    def add(
-        self,
-        employee_id: int,
-        diploma_id: int,
-        start_: date | None,
-        end_: date | None,
-        distinction: str | None,
-        school: str | None,
-    ) -> EmployeeDiploma:
-        """Keep the legacy completion workflow compatible during migration."""
-        employee_diploma = EmployeeDiploma(
-            id_employee=employee_id,
-            id_diploma=diploma_id,
-            start_=start_,
-            end_=end_,
-            school=school,
-            distinction=distinction,
-            doc=None,
-            is_deleted=False,
-        )
-        return self.repository.add(employee_diploma)
 
     def get_all(self) -> list[ResponseEmployeeDiplomaDTO]:
         employee_diplomas = self._get_all_entities()

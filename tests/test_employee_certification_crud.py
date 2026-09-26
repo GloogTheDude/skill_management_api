@@ -107,40 +107,6 @@ def test_crud_service_handles_update_and_soft_delete():
     service.delete(1)
     assert service.get_all() == []
 
-
-def test_legacy_add_calculates_expiration():
-    repository = FakeEmployeeCertificationRepository()
-    service = EmployeeCertificationService(repository)
-
-    created = service.add(
-        id_employee=4,
-        id_certification=8,
-        start_=date(2024, 1, 1),
-        end_=date(2024, 2, 1),
-        organism="Company",
-        validity_month=12,
-        evaluation="Passed",
-    )
-
-    assert created.expiration == date(2025, 2, 1)
-
-
-def test_legacy_add_without_validity_or_end_has_no_expiration():
-    repository = FakeEmployeeCertificationRepository()
-    service = EmployeeCertificationService(repository)
-
-    created = service.add(
-        id_employee=4,
-        id_certification=8,
-        start_=None,
-        end_=None,
-        organism="Company",
-        validity_month=None,
-    )
-
-    assert created.expiration is None
-
-
 def test_legacy_close_to_expiration_maps_repository_results():
     repository = FakeEmployeeCertificationRepository()
     repository.close_to_expiration = [

@@ -111,22 +111,3 @@ def test_crud_service_handles_composite_key_and_soft_delete():
 
     service.delete((3, 7))
     assert service.get_all() == []
-
-
-def test_legacy_add_keeps_completion_workflow_compatible():
-    repository = FakeEmployeeDiplomaRepository()
-    service = EmployeeDiplomaService(repository)
-
-    created = service.add(
-        employee_id=3,
-        diploma_id=7,
-        start_=date(2020, 9, 1),
-        end_=date(2024, 6, 30),
-        distinction="Great",
-        school="University",
-    )
-
-    assert created.id_employee == 3
-    assert created.id_diploma == 7
-    assert created.doc is None
-    assert created.is_deleted is False
