@@ -1,54 +1,42 @@
-from sqlalchemy import select, func,and_
-from sqlalchemy.orm import Session
-
-from models.participation import Participation
-from models.employee import Employee
-from models.training import Training
-
 from datetime import date
 
-class ParticipationRepository():
-    def __init__(self, session:Session):
-        self.session = session
+from sqlalchemy import select
 
-    def add(self,participation:Participation):
-        self.session.add(participation)
-    
-    def get_by_ids(self, id_employee,id_training):
-        return self.session.get(Participation, (id_employee,id_training))
-    
-    def get_by_status(self, status):
+from core.constants import PARTICIPATIONSTATUS
+from db.repositories.base_repository import BaseRepository
+from models.employee import Employee
+from models.participation import Participation
+from models.training import Training
+
+
+class ParticipationRepository(BaseRepository[Participation]):
+    model = Participation
+
+    def get_completable(
+        self,
+    ) -> list[tuple[Participation, Employee, Training]]:
         stmt = (
-            select(Participation)
-            .where(
-                Participation.status == status,
-                Participation.is_deleted.is_(False)
-            )
-        )
-        return self.session.scalars(stmt).all()
-    
-    def get_details_by_status(self, status, min_end_date:date|None = None)->tuple[Participation,Employee,Training]:
-        conditions = [
-            Participation.status == status,
-            Participation.is_deleted.is_(False),
-            Employee.is_deleted.is_(False),
-            Training.is_deleted.is_(False)
-        ]
-        if min_end_date is not None:
-            conditions.append(Training.end_ <= min_end_date)
-        stmt = (
-            select(Participation,Employee,Training)
+            select(Participation, Employee, Training)
             .join(Employee, Employee.id_employee == Participation.id_employee)
             .join(Training, Training.id_training == Participation.id_training)
-            .where(*conditions)
+            .where(
+                Participation.status == PARTICIPATIONSTATUS.IN_PROGRESS.value,
+                Participation.is_deleted.is_(False),
+                Employee.is_deleted.is_(False),
+                Training.is_deleted.is_(False),
+                Training.end_.is_not(None),
+                Training.end_ <= date.today(),
+            )
         )
-        return self.session.execute(stmt).all()
-    
-    def change_status(self, id_employee:int, id_training:int, status:str):
-        participation = self.session.get(Participation, (id_employee, id_training))
-        if participation :
-            participation.status = status
-        else:
-            raise ValueError("Participation is None")
-        
-    
+        return list(self._session.execute(stmt).all())
+
+    def update_status(
+        self,
+        id_employee: int,
+        id_training: int,
+        status: str,
+    ) -> Participation:
+        participation = self.get_one((id_employee, id_training))
+        participation.status = status
+        self._session.flush()
+        return participation
