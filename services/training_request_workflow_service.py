@@ -19,6 +19,7 @@ from errors.training_request_errors import (
 )
 from models.participation import Participation
 from services.training_request_service import TrainingRequestService
+from services.training_request_authorization import TrainingRequestAuthorization
 
 
 class TrainingRequestWorkflowService:
@@ -49,7 +50,7 @@ class TrainingRequestWorkflowService:
         if employee.is_deleted:
             raise RelatedEntityNotFound("Employee")
 
-        self._authorize(current_employee, employee)
+        TrainingRequestAuthorization.authorize_action(current_employee, employee)
 
         if request.id_training is not None:
             if dto.id_training is not None:
@@ -114,7 +115,7 @@ class TrainingRequestWorkflowService:
         if employee.is_deleted:
             raise RelatedEntityNotFound("Employee")
 
-        self._authorize(current_employee, employee)
+        TrainingRequestAuthorization.authorize_action(current_employee, employee)
 
         request.status = TRAININGREQUESTSTATUS.REFUSED.value
         request.id_validator = current_employee.id_employee
@@ -123,25 +124,6 @@ class TrainingRequestWorkflowService:
 
         row = self.training_request_repository.get_by_id_with_details(id_request)
         return TrainingRequestService._to_response(*row)
-
-    @staticmethod
-    def _authorize(
-        current_employee: AuthEmployeeDTO,
-        requested_employee,
-    ) -> None:
-        if current_employee.access_level == 3:
-            return
-
-        if current_employee.access_level == 2:
-            if requested_employee.id_manager == current_employee.id_employee:
-                return
-            raise TrainingRequestForbidden(
-                "Managers may only process requests from direct reports."
-            )
-
-        raise TrainingRequestForbidden(
-            "Employees are not authorized to process training requests."
-        )
 
     def _get_pending_request(self, id_request: int):
         request = self.training_request_repository.get_active_by_id(id_request)

@@ -13,6 +13,7 @@ from dto.training_request_api_dto import (
     CreatePlannedTrainingRequestDTO,
     RejectTrainingRequestDTO,
     ResponseTrainingRequestDTO,
+    PendingTrainingRequestDTO,
 )
 from dto.auth_dto import AuthEmployeeDTO
 from errors.training_request_errors import (
@@ -24,6 +25,7 @@ from errors.training_request_errors import (
 )
 from services.training_request_service import TrainingRequestService
 from services.training_request_workflow_service import TrainingRequestWorkflowService
+from services.training_request_queue_service import TrainingRequestQueueService
 
 
 router = APIRouter(prefix="/training-requests", tags=["training-requests"])
@@ -77,6 +79,32 @@ def get_training_requests(
     session: Session = Depends(get_session),
 ):
     return TrainingRequestService(TrainingRequestRepository(session)).get_all()
+
+
+@router.get("/pending/manager", response_model=list[PendingTrainingRequestDTO])
+def get_pending_manager_requests(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        return TrainingRequestQueueService(
+            TrainingRequestRepository(session)
+        ).get_for_manager(current_employee)
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.get("/pending/hr", response_model=list[PendingTrainingRequestDTO])
+def get_pending_hr_requests(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        return TrainingRequestQueueService(
+            TrainingRequestRepository(session)
+        ).get_for_hr(current_employee)
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.get("/{id_training_request}", response_model=ResponseTrainingRequestDTO)

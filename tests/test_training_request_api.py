@@ -33,6 +33,7 @@ from models.training import Training
 from models.training_request import TrainingRequest
 from services.training_request_service import TrainingRequestService
 from services.training_request_workflow_service import TrainingRequestWorkflowService
+from services.training_request_queue_service import TrainingRequestQueueService
 
 
 @pytest.fixture
@@ -136,6 +137,96 @@ def actor(id_employee: int, access_level: int) -> AuthEmployeeDTO:
         access_level_label=None,
         access_level=access_level,
     )
+
+
+def queue_service(session):
+    return TrainingRequestQueueService(TrainingRequestRepository(session))
+
+
+def add_queue_request(session, *, employee_id, training_id=None, status="PENDING", deleted=False):
+    request = TrainingRequest(
+        id_employee=employee_id,
+        id_training=training_id,
+        request_desc="custom request" if training_id is None else None,
+        status=status,
+        requested_at=date.today(),
+        is_deleted=deleted,
+    )
+    session.add(request)
+    session.flush()
+    return request
+
+
+def test_manager_queue_returns_direct_reports_and_both_request_types(session):
+    planned = add_queue_request(session, employee_id=1, training_id=1)
+    personalized = add_queue_request(session, employee_id=1)
+    add_queue_request(session, employee_id=1, training_id=1, status="VALIDATED")
+    add_queue_request(session, employee_id=2, training_id=1)
+    session.commit()
+
+    result = queue_service(session).get_for_manager(actor(2, 2))
+
+    assert {item.id_training_request for item in result} == {
+        planned.id_training_request,
+        personalized.id_training_request,
+    }
+    planned_result = next(item for item in result if item.id_training_request == planned.id_training_request)
+    personalized_result = next(item for item in result if item.id_training_request == personalized.id_training_request)
+    assert planned_result.training_title == "REST API"
+    assert planned_result.first_name_employee == "Ada"
+    assert personalized_result.id_training is None
+    assert personalized_result.training_title is None
+    assert personalized_result.request_desc == "custom request"
+
+
+def test_manager_queue_requires_manager_and_direct_scope(session):
+    add_queue_request(session, employee_id=1, training_id=1)
+    session.commit()
+
+    with pytest.raises(TrainingRequestForbidden):
+        queue_service(session).get_for_manager(actor(1, 1))
+    with pytest.raises(TrainingRequestForbidden):
+        queue_service(session).get_for_manager(actor(3, 3))
+
+
+def test_hr_queue_returns_all_pending_and_requires_hr(session):
+    first = add_queue_request(session, employee_id=1, training_id=1)
+    second = add_queue_request(session, employee_id=2, training_id=1)
+    add_queue_request(session, employee_id=1, training_id=1, status="REFUSED")
+    deleted = add_queue_request(session, employee_id=1, training_id=1, deleted=True)
+    session.commit()
+
+    result = queue_service(session).get_for_hr(actor(3, 3))
+
+    assert {item.id_training_request for item in result} == {
+        first.id_training_request,
+        second.id_training_request,
+    }
+    with pytest.raises(TrainingRequestForbidden):
+        queue_service(session).get_for_hr(actor(2, 2))
+    with pytest.raises(TrainingRequestForbidden):
+        queue_service(session).get_for_hr(actor(1, 1))
+    assert deleted.id_training_request not in {item.id_training_request for item in result}
+
+
+def test_pending_queue_uses_one_sql_query(session):
+    for _ in range(4):
+        add_queue_request(session, employee_id=1, training_id=1)
+    session.commit()
+    statements = []
+
+    def count_statement(conn, cursor, statement, parameters, context, executemany):
+        if statement.lstrip().upper().startswith("SELECT"):
+            statements.append(statement)
+
+    event.listen(session.bind, "before_cursor_execute", count_statement)
+    try:
+        result = queue_service(session).get_for_manager(actor(2, 2))
+    finally:
+        event.remove(session.bind, "before_cursor_execute", count_statement)
+
+    assert len(result) == 4
+    assert len(statements) == 1
 
 
 def add_request(

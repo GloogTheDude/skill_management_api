@@ -49,3 +49,17 @@ class ResponseTrainingRequestDTO(BaseModel):
     id_validator: int | None
     training_title: str | None
     domaine_name: str | None
+
+
+class PendingTrainingRequestDTO(BaseModel):
+    id_training_request: int
+    request_desc: str | None
+    status: str
+    reason: str | None
+    requested_at: date
+    id_employee: int
+    first_name_employee: str | None
+    last_name_employee: str | None
+    id_training: int | None
+    training_title: str | None
+    domaine_name: str | None
