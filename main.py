@@ -29,6 +29,7 @@ from controlers import (
     employee_diploma_controller,
     employee_certification_controller,
     employee_certification_expiration_controller,
+    available_training_controller,
     participation_controller,
     training_request_controller,
     employee_skill_profile_controller,
@@ -94,6 +95,7 @@ app.include_router(skill_validation_controller.router)
 app.include_router(employee_diploma_controller.router)
 app.include_router(employee_certification_controller.router)
 app.include_router(employee_certification_expiration_controller.router)
+app.include_router(available_training_controller.router)
 app.include_router(participation_controller.router)
 app.include_router(training_request_controller.router)
 app.include_router(employee_skill_profile_controller.router)
