@@ -9,6 +9,7 @@ from dto.role_dto import (
     ResponseRoleDTO,
 )
 from services.role_service import RoleService
+from controlers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(
@@ -21,6 +22,7 @@ router = APIRouter(
 def create_role(
     dto: CreateRoleDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseRoleDTO:
 
     repo = RoleRepository(session)
@@ -33,6 +35,7 @@ def create_role(
 def get_role_by_id(
     id_role: int,
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> ResponseRoleDTO:
 
     repo = RoleRepository(session)
@@ -44,6 +47,7 @@ def get_role_by_id(
 @router.get("")
 def get_roles(
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> list[ResponseRoleDTO]:
 
     repo = RoleRepository(session)
@@ -57,6 +61,7 @@ def update_role(
     id_role: int,
     dto: UpdateRoleDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseRoleDTO:
 
     repo = RoleRepository(session)
@@ -69,6 +74,7 @@ def update_role(
 def delete_role(
     id_role: int,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ):
     repo = RoleRepository(session)
     service = RoleService(repo)

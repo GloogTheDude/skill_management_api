@@ -12,6 +12,8 @@ from core.database import get_session
 from db.repositories.employee_repository import EmployeeRepository
 from dto.auth_dto import AuthEmployeeDTO, LoginDTO
 from services.auth_service import AuthService
+from services.training_request_authorization import TrainingRequestAuthorization
+from errors.training_request_errors import TrainingRequestForbidden
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -77,6 +79,16 @@ async def get_current_employee(
             detail="Authentication required.",
             headers={"WWW-Authenticate": "Session"},
         )
+    return employee
+
+
+async def require_hr_employee(
+    employee: AuthEmployeeDTO = Depends(get_current_employee),
+) -> AuthEmployeeDTO:
+    try:
+        TrainingRequestAuthorization.require_hr(employee)
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     return employee
 
 

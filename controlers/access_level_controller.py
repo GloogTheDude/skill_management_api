@@ -9,6 +9,7 @@ from dto.access_level_dto import (
     ResponseAccessLevelDTO,
 )
 from services.access_level_service import AccessLevelService
+from controlers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(
@@ -21,6 +22,7 @@ router = APIRouter(
 def create_access_level(
     dto: CreateAccessLevelDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseAccessLevelDTO:
 
     repo = AccessLevelRepository(session)
@@ -33,6 +35,7 @@ def create_access_level(
 def get_access_level_by_id(
     id_access_level: int,
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> ResponseAccessLevelDTO:
 
     repo = AccessLevelRepository(session)
@@ -44,6 +47,7 @@ def get_access_level_by_id(
 @router.get("")
 def get_access_levels(
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> list[ResponseAccessLevelDTO]:
 
     repo = AccessLevelRepository(session)
@@ -57,6 +61,7 @@ def update_access_level(
     id_access_level: int,
     dto: UpdateAccessLevelDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseAccessLevelDTO:
 
     repo = AccessLevelRepository(session)
@@ -72,6 +77,7 @@ def update_access_level(
 def delete_access_level(
     id_access_level: int,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ):
     repo = AccessLevelRepository(session)
     service = AccessLevelService(repo)

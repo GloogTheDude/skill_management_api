@@ -5,6 +5,7 @@ from core.database import get_session
 from db.repositories.certification_repository import CertificationRepository
 from dto.certification_dto import CreateCertificationDTO, UpdateCertificationDTO,ResponseCertificationDTO
 from services.certification_service import CertificationService
+from controlers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(prefix="/certification",tags=["certification"])
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/certification",tags=["certification"])
 def create_certification(
     dto:CreateCertificationDTO,
     session:Session=Depends(get_session)
+    ,_: object = Depends(require_hr_employee)
 )->ResponseCertificationDTO:
     repo = CertificationRepository(session)
     service= CertificationService(repo)
@@ -22,6 +24,7 @@ def create_certification(
 def get_certification_by_id(
     id_certification:int,
     session:Session=Depends(get_session)
+    ,_: object = Depends(get_current_employee)
 )->ResponseCertificationDTO:
     repo = CertificationRepository(session)
     service= CertificationService(repo)
@@ -30,6 +33,7 @@ def get_certification_by_id(
 @router.get('')
 def get_certifications(
     session:Session=Depends(get_session)
+    ,_: object = Depends(get_current_employee)
 )->list[ResponseCertificationDTO]:
     repo = CertificationRepository(session)
     service= CertificationService(repo)
@@ -40,6 +44,7 @@ def update_certification(
     id_certification:int, 
     dto:UpdateCertificationDTO,
     session:Session=Depends(get_session)
+    ,_: object = Depends(require_hr_employee)
 )->ResponseCertificationDTO:
     repo = CertificationRepository(session)
     service= CertificationService(repo)
@@ -49,6 +54,7 @@ def update_certification(
 def delete_certification(
     id_certification:int,
     session:Session=Depends(get_session)
+    ,_: object = Depends(require_hr_employee)
 ):
     repo = CertificationRepository(session)
     service= CertificationService(repo)

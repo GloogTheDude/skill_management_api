@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_session
@@ -9,6 +9,8 @@ from dto.domaine_dto import (
     ResponseDomaineDTO,
 )
 from services.domaine_service import DomaineService
+from controlers.auth_controller import get_current_employee, require_hr_employee
+from errors.training_request_errors import TrainingRequestForbidden
 
 
 router = APIRouter(prefix="/domaine", tags=["domaine"])
@@ -18,6 +20,7 @@ router = APIRouter(prefix="/domaine", tags=["domaine"])
 def create_domaine(
     dto: CreateDomaineDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseDomaineDTO:
     repo = DomaineRepository(session)
     service = DomaineService(repo)
@@ -28,6 +31,7 @@ def create_domaine(
 def get_domaine_by_id(
     id_domaine: int,
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> ResponseDomaineDTO:
     repo = DomaineRepository(session)
     service = DomaineService(repo)
@@ -37,6 +41,7 @@ def get_domaine_by_id(
 @router.get("")
 def get_domaines(
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> list[ResponseDomaineDTO]:
     repo = DomaineRepository(session)
     service = DomaineService(repo)
@@ -48,6 +53,7 @@ def update_domaine(
     id_domaine: int,
     dto: UpdateDomaineDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseDomaineDTO:
     repo = DomaineRepository(session)
     service = DomaineService(repo)
@@ -58,6 +64,7 @@ def update_domaine(
 def delete_domaine(
     id_domaine: int,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ):
     repo = DomaineRepository(session)
     service = DomaineService(repo)

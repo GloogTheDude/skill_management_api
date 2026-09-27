@@ -9,6 +9,7 @@ from dto.training_source_dto import (
     ResponseTrainingSourceDTO,
 )
 from services.training_source_service import TrainingSourceService
+from controlers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(
@@ -21,6 +22,7 @@ router = APIRouter(
 def create_training_source(
     dto: CreateTrainingSourceDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseTrainingSourceDTO:
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
@@ -31,6 +33,7 @@ def create_training_source(
 def get_training_source_by_id(
     id_source: int,
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> ResponseTrainingSourceDTO:
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
@@ -40,6 +43,7 @@ def get_training_source_by_id(
 @router.get("")
 def get_training_sources(
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> list[ResponseTrainingSourceDTO]:
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
@@ -51,6 +55,7 @@ def update_training_source(
     id_source: int,
     dto: UpdateTrainingSourceDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseTrainingSourceDTO:
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)
@@ -61,6 +66,7 @@ def update_training_source(
 def delete_training_source(
     id_source: int,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ):
     repo = TrainingSourceRepository(session)
     service = TrainingSourceService(repo)

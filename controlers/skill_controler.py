@@ -9,6 +9,7 @@ from dto.skill_dto import (
     ResponseSkillDTO,
 )
 from services.skill_service import SkillService
+from controlers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(prefix="/skill", tags=["skill"])
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/skill", tags=["skill"])
 def create_skill(
     dto: CreateSkillDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseSkillDTO:
     repo = SkillRepository(session)
     service = SkillService(repo)
@@ -28,6 +30,7 @@ def create_skill(
 def get_skill_by_id(
     id_skill: int,
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> ResponseSkillDTO:
     repo = SkillRepository(session)
     service = SkillService(repo)
@@ -37,6 +40,7 @@ def get_skill_by_id(
 @router.get("")
 def get_all_skills(
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> list[ResponseSkillDTO]:
     repo = SkillRepository(session)
     service = SkillService(repo)
@@ -48,6 +52,7 @@ def update_skill(
     id_skill: int,
     dto: UpdateSkillDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseSkillDTO:
     repo = SkillRepository(session)
     service = SkillService(repo)
@@ -58,6 +63,7 @@ def update_skill(
 def delete_skill(
     id_skill: int,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ):
     repo = SkillRepository(session)
     service = SkillService(repo)

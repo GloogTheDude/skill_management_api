@@ -9,26 +9,30 @@ from dto.training_dto import (
     ResponseTrainingDTO,
 )
 from services.training_service import TrainingService
+from controlers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(prefix="/training", tags=["training"])
 
 @router.post('',status_code=201)
 def create_training(dto:CreateTrainingDTO,
-                    session:Session=Depends(get_session))->ResponseTrainingDTO:
+                    session:Session=Depends(get_session),
+                    _: object = Depends(require_hr_employee))->ResponseTrainingDTO:
     repo = TrainingRepository(session)
     service = TrainingService(repo)
     return service.create(dto)
 
 @router.get('/{id_training}')
 def get_training_by_id(id_training:int,
-                       session:Session=Depends(get_session))->ResponseTrainingDTO:
+                       session:Session=Depends(get_session),
+                       _: object = Depends(get_current_employee))->ResponseTrainingDTO:
     repo = TrainingRepository(session)
     service = TrainingService(repo)
     return service.get_by_id(id_training)
 
 @router.get('')
-def get_trainings(session:Session=Depends(get_session))->list[ResponseTrainingDTO]:
+def get_trainings(session:Session=Depends(get_session),
+                  _: object = Depends(get_current_employee))->list[ResponseTrainingDTO]:
     repo = TrainingRepository(session)
     service = TrainingService(repo)
     return service.get_all()
@@ -39,15 +43,16 @@ def get_trainings(session:Session=Depends(get_session))->list[ResponseTrainingDT
 )
 def update_training(id_training:int, 
                     dto:UpdateTrainingDTO,
-                    session:Session=Depends(get_session))->ResponseTrainingDTO:
+                    session:Session=Depends(get_session),
+                    _: object = Depends(require_hr_employee))->ResponseTrainingDTO:
     repo = TrainingRepository(session)
     service = TrainingService(repo)
     return service.update(id_training, dto)
 
 @router.delete('/{id_training}')
 def delete_training(id_training:int,
-                    session: Session=Depends(get_session)):
+                    session: Session=Depends(get_session),
+                    _: object = Depends(require_hr_employee)):
     repo = TrainingRepository(session)
     service = TrainingService(repo)
     return service.delete(id_training)
-
