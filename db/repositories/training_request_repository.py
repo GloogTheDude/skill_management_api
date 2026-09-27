@@ -21,15 +21,6 @@ class TrainingRequestRepository():
     def add(self, training_request: TrainingRequest):
         return self.add_request_preplanned_training(training_request)
 
-    def get_all_active(self):
-        stmt = select(TrainingRequest).where(
-            TrainingRequest.is_deleted.is_(False),
-        )
-        return list(self.session.scalars(stmt).all())
-
-    def get_one(self, id_request: int):
-        return self.session.get_one(TrainingRequest, id_request)
-
     def get_active_by_id(self, id_request: int):
         request = self.session.get(TrainingRequest, id_request)
         if request is None or request.is_deleted:
@@ -67,17 +58,6 @@ class TrainingRequestRepository():
         )
         return self.session.execute(stmt).all()
 
-    def get_domaines_available(self):
-        stmt = (
-            select(
-                Domaine
-            )
-            .where(
-                Domaine.is_deleted.is_(False),
-            )
-        )
-        return self.session.execute(stmt).all()
-    
     def get_pending_request_for_manager(self, id_manager: int):
         stmt = (
             select(
@@ -116,33 +96,3 @@ class TrainingRequestRepository():
         )
 
         return self.session.execute(stmt).all()
-
-    def update_request_status(self, id_request: int,
-                                status: str,
-                                reason: str | None = None,
-                                id_validator: int | None = None) -> TrainingRequest | None:
-        
-        request = self.session.get(TrainingRequest, id_request)
-
-        if request is None:
-            return None
-
-        if request.is_deleted:
-            return None
-
-        if id_validator is None:
-            return None
-        
-        request.status = status
-        request.reason = reason
-
-        if id_validator is not None:
-            request.id_validator = id_validator
-
-        self.session.flush()
-
-        return request
-    
-
-    def get_by_id(self, id_request):
-        return self.session.get(TrainingRequest, id_request)

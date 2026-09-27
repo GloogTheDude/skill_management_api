@@ -1,5 +1,3 @@
-from dto.training_request_dto import PendingTrainingRequestForManagerDTO
-
 class HRMenu():
     def __init__(self):
         pass
@@ -10,9 +8,6 @@ class HRMenu():
             print("Here are your options:")
             print("1. See skills")
             print("2. See certifications")
-            print("3. Request training")
-            print("4. Follow up on your requests")
-            print("5. Pending Request Management")
             print("6. Participation Menu")
             print("7. Who's certification are about to expire")
             print("8. CRUD")
@@ -34,5 +29,5 @@ class HRMenu():
             print("6. Create, update or delete Employee")
             print("0. Leave")
 
-    
+
     

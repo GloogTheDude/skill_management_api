@@ -14,7 +14,6 @@ from services.certification_service import CertificationService
 from dto.employee_dto import EmployeeDTO
 from menus.hr_menu import HRMenu 
 from menus.employee_certification_menu import EmployeeCertificationMenu as ecm
-from controllers.training_request_controller import TrainingRequestController
 from controllers.training_source_controller import TrainingSourceController
 from controllers.skill_controller import SkillController
 from controllers.domaine_controller import DomaineController
@@ -24,7 +23,6 @@ from menus.crud_menu import CrudMenu
 class HRController():
     def __init__(self,hr: EmployeeDTO):
         self.hr = hr
-        self.training_request_controller = TrainingRequestController(self.hr)
 
     def get_main_hr_menu(self):
         em = EmployeeMenu()
@@ -46,14 +44,6 @@ class HRController():
                         service = CertificationService(repo)
                         certifications_employee = service.fetch_certification_employee(self.hr.id_employee)
                     em.display_certification(certifications_employee)
-                case 3: #3. ask for training
-                    self.training_request_controller.get_training_request_menu()
-                case 4:
-                    self.training_request_controller.follow_up_request()
-                case 5:
-                    #need to change to manage_pending_requests_for_hr
-                    #subordonate request to (in)validate
-                    self.training_request_controller.manage_pending_requests_for_hr(self.hr)
                 case 6:
                     participation_controller = ParticipationController()
                     participation_controller.main_menu()
