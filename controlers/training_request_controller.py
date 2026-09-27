@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_session
+from controlers.auth_controller import get_current_employee
 from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
@@ -13,11 +14,13 @@ from dto.training_request_api_dto import (
     RejectTrainingRequestDTO,
     ResponseTrainingRequestDTO,
 )
+from dto.auth_dto import AuthEmployeeDTO
 from errors.training_request_errors import (
     ActiveParticipationConflict,
     RelatedEntityNotFound,
     TrainingRequestConflict,
     TrainingRequestNotFound,
+    TrainingRequestForbidden,
 )
 from services.training_request_service import TrainingRequestService
 from services.training_request_workflow_service import TrainingRequestWorkflowService
@@ -94,15 +97,18 @@ def approve_training_request(
     id_training_request: int,
     dto: ApproveTrainingRequestDTO,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ):
     try:
-        return _workflow(session).approve(id_training_request, dto)
+        return _workflow(session).approve(id_training_request, dto, current_employee)
     except TrainingRequestNotFound as exc:
         raise HTTPException(status_code=404, detail="Training request not found.") from exc
     except RelatedEntityNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except (TrainingRequestConflict, ActiveParticipationConflict) as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.post("/{id_training_request}/reject", response_model=ResponseTrainingRequestDTO)
@@ -110,12 +116,15 @@ def reject_training_request(
     id_training_request: int,
     dto: RejectTrainingRequestDTO,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ):
     try:
-        return _workflow(session).reject(id_training_request, dto)
+        return _workflow(session).reject(id_training_request, dto, current_employee)
     except TrainingRequestNotFound as exc:
         raise HTTPException(status_code=404, detail="Training request not found.") from exc
     except RelatedEntityNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except TrainingRequestConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc

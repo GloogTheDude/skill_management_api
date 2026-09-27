@@ -9,11 +9,13 @@ from dto.training_request_api_dto import (
     RejectTrainingRequestDTO,
     ResponseTrainingRequestDTO,
 )
+from dto.auth_dto import AuthEmployeeDTO
 from errors.training_request_errors import (
     ActiveParticipationConflict,
     RelatedEntityNotFound,
     TrainingRequestConflict,
     TrainingRequestNotFound,
+    TrainingRequestForbidden,
 )
 from models.participation import Participation
 from services.training_request_service import TrainingRequestService
@@ -36,6 +38,7 @@ class TrainingRequestWorkflowService:
         self,
         id_request: int,
         dto: ApproveTrainingRequestDTO,
+        current_employee: AuthEmployeeDTO,
     ) -> ResponseTrainingRequestDTO:
         request = self._get_pending_request(id_request)
 
@@ -46,12 +49,7 @@ class TrainingRequestWorkflowService:
         if employee.is_deleted:
             raise RelatedEntityNotFound("Employee")
 
-        try:
-            validator = self.employee_repository.get_one(dto.id_validator)
-        except NoResultFound as exc:
-            raise RelatedEntityNotFound("Validator") from exc
-        if validator.is_deleted:
-            raise RelatedEntityNotFound("Validator")
+        self._authorize(current_employee, employee)
 
         if request.id_training is not None:
             if dto.id_training is not None:
@@ -81,7 +79,7 @@ class TrainingRequestWorkflowService:
             raise ActiveParticipationConflict()
 
         request.status = TRAININGREQUESTSTATUS.VALIDATED.value
-        request.id_validator = dto.id_validator
+        request.id_validator = current_employee.id_employee
         request.id_training = id_training
         request.reason = None
         self.training_request_repository.session.flush()
@@ -105,23 +103,45 @@ class TrainingRequestWorkflowService:
         self,
         id_request: int,
         dto: RejectTrainingRequestDTO,
+        current_employee: AuthEmployeeDTO,
     ) -> ResponseTrainingRequestDTO:
         request = self._get_pending_request(id_request)
 
         try:
-            validator = self.employee_repository.get_one(dto.id_validator)
+            employee = self.employee_repository.get_one(request.id_employee)
         except NoResultFound as exc:
-            raise RelatedEntityNotFound("Validator") from exc
-        if validator.is_deleted:
-            raise RelatedEntityNotFound("Validator")
+            raise RelatedEntityNotFound("Employee") from exc
+        if employee.is_deleted:
+            raise RelatedEntityNotFound("Employee")
+
+        self._authorize(current_employee, employee)
 
         request.status = TRAININGREQUESTSTATUS.REFUSED.value
-        request.id_validator = dto.id_validator
+        request.id_validator = current_employee.id_employee
         request.reason = dto.reason
         self.training_request_repository.session.flush()
 
         row = self.training_request_repository.get_by_id_with_details(id_request)
         return TrainingRequestService._to_response(*row)
+
+    @staticmethod
+    def _authorize(
+        current_employee: AuthEmployeeDTO,
+        requested_employee,
+    ) -> None:
+        if current_employee.access_level == 3:
+            return
+
+        if current_employee.access_level == 2:
+            if requested_employee.id_manager == current_employee.id_employee:
+                return
+            raise TrainingRequestForbidden(
+                "Managers may only process requests from direct reports."
+            )
+
+        raise TrainingRequestForbidden(
+            "Employees are not authorized to process training requests."
+        )
 
     def _get_pending_request(self, id_request: int):
         request = self.training_request_repository.get_active_by_id(id_request)

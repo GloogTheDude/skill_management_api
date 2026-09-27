@@ -22,12 +22,10 @@ class CreatePersonalizedTrainingRequestDTO(BaseModel):
 
 
 class ApproveTrainingRequestDTO(BaseModel):
-    id_validator: int = Field(gt=0)
     id_training: int | None = Field(default=None, gt=0)
 
 
 class RejectTrainingRequestDTO(BaseModel):
-    id_validator: int = Field(gt=0)
     reason: str
 
     @field_validator("reason")

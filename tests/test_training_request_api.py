@@ -9,6 +9,7 @@ from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
 from db.repositories.training_request_repository import TrainingRequestRepository
+from dto.auth_dto import AuthEmployeeDTO
 from dto.training_request_api_dto import (
     ApproveTrainingRequestDTO,
     CreatePersonalizedTrainingRequestDTO,
@@ -19,6 +20,7 @@ from errors.training_request_errors import (
     ActiveParticipationConflict,
     RelatedEntityNotFound,
     TrainingRequestConflict,
+    TrainingRequestForbidden,
     TrainingRequestNotFound,
 )
 from models import Base
@@ -48,7 +50,11 @@ def session():
     current_session.add_all(
         [
             AccessLevel(id_access_level=1, label="Employee", level=1),
+            AccessLevel(id_access_level=2, label="Manager", level=2),
+            AccessLevel(id_access_level=3, label="HR", level=3),
             Role(id_role=1, denomination_role="Employee", id_access_level=1),
+            Role(id_role=2, denomination_role="Manager", id_access_level=2),
+            Role(id_role=3, denomination_role="HR", id_access_level=3),
             Domaine(id_domaine=1, nom_domaine="Backend", is_deleted=False),
             Employee(
                 id_employee=1,
@@ -57,6 +63,7 @@ def session():
                 hash_password="hash",
                 mail="ada@example.com",
                 id_role=1,
+                id_manager=None,
                 is_deleted=False,
             ),
             Employee(
@@ -65,7 +72,16 @@ def session():
                 last_name="Hopper",
                 hash_password="hash",
                 mail="grace@example.com",
-                id_role=1,
+                id_role=2,
+                is_deleted=False,
+            ),
+            Employee(
+                id_employee=3,
+                first_name="Henri",
+                last_name="Roe",
+                hash_password="hash",
+                mail="henri@example.com",
+                id_role=3,
                 is_deleted=False,
             ),
             Training(
@@ -84,6 +100,8 @@ def session():
             ),
         ]
     )
+    current_session.commit()
+    current_session.get(Employee, 1).id_manager = 2
     current_session.commit()
     yield current_session
     current_session.close()
@@ -108,10 +126,30 @@ def workflow_service(session, participation_repository=None):
     )
 
 
-def add_request(session, *, request_id, training_id=None, status="PENDING", deleted=False):
+def actor(id_employee: int, access_level: int) -> AuthEmployeeDTO:
+    return AuthEmployeeDTO(
+        id_employee=id_employee,
+        first_name="Actor",
+        last_name="Test",
+        mail="actor@example.com",
+        role_name=None,
+        access_level_label=None,
+        access_level=access_level,
+    )
+
+
+def add_request(
+    session,
+    *,
+    request_id,
+    training_id=None,
+    status="PENDING",
+    deleted=False,
+    employee_id=1,
+):
     request = TrainingRequest(
         id_training_request=request_id,
-        id_employee=1,
+        id_employee=employee_id,
         id_training=training_id,
         request_desc=None if training_id else "Kubernetes",
         status=status,
@@ -162,7 +200,8 @@ def test_approve_planned_creates_registered_participation(session):
 
     result = workflow_service(session).approve(
         1,
-        ApproveTrainingRequestDTO(id_validator=2),
+        ApproveTrainingRequestDTO(),
+        actor(2, 2),
     )
     session.commit()
 
@@ -178,13 +217,15 @@ def test_approve_personalized_requires_and_assigns_training(session):
     with pytest.raises(TrainingRequestConflict):
         workflow_service(session).approve(
             1,
-            ApproveTrainingRequestDTO(id_validator=2),
+            ApproveTrainingRequestDTO(),
+            actor(2, 2),
         )
     session.rollback()
 
     result = workflow_service(session).approve(
         1,
-        ApproveTrainingRequestDTO(id_validator=2, id_training=1),
+        ApproveTrainingRequestDTO(id_training=1),
+        actor(2, 2),
     )
     assert result.id_training == 1
 
@@ -195,7 +236,8 @@ def test_approve_planned_rejects_training_override(session):
     with pytest.raises(TrainingRequestConflict):
         workflow_service(session).approve(
             1,
-            ApproveTrainingRequestDTO(id_validator=2, id_training=1),
+            ApproveTrainingRequestDTO(id_training=1),
+            actor(2, 2),
         )
 
 
@@ -204,7 +246,8 @@ def test_reject_records_reason_and_creates_no_participation(session):
 
     result = workflow_service(session).reject(
         1,
-        RejectTrainingRequestDTO(id_validator=2, reason="Not relevant"),
+        RejectTrainingRequestDTO(reason="Not relevant"),
+        actor(2, 2),
     )
     session.commit()
 
@@ -213,23 +256,76 @@ def test_reject_records_reason_and_creates_no_participation(session):
     assert session.query(Participation).count() == 0
 
 
+def test_employee_cannot_approve_or_reject(session):
+    add_request(session, request_id=1, training_id=1)
+    with pytest.raises(TrainingRequestForbidden):
+        workflow_service(session).approve(1, ApproveTrainingRequestDTO(), actor(1, 1))
+
+    session.rollback()
+    add_request(session, request_id=2, training_id=1)
+    with pytest.raises(TrainingRequestForbidden):
+        workflow_service(session).reject(
+            2,
+            RejectTrainingRequestDTO(reason="Not relevant"),
+            actor(1, 1),
+        )
+
+
+def test_manager_cannot_process_request_outside_direct_reports(session):
+    add_request(session, request_id=1, training_id=1, employee_id=2)
+
+    with pytest.raises(TrainingRequestForbidden):
+        workflow_service(session).approve(1, ApproveTrainingRequestDTO(), actor(2, 2))
+
+    session.rollback()
+    add_request(session, request_id=2, training_id=1, employee_id=2)
+    with pytest.raises(TrainingRequestForbidden):
+        workflow_service(session).reject(
+            2,
+            RejectTrainingRequestDTO(reason="Not relevant"),
+            actor(2, 2),
+        )
+
+
+def test_hr_can_approve_request_outside_manager_scope(session):
+    add_request(session, request_id=1, training_id=1, employee_id=2)
+
+    result = workflow_service(session).approve(1, ApproveTrainingRequestDTO(), actor(3, 3))
+
+    assert result.status == TRAININGREQUESTSTATUS.VALIDATED.value
+    assert result.id_validator == 3
+
+
+def test_hr_can_reject_request_outside_manager_scope(session):
+    add_request(session, request_id=1, training_id=1, employee_id=2)
+
+    result = workflow_service(session).reject(
+        1,
+        RejectTrainingRequestDTO(reason="Not relevant"),
+        actor(3, 3),
+    )
+
+    assert result.status == TRAININGREQUESTSTATUS.REFUSED.value
+    assert result.id_validator == 3
+
+
 def test_approve_rejects_missing_or_deleted_related_entities(session):
     add_request(session, request_id=1, training_id=2)
     with pytest.raises(RelatedEntityNotFound):
-        workflow_service(session).approve(1, ApproveTrainingRequestDTO(id_validator=2))
+        workflow_service(session).approve(1, ApproveTrainingRequestDTO(), actor(2, 2))
     session.rollback()
 
     add_request(session, request_id=2, training_id=1)
-    session.get(Employee, 2).is_deleted = True
+    session.get(Employee, 1).is_deleted = True
     session.commit()
     with pytest.raises(RelatedEntityNotFound):
-        workflow_service(session).approve(2, ApproveTrainingRequestDTO(id_validator=2))
+        workflow_service(session).approve(2, ApproveTrainingRequestDTO(), actor(3, 3))
 
 
 def test_processed_deleted_and_duplicate_requests_are_rejected(session):
     add_request(session, request_id=1, training_id=1, status="VALIDATED")
     with pytest.raises(TrainingRequestConflict):
-        workflow_service(session).approve(1, ApproveTrainingRequestDTO(id_validator=2))
+        workflow_service(session).approve(1, ApproveTrainingRequestDTO(), actor(2, 2))
 
     add_request(session, request_id=2, training_id=1)
     session.add(Participation(
@@ -240,7 +336,7 @@ def test_processed_deleted_and_duplicate_requests_are_rejected(session):
     ))
     session.commit()
     with pytest.raises(ActiveParticipationConflict):
-        workflow_service(session).approve(2, ApproveTrainingRequestDTO(id_validator=2))
+        workflow_service(session).approve(2, ApproveTrainingRequestDTO(), actor(2, 2))
 
 
 def test_active_duplicate_participation_keeps_request_unchanged(session):
@@ -257,7 +353,8 @@ def test_active_duplicate_participation_keeps_request_unchanged(session):
     with pytest.raises(ActiveParticipationConflict):
         workflow_service(session).approve(
             1,
-            ApproveTrainingRequestDTO(id_validator=2),
+            ApproveTrainingRequestDTO(),
+            actor(2, 2),
         )
 
     session.rollback()
@@ -297,7 +394,7 @@ def test_approve_is_atomic_when_participation_creation_fails(session):
         workflow_service(
             session,
             FailingParticipationRepository(session),
-        ).approve(1, ApproveTrainingRequestDTO(id_validator=2))
+        ).approve(1, ApproveTrainingRequestDTO(), actor(2, 2))
 
     session.rollback()
     session.expire_all()
@@ -311,4 +408,4 @@ def test_dto_rejects_non_positive_identifiers():
     with pytest.raises(ValueError):
         CreatePlannedTrainingRequestDTO(id_employee=0, id_training=1)
     with pytest.raises(ValueError):
-        ApproveTrainingRequestDTO(id_validator=0)
+        ApproveTrainingRequestDTO(id_training=0)

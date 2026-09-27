@@ -3,6 +3,11 @@ class TrainingRequestConflict(Exception):
         super().__init__(detail)
 
 
+class TrainingRequestForbidden(Exception):
+    def __init__(self, detail: str = "You are not authorized to process this request."):
+        super().__init__(detail)
+
+
 class TrainingRequestNotFound(Exception):
     def __init__(self, detail: str = "Training request not found."):
         super().__init__(detail)
