@@ -12,6 +12,9 @@ from dto.employee_certification_crud_dto import (
     UpdateEmployeeCertificationDTO,
 )
 from dto.employee_certification_dto import CloseToExpirationDTO
+from dto.employee_certification_expiration_dto import (
+    EmployeeCertificationExpirationDTO,
+)
 from models.employee_certification import EmployeeCertification
 from services.base_crud_service import BaseCrudService
 
@@ -22,27 +25,47 @@ class EmployeeCertificationService(
 
     def get_close_to_expiration(self) -> list[CloseToExpirationDTO]:
         """Keep the legacy HR workflow compatible during migration."""
+        return [
+            CloseToExpirationDTO(
+                employee_id=dto.employee_id,
+                employee_first_name=dto.employee_first_name,
+                employee_last_name=dto.employee_last_name,
+                certification_id=dto.certification_id,
+                certification_name=dto.certification_name,
+                expiration_date=dto.expiration_date,
+                status=dto.status,
+            )
+            for dto in self._get_expiring_dtos()
+        ]
+
+    def get_expiring(self) -> list[EmployeeCertificationExpirationDTO]:
+        return self._get_expiring_dtos()
+
+    def _get_expiring_dtos(self) -> list[EmployeeCertificationExpirationDTO]:
         today = date.today()
-        close_to_expiration = self.repository.get_close_to_expiration()
         result = []
 
-        for employee_certification, employee, certification in close_to_expiration:
-            dto = CloseToExpirationDTO(
-                employee_id=employee.id_employee,
-                employee_first_name=employee.first_name,
-                employee_last_name=employee.last_name,
-                certification_id=certification.id_certification,
-                certification_name=certification.subject_certification,
-                expiration_date=employee_certification.expiration,
-                status=None,
-            )
-            if dto.expiration_date < today:
-                dto.status = CERTIFICATIONSTATUS.EXPIRED.value
-            elif dto.expiration_date <= today + relativedelta(months=1):
-                dto.status = CERTIFICATIONSTATUS.URGENT.value
+        for employee_certification, employee, certification in self.repository.get_close_to_expiration():
+            expiration = employee_certification.expiration
+            if expiration < today:
+                status = CERTIFICATIONSTATUS.EXPIRED.value
+            elif expiration <= today + relativedelta(months=1):
+                status = CERTIFICATIONSTATUS.URGENT.value
             else:
-                dto.status = CERTIFICATIONSTATUS.EXPIRING_SOON.value
-            result.append(dto)
+                status = CERTIFICATIONSTATUS.EXPIRING_SOON.value
+
+            result.append(
+                EmployeeCertificationExpirationDTO(
+                    id_employee_certification=employee_certification.id_employee_certification,
+                    employee_id=employee.id_employee,
+                    employee_first_name=employee.first_name,
+                    employee_last_name=employee.last_name,
+                    certification_id=certification.id_certification,
+                    certification_name=certification.subject_certification,
+                    expiration_date=expiration,
+                    status=status,
+                )
+            )
 
         return result
 
