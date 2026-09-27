@@ -12,6 +12,8 @@ from db.repositories.employee_skill_search_repository import (
 from dto.employee_skill_search_dto import (
     EmployeeSkillSearchRequestDTO,
 )
+from dto.auth_dto import AuthEmployeeDTO
+from errors.training_request_errors import TrainingRequestForbidden
 from models import Base
 from models.access_level import AccessLevel
 from models.certification import Certification
@@ -247,6 +249,18 @@ def search(session, *requirements):
     )
 
 
+def actor(id_employee, access_level):
+    return AuthEmployeeDTO(
+        id_employee=id_employee,
+        first_name="Actor",
+        last_name="Test",
+        mail="actor@example.com",
+        role_name=None,
+        access_level_label=None,
+        access_level=access_level,
+    )
+
+
 def test_simple_requirement_returns_matching_employee(session):
     result = search(session, requirement(1, "gte", 3))
 
@@ -327,3 +341,27 @@ def test_result_contains_all_consolidated_skills_without_cartesian_product(sessi
 def test_empty_requirements_are_rejected():
     with pytest.raises(ValidationError):
         EmployeeSkillSearchRequestDTO(requirements=[])
+
+
+def test_employee_cannot_search_and_manager_scope_is_sql_filtered(session):
+    employee = session.get(Employee, 2)
+    employee.id_manager = 1
+    session.commit()
+    service = search_service(session)
+    dto = EmployeeSkillSearchRequestDTO(requirements=[requirement(1, "gte", 1)])
+
+    with pytest.raises(TrainingRequestForbidden):
+        service.search(dto, actor(2, 1))
+
+    result = service.search(dto, actor(1, 2))
+    assert {item.id_employee for item in result} == {2}
+
+
+def test_manager_search_excludes_non_direct_reports(session):
+    employee = session.get(Employee, 2)
+    employee.id_manager = 2
+    session.commit()
+    dto = EmployeeSkillSearchRequestDTO(requirements=[requirement(1, "gte", 1)])
+
+    result = search_service(session).search(dto, actor(1, 2))
+    assert result == []

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_session
@@ -9,6 +9,10 @@ from dto.employee_dto import (
     ResponseEmployeeDTO,
 )
 from services.employee_service import EmployeeService
+from controlers.auth_controller import get_current_employee
+from dto.auth_dto import AuthEmployeeDTO
+from errors.training_request_errors import TrainingRequestForbidden
+from sqlalchemy.exc import NoResultFound
 
 
 router = APIRouter(
@@ -33,12 +37,18 @@ def create_employee(
 def get_employee_by_id(
     id_employee: int,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> ResponseEmployeeDTO:
 
     repo = EmployeeRepository(session)
     service = EmployeeService(repo)
 
-    return service.get_by_id(id_employee)
+    try:
+        return service.get_by_id(id_employee, current_employee)
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Employee not found.") from exc
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.get("")

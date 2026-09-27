@@ -6,6 +6,9 @@ from dto.employee_dto import (
 from models.employee import Employee
 from services.base_crud_service import BaseCrudService
 from core.security import hash_password
+from dto.auth_dto import AuthEmployeeDTO
+from services.training_request_authorization import TrainingRequestAuthorization
+from sqlalchemy.exc import NoResultFound
 
 
 class EmployeeService(BaseCrudService[Employee]):
@@ -21,9 +24,16 @@ class EmployeeService(BaseCrudService[Employee]):
     def get_by_id(
         self,
         id_employee: int,
+        current_employee: AuthEmployeeDTO | None = None,
     ) -> ResponseEmployeeDTO:
 
         employee = self._get_entity_by_id(id_employee)
+        if employee.is_deleted:
+            raise NoResultFound()
+        if current_employee is not None:
+            TrainingRequestAuthorization.require_self_or_direct_manager_or_hr(
+                current_employee, employee
+            )
 
         return ResponseEmployeeDTO.from_entity(employee)
 

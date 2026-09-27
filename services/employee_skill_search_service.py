@@ -7,6 +7,8 @@ from db.repositories.employee_skill_search_repository import (
     EmployeeSkillSearchRepository,
 )
 from services.skill_profile_aggregation import add_skill_source
+from dto.auth_dto import AuthEmployeeDTO
+from services.training_request_authorization import TrainingRequestAuthorization
 
 
 class EmployeeSkillSearchService:
@@ -16,8 +18,14 @@ class EmployeeSkillSearchService:
     def search(
         self,
         dto: EmployeeSkillSearchRequestDTO,
+        current_employee: AuthEmployeeDTO | None = None,
     ) -> list[EmployeeSkillSearchResultDTO]:
-        rows = self.repository.search(dto.requirements)
+        manager_id = None
+        if current_employee is not None:
+            TrainingRequestAuthorization.require_manager_or_hr(current_employee)
+            if current_employee.access_level == 2:
+                manager_id = current_employee.id_employee
+        rows = self.repository.search(dto.requirements, manager_id=manager_id)
         employees = {}
 
         for row in rows:

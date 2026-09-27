@@ -18,6 +18,8 @@ from models.role import Role
 from models.training import Training
 from models.training_request import TrainingRequest
 from services.available_training_service import AvailableTrainingService
+from dto.auth_dto import AuthEmployeeDTO
+from errors.training_request_errors import TrainingRequestForbidden
 
 
 @pytest.fixture
@@ -143,6 +145,31 @@ def test_missing_or_deleted_employee_is_not_available(session):
         service(session).get_available_trainings(999)
     with pytest.raises(NoResultFound):
         service(session).get_available_trainings(2)
+
+
+def test_available_trainings_are_self_only(session):
+    session.add(Employee(
+        id_employee=3,
+        first_name="Other",
+        last_name="Employee",
+        hash_password="hash",
+        mail="other@example.com",
+        id_role=1,
+        is_deleted=False,
+    ))
+    session.commit()
+    current = AuthEmployeeDTO(
+        id_employee=1,
+        first_name="Ada",
+        last_name="Lovelace",
+        mail="ada@example.com",
+        role_name=None,
+        access_level_label=None,
+        access_level=1,
+    )
+    assert service(session).get_available_trainings(1, current_employee=current)
+    with pytest.raises(TrainingRequestForbidden):
+        service(session).get_available_trainings(3, current_employee=current)
 
 
 def test_query_count_does_not_depend_on_training_count(session):

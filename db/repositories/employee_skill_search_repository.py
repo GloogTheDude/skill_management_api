@@ -23,7 +23,7 @@ class EmployeeSkillSearchRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def search(self, requirements):
+    def search(self, requirements, manager_id: int | None = None):
         sources = self._source_cte()
         matching_employee_ids = self._matching_employee_ids(sources, requirements)
 
@@ -32,6 +32,12 @@ class EmployeeSkillSearchRepository:
             .where(sources.c.id_employee.in_(matching_employee_ids))
             .order_by(sources.c.id_employee, sources.c.id_skill, sources.c.source_type)
         )
+        if manager_id is not None:
+            stmt = stmt.where(
+                sources.c.id_employee.in_(
+                    select(Employee.id_employee).where(Employee.id_manager == manager_id)
+                )
+            )
         return list(self.session.execute(stmt).all())
 
     def _source_cte(self):

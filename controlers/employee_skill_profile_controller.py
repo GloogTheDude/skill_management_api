@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from core.database import get_session
@@ -6,6 +6,10 @@ from db.repositories.acquisition_skill_repository import AcquisitionSkillReposit
 from db.repositories.employee_repository import EmployeeRepository
 from dto.skill_dto import SkillProfileDTO
 from services.employee_skill_profile_service import EmployeeSkillProfileService
+from controlers.auth_controller import get_current_employee
+from dto.auth_dto import AuthEmployeeDTO
+from errors.training_request_errors import TrainingRequestForbidden
+from sqlalchemy.exc import NoResultFound
 
 
 router = APIRouter(tags=["employee skills"])
@@ -18,9 +22,15 @@ router = APIRouter(tags=["employee skills"])
 def get_employee_skill_profile(
     id_employee: int,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> list[SkillProfileDTO]:
     service = EmployeeSkillProfileService(
         EmployeeRepository(session),
         AcquisitionSkillRepository(session),
     )
-    return service.get_profile(id_employee)
+    try:
+        return service.get_profile(id_employee, current_employee)
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Employee not found.") from exc
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
