@@ -19,7 +19,7 @@ from errors.training_request_errors import (
 )
 from models.participation import Participation
 from services.training_request_service import TrainingRequestService
-from services.training_request_authorization import TrainingRequestAuthorization
+from services.employee_authorization_service import EmployeeAuthorizationService
 
 
 class TrainingRequestWorkflowService:
@@ -50,7 +50,7 @@ class TrainingRequestWorkflowService:
         if employee.is_deleted:
             raise RelatedEntityNotFound("Employee")
 
-        TrainingRequestAuthorization.authorize_action(current_employee, employee)
+        EmployeeAuthorizationService.authorize_action(current_employee, employee)
 
         if request.id_training is not None:
             if dto.id_training is not None:
@@ -115,7 +115,7 @@ class TrainingRequestWorkflowService:
         if employee.is_deleted:
             raise RelatedEntityNotFound("Employee")
 
-        TrainingRequestAuthorization.authorize_action(current_employee, employee)
+        EmployeeAuthorizationService.authorize_action(current_employee, employee)
 
         request.status = TRAININGREQUESTSTATUS.REFUSED.value
         request.id_validator = current_employee.id_employee

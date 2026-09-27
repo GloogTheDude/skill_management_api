@@ -12,7 +12,7 @@ from services.employee_service import EmployeeService
 from controlers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.training_request_errors import TrainingRequestForbidden
-from services.training_request_authorization import TrainingRequestAuthorization
+from services.employee_authorization_service import EmployeeAuthorizationService
 from sqlalchemy.exc import NoResultFound
 
 
@@ -33,7 +33,7 @@ def create_employee(
     service = EmployeeService(repo)
 
     try:
-        TrainingRequestAuthorization.require_hr(current_employee)
+        EmployeeAuthorizationService.require_hr(current_employee)
         return service.create(dto)
     except TrainingRequestForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -67,7 +67,7 @@ def get_employees(
     service = EmployeeService(repo)
 
     try:
-        TrainingRequestAuthorization.require_hr(current_employee)
+        EmployeeAuthorizationService.require_hr(current_employee)
         return service.get_all()
     except TrainingRequestForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -85,7 +85,7 @@ def update_employee(
     service = EmployeeService(repo)
 
     try:
-        TrainingRequestAuthorization.require_hr(current_employee)
+        EmployeeAuthorizationService.require_hr(current_employee)
         return service.update(id_employee, dto)
     except TrainingRequestForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -101,7 +101,7 @@ def delete_employee(
     service = EmployeeService(repo)
 
     try:
-        TrainingRequestAuthorization.require_hr(current_employee)
+        EmployeeAuthorizationService.require_hr(current_employee)
         return service.delete(id_employee)
     except TrainingRequestForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc

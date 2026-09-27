@@ -8,7 +8,7 @@ from db.repositories.employee_skill_search_repository import (
 )
 from services.skill_profile_aggregation import add_skill_source
 from dto.auth_dto import AuthEmployeeDTO
-from services.training_request_authorization import TrainingRequestAuthorization
+from services.employee_authorization_service import EmployeeAuthorizationService
 
 
 class EmployeeSkillSearchService:
@@ -22,7 +22,7 @@ class EmployeeSkillSearchService:
     ) -> list[EmployeeSkillSearchResultDTO]:
         manager_id = None
         if current_employee is not None:
-            TrainingRequestAuthorization.require_manager_or_hr(current_employee)
+            EmployeeAuthorizationService.require_manager_or_hr(current_employee)
             if current_employee.access_level == 2:
                 manager_id = current_employee.id_employee
         rows = self.repository.search(dto.requirements, manager_id=manager_id)

@@ -1,7 +1,7 @@
 from dto.auth_dto import AuthEmployeeDTO
 from dto.training_request_api_dto import PendingTrainingRequestDTO
 from db.repositories.training_request_repository import TrainingRequestRepository
-from services.training_request_authorization import TrainingRequestAuthorization
+from services.employee_authorization_service import EmployeeAuthorizationService
 
 
 class TrainingRequestQueueService:
@@ -9,12 +9,12 @@ class TrainingRequestQueueService:
         self.repository = repository
 
     def get_for_manager(self, current_employee: AuthEmployeeDTO) -> list[PendingTrainingRequestDTO]:
-        TrainingRequestAuthorization.require_manager_queue(current_employee)
+        EmployeeAuthorizationService.require_manager_queue(current_employee)
         rows = self.repository.get_pending_for_manager(current_employee.id_employee)
         return [self._to_response(*row) for row in rows]
 
     def get_for_hr(self, current_employee: AuthEmployeeDTO) -> list[PendingTrainingRequestDTO]:
-        TrainingRequestAuthorization.require_hr_queue(current_employee)
+        EmployeeAuthorizationService.require_hr_queue(current_employee)
         rows = self.repository.get_pending_for_hr()
         return [self._to_response(*row) for row in rows]
 

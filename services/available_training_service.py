@@ -4,7 +4,7 @@ from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.training_repository import TrainingRepository
 from dto.available_training_dto import AvailableTrainingDTO
 from dto.auth_dto import AuthEmployeeDTO
-from services.training_request_authorization import TrainingRequestAuthorization
+from services.employee_authorization_service import EmployeeAuthorizationService
 
 
 class AvailableTrainingService:
@@ -26,7 +26,7 @@ class AvailableTrainingService:
         if employee.is_deleted:
             raise NoResultFound()
         if current_employee is not None:
-            TrainingRequestAuthorization.require_self(current_employee, id_employee)
+            EmployeeAuthorizationService.require_self(current_employee, id_employee)
 
         return [
             AvailableTrainingDTO(

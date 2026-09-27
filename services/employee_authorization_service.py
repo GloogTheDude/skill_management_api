@@ -2,7 +2,7 @@ from dto.auth_dto import AuthEmployeeDTO
 from errors.training_request_errors import TrainingRequestForbidden
 
 
-class TrainingRequestAuthorization:
+class EmployeeAuthorizationService:
     @staticmethod
     def require_hr(current_employee: AuthEmployeeDTO) -> None:
         if current_employee.access_level != 3:

@@ -7,7 +7,7 @@ from models.employee import Employee
 from services.base_crud_service import BaseCrudService
 from core.security import hash_password
 from dto.auth_dto import AuthEmployeeDTO
-from services.training_request_authorization import TrainingRequestAuthorization
+from services.employee_authorization_service import EmployeeAuthorizationService
 from sqlalchemy.exc import NoResultFound
 
 
@@ -31,7 +31,7 @@ class EmployeeService(BaseCrudService[Employee]):
         if employee.is_deleted:
             raise NoResultFound()
         if current_employee is not None:
-            TrainingRequestAuthorization.require_self_or_direct_manager_or_hr(
+            EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(
                 current_employee, employee
             )
 

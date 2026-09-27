@@ -11,7 +11,7 @@ from dto.skill_validation_dto import (
 from services.skill_validation_service import SkillValidationService
 from dto.auth_dto import AuthEmployeeDTO
 from errors.training_request_errors import TrainingRequestForbidden
-from services.training_request_authorization import TrainingRequestAuthorization
+from services.employee_authorization_service import EmployeeAuthorizationService
 
 
 class FakeSkillValidationRepository:
@@ -157,10 +157,10 @@ def _actor(employee_id: int, access_level: int) -> AuthEmployeeDTO:
 )
 def test_skill_validation_creation_scope(actor, target, allowed):
     if allowed:
-        TrainingRequestAuthorization.authorize_action(actor, target)
+        EmployeeAuthorizationService.authorize_action(actor, target)
     else:
         with pytest.raises(TrainingRequestForbidden):
-            TrainingRequestAuthorization.authorize_action(actor, target)
+            EmployeeAuthorizationService.authorize_action(actor, target)
 
 
 def test_skill_validation_input_does_not_accept_validator():
