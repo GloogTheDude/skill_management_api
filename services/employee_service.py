@@ -9,9 +9,13 @@ from core.security import hash_password
 from dto.auth_dto import AuthEmployeeDTO
 from services.employee_authorization_service import EmployeeAuthorizationService
 from sqlalchemy.exc import NoResultFound
+from db.repositories.role_repository import RoleRepository
 
 
 class EmployeeService(BaseCrudService[Employee]):
+    def __init__(self, repository, role_repository: RoleRepository | None = None):
+        super().__init__(repository)
+        self.role_repository = role_repository
 
     def get_all(self) -> list[ResponseEmployeeDTO]:
         employees = self._get_all_entities()
@@ -42,6 +46,11 @@ class EmployeeService(BaseCrudService[Employee]):
         dto: CreateEmployeeDTO,
     ) -> ResponseEmployeeDTO:
 
+        if self.role_repository is not None:
+            role = self.role_repository.get_one(dto.id_role)
+            if role.is_deleted:
+                raise NoResultFound()
+
         employee = Employee(
             first_name=dto.first_name,
             last_name=dto.last_name,
@@ -64,6 +73,13 @@ class EmployeeService(BaseCrudService[Employee]):
     ) -> ResponseEmployeeDTO:
 
         data = dto.model_dump(exclude_unset=True)
+
+        if data.get("id_manager") == id_employee:
+            raise ValueError("An employee cannot be their own manager.")
+        if "id_role" in data and self.role_repository is not None:
+            role = self.role_repository.get_one(data["id_role"])
+            if role.is_deleted:
+                raise NoResultFound()
 
         if "password" in data:
             data["hash_password"] = hash_password(data.pop("password"))
