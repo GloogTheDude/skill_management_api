@@ -4,6 +4,11 @@ from errors.training_request_errors import TrainingRequestForbidden
 
 class TrainingRequestAuthorization:
     @staticmethod
+    def require_hr(current_employee: AuthEmployeeDTO) -> None:
+        if current_employee.access_level != 3:
+            raise TrainingRequestForbidden("Only HR may perform this administrative action.")
+
+    @staticmethod
     def require_self(current_employee: AuthEmployeeDTO, target_employee_id: int) -> None:
         if current_employee.id_employee != target_employee_id:
             raise TrainingRequestForbidden("Employees may only access their own data.")

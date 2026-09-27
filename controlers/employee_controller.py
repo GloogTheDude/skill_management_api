@@ -12,6 +12,7 @@ from services.employee_service import EmployeeService
 from controlers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.training_request_errors import TrainingRequestForbidden
+from services.training_request_authorization import TrainingRequestAuthorization
 from sqlalchemy.exc import NoResultFound
 
 
@@ -25,12 +26,17 @@ router = APIRouter(
 def create_employee(
     dto: CreateEmployeeDTO,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> ResponseEmployeeDTO:
 
     repo = EmployeeRepository(session)
     service = EmployeeService(repo)
 
-    return service.create(dto)
+    try:
+        TrainingRequestAuthorization.require_hr(current_employee)
+        return service.create(dto)
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.get("/{id_employee}")
@@ -54,12 +60,17 @@ def get_employee_by_id(
 @router.get("")
 def get_employees(
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> list[ResponseEmployeeDTO]:
 
     repo = EmployeeRepository(session)
     service = EmployeeService(repo)
 
-    return service.get_all()
+    try:
+        TrainingRequestAuthorization.require_hr(current_employee)
+        return service.get_all()
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.patch("/{id_employee}")
@@ -67,20 +78,30 @@ def update_employee(
     id_employee: int,
     dto: UpdateEmployeeDTO,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> ResponseEmployeeDTO:
 
     repo = EmployeeRepository(session)
     service = EmployeeService(repo)
 
-    return service.update(id_employee, dto)
+    try:
+        TrainingRequestAuthorization.require_hr(current_employee)
+        return service.update(id_employee, dto)
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.delete("/{id_employee}")
 def delete_employee(
     id_employee: int,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ):
     repo = EmployeeRepository(session)
     service = EmployeeService(repo)
 
-    return service.delete(id_employee)
+    try:
+        TrainingRequestAuthorization.require_hr(current_employee)
+        return service.delete(id_employee)
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc

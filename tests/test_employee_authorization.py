@@ -50,3 +50,10 @@ def test_available_training_scope_is_self_only():
     TrainingRequestAuthorization.require_self(actor(1, 1), 1)
     with pytest.raises(TrainingRequestForbidden):
         TrainingRequestAuthorization.require_self(actor(1, 1), 2)
+
+
+@pytest.mark.parametrize("level", [1, 2])
+def test_employee_crud_requires_hr(level):
+    with pytest.raises(TrainingRequestForbidden):
+        TrainingRequestAuthorization.require_hr(actor(1, level))
+    TrainingRequestAuthorization.require_hr(actor(3, 3))
