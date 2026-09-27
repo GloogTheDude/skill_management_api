@@ -8,7 +8,7 @@ from dto.skill_dto import SkillProfileDTO
 from services.employee_skill_profile_service import EmployeeSkillProfileService
 from controlers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 from sqlalchemy.exc import NoResultFound
 
 
@@ -32,5 +32,5 @@ def get_employee_skill_profile(
         return service.get_profile(id_employee, current_employee)
     except NoResultFound as exc:
         raise HTTPException(status_code=404, detail="Employee not found.") from exc
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc

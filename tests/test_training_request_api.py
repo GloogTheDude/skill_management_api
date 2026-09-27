@@ -20,9 +20,9 @@ from errors.training_request_errors import (
     ActiveParticipationConflict,
     RelatedEntityNotFound,
     TrainingRequestConflict,
-    TrainingRequestForbidden,
     TrainingRequestNotFound,
 )
+from errors.authorization_errors import AuthorizationForbidden
 from models import Base
 from models.access_level import AccessLevel
 from models.domaine import Domaine
@@ -183,9 +183,9 @@ def test_manager_queue_requires_manager_and_direct_scope(session):
     add_queue_request(session, employee_id=1, training_id=1)
     session.commit()
 
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         queue_service(session).get_for_manager(actor(1, 1))
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         queue_service(session).get_for_manager(actor(3, 3))
 
 
@@ -202,9 +202,9 @@ def test_hr_queue_returns_all_pending_and_requires_hr(session):
         first.id_training_request,
         second.id_training_request,
     }
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         queue_service(session).get_for_hr(actor(2, 2))
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         queue_service(session).get_for_hr(actor(1, 1))
     assert deleted.id_training_request not in {item.id_training_request for item in result}
 
@@ -395,12 +395,12 @@ def test_reject_records_reason_and_creates_no_participation(session):
 
 def test_employee_cannot_approve_or_reject(session):
     add_request(session, request_id=1, training_id=1)
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         workflow_service(session).approve(1, ApproveTrainingRequestDTO(), actor(1, 1))
 
     session.rollback()
     add_request(session, request_id=2, training_id=1)
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         workflow_service(session).reject(
             2,
             RejectTrainingRequestDTO(reason="Not relevant"),
@@ -411,12 +411,12 @@ def test_employee_cannot_approve_or_reject(session):
 def test_manager_cannot_process_request_outside_direct_reports(session):
     add_request(session, request_id=1, training_id=1, employee_id=2)
 
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         workflow_service(session).approve(1, ApproveTrainingRequestDTO(), actor(2, 2))
 
     session.rollback()
     add_request(session, request_id=2, training_id=1, employee_id=2)
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         workflow_service(session).reject(
             2,
             RejectTrainingRequestDTO(reason="Not relevant"),

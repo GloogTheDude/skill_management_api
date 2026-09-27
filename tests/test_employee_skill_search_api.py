@@ -13,7 +13,7 @@ from dto.employee_skill_search_dto import (
     EmployeeSkillSearchRequestDTO,
 )
 from dto.auth_dto import AuthEmployeeDTO
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 from models import Base
 from models.access_level import AccessLevel
 from models.certification import Certification
@@ -350,7 +350,7 @@ def test_employee_cannot_search_and_manager_scope_is_sql_filtered(session):
     service = search_service(session)
     dto = EmployeeSkillSearchRequestDTO(requirements=[requirement(1, "gte", 1)])
 
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         service.search(dto, actor(2, 1))
 
     result = service.search(dto, actor(1, 2))

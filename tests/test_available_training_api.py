@@ -19,7 +19,7 @@ from models.training import Training
 from models.training_request import TrainingRequest
 from services.available_training_service import AvailableTrainingService
 from dto.auth_dto import AuthEmployeeDTO
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 
 
 @pytest.fixture
@@ -168,7 +168,7 @@ def test_available_trainings_are_self_only(session):
         access_level=1,
     )
     assert service(session).get_available_trainings(1, current_employee=current)
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         service(session).get_available_trainings(3, current_employee=current)
 
 

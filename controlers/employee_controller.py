@@ -11,7 +11,7 @@ from dto.employee_dto import (
 from services.employee_service import EmployeeService
 from controlers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 from services.employee_authorization_service import EmployeeAuthorizationService
 from sqlalchemy.exc import NoResultFound
 
@@ -35,7 +35,7 @@ def create_employee(
     try:
         EmployeeAuthorizationService.require_hr(current_employee)
         return service.create(dto)
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -53,7 +53,7 @@ def get_employee_by_id(
         return service.get_by_id(id_employee, current_employee)
     except NoResultFound as exc:
         raise HTTPException(status_code=404, detail="Employee not found.") from exc
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -69,7 +69,7 @@ def get_employees(
     try:
         EmployeeAuthorizationService.require_hr(current_employee)
         return service.get_all()
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -87,7 +87,7 @@ def update_employee(
     try:
         EmployeeAuthorizationService.require_hr(current_employee)
         return service.update(id_employee, dto)
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -103,5 +103,5 @@ def delete_employee(
     try:
         EmployeeAuthorizationService.require_hr(current_employee)
         return service.delete(id_employee)
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc

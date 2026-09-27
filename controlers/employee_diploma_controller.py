@@ -11,7 +11,7 @@ from dto.employee_diploma_dto import (
 from services.employee_diploma_service import EmployeeDiplomaService
 from controlers.auth_controller import get_current_employee, require_hr_employee
 from dto.auth_dto import AuthEmployeeDTO
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 from models.employee import Employee
 from services.employee_authorization_service import EmployeeAuthorizationService
 
@@ -48,7 +48,7 @@ def get_employee_diploma_by_ids(
         raise HTTPException(status_code=404, detail="Employee not found")
     try:
         EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(current_employee, target)
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return result
 

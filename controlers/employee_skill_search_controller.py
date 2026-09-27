@@ -12,7 +12,7 @@ from dto.employee_skill_search_dto import (
 from services.employee_skill_search_service import EmployeeSkillSearchService
 from controlers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 
 
 router = APIRouter(tags=["employee skills"])
@@ -30,5 +30,5 @@ def search_employees_by_skills(
     service = EmployeeSkillSearchService(EmployeeSkillSearchRepository(session))
     try:
         return service.search(dto, current_employee)
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc

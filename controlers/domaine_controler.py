@@ -10,7 +10,7 @@ from dto.domaine_dto import (
 )
 from services.domaine_service import DomaineService
 from controlers.auth_controller import get_current_employee, require_hr_employee
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 
 
 router = APIRouter(prefix="/domaine", tags=["domaine"])

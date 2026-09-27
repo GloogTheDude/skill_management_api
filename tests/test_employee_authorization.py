@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from dto.auth_dto import AuthEmployeeDTO
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 from services.employee_authorization_service import EmployeeAuthorizationService
 
 
@@ -36,11 +36,11 @@ def test_self_or_direct_manager_or_hr_scope():
 
 
 def test_employee_and_manager_out_of_scope_are_forbidden():
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(
             actor(1, 1), target(2, 1)
         )
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(
             actor(2, 2), target(4, 99)
         )
@@ -48,12 +48,12 @@ def test_employee_and_manager_out_of_scope_are_forbidden():
 
 def test_available_training_scope_is_self_only():
     EmployeeAuthorizationService.require_self(actor(1, 1), 1)
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         EmployeeAuthorizationService.require_self(actor(1, 1), 2)
 
 
 @pytest.mark.parametrize("level", [1, 2])
 def test_employee_crud_requires_hr(level):
-    with pytest.raises(TrainingRequestForbidden):
+    with pytest.raises(AuthorizationForbidden):
         EmployeeAuthorizationService.require_hr(actor(1, level))
     EmployeeAuthorizationService.require_hr(actor(3, 3))

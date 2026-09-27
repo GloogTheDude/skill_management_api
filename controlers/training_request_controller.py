@@ -21,8 +21,8 @@ from errors.training_request_errors import (
     RelatedEntityNotFound,
     TrainingRequestConflict,
     TrainingRequestNotFound,
-    TrainingRequestForbidden,
 )
+from errors.authorization_errors import AuthorizationForbidden
 from services.training_request_service import TrainingRequestService
 from services.training_request_workflow_service import TrainingRequestWorkflowService
 from services.training_request_queue_service import TrainingRequestQueueService
@@ -90,7 +90,7 @@ def get_pending_manager_requests(
         return TrainingRequestQueueService(
             TrainingRequestRepository(session)
         ).get_for_manager(current_employee)
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -103,7 +103,7 @@ def get_pending_hr_requests(
         return TrainingRequestQueueService(
             TrainingRequestRepository(session)
         ).get_for_hr(current_employee)
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -145,7 +145,7 @@ def approve_training_request(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except (TrainingRequestConflict, ActiveParticipationConflict) as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
@@ -164,5 +164,5 @@ def reject_training_request(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except TrainingRequestConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc

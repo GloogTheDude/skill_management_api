@@ -13,7 +13,7 @@ from db.repositories.employee_repository import EmployeeRepository
 from dto.auth_dto import AuthEmployeeDTO, LoginDTO
 from services.auth_service import AuthService
 from services.employee_authorization_service import EmployeeAuthorizationService
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -87,7 +87,7 @@ async def require_hr_employee(
 ) -> AuthEmployeeDTO:
     try:
         EmployeeAuthorizationService.require_hr(employee)
-    except TrainingRequestForbidden as exc:
+    except AuthorizationForbidden as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     return employee
 

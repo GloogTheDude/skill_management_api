@@ -10,7 +10,7 @@ from dto.skill_validation_dto import (
 )
 from services.skill_validation_service import SkillValidationService
 from dto.auth_dto import AuthEmployeeDTO
-from errors.training_request_errors import TrainingRequestForbidden
+from errors.authorization_errors import AuthorizationForbidden
 from services.employee_authorization_service import EmployeeAuthorizationService
 
 
@@ -159,7 +159,7 @@ def test_skill_validation_creation_scope(actor, target, allowed):
     if allowed:
         EmployeeAuthorizationService.authorize_action(actor, target)
     else:
-        with pytest.raises(TrainingRequestForbidden):
+        with pytest.raises(AuthorizationForbidden):
             EmployeeAuthorizationService.authorize_action(actor, target)
 
 

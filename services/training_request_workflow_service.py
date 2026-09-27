@@ -15,7 +15,6 @@ from errors.training_request_errors import (
     RelatedEntityNotFound,
     TrainingRequestConflict,
     TrainingRequestNotFound,
-    TrainingRequestForbidden,
 )
 from models.participation import Participation
 from services.training_request_service import TrainingRequestService
