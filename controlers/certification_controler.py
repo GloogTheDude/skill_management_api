@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
 from core.database import get_session
@@ -6,9 +6,28 @@ from db.repositories.certification_repository import CertificationRepository
 from dto.certification_dto import CreateCertificationDTO, UpdateCertificationDTO,ResponseCertificationDTO
 from services.certification_service import CertificationService
 from controlers.auth_controller import get_current_employee, require_hr_employee
+from dto.skill_link_replacement_dto import ReplaceSkillsDTO
+from dto.certification_skill_dto import ResponseCertificationSkillDTO
+from models.certification import Certification
+from models.certification_skill import CertificationSkill
+from services.skill_link_replacement_service import SkillLinkReplacementService
 
 
 router = APIRouter(prefix="/certification",tags=["certification"])
+
+
+@router.put("s/{id_certification}/skills", response_model=list[ResponseCertificationSkillDTO])
+def replace_certification_skills(id_certification: int, dto: ReplaceSkillsDTO,
+                                 session: Session = Depends(get_session),
+                                 _: object = Depends(require_hr_employee)):
+    try:
+        links = SkillLinkReplacementService(session).replace(
+            Certification, id_certification, "id_certification", CertificationSkill,
+            "id_skill", "granted_level", [(item.id_skill, item.level) for item in dto.skills],
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return [ResponseCertificationSkillDTO.from_entity(link) for link in links]
 
 @router.post('', status_code=status.HTTP_201_CREATED)
 def create_certification(
