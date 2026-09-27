@@ -13,6 +13,7 @@ from db.repositories.training_repository import TrainingRepository
 from models.training_request import TrainingRequest
 from errors.training_request_errors import RelatedEntityNotFound, TrainingRequestNotFound
 from core.constants import TRAININGREQUESTSTATUS
+from dto.auth_dto import AuthEmployeeDTO
 
 
 class TrainingRequestService:
@@ -28,6 +29,12 @@ class TrainingRequestService:
 
     def get_all(self) -> list[ResponseTrainingRequestDTO]:
         return [self._to_response(*row) for row in self.repository.get_all_with_details()]
+
+    def get_mine(self, current_employee: AuthEmployeeDTO) -> list[ResponseTrainingRequestDTO]:
+        return [
+            self._to_response(*row)
+            for row in self.repository.get_employee_request(current_employee.id_employee)
+        ]
 
     def get_by_id(self, id_request: int) -> ResponseTrainingRequestDTO:
         row = self.repository.get_by_id_with_details(id_request)

@@ -107,6 +107,16 @@ def get_pending_hr_requests(
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
+@router.get("/mine", response_model=list[ResponseTrainingRequestDTO])
+def get_my_training_requests(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    return TrainingRequestService(
+        TrainingRequestRepository(session)
+    ).get_mine(current_employee)
+
+
 @router.get("/{id_training_request}", response_model=ResponseTrainingRequestDTO)
 def get_training_request(
     id_training_request: int,

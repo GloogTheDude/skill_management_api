@@ -229,6 +229,52 @@ def test_pending_queue_uses_one_sql_query(session):
     assert len(statements) == 1
 
 
+def test_mine_returns_all_request_statuses_and_personalized_requests(session):
+    own_pending = add_queue_request(session, employee_id=1, training_id=1)
+    own_personalized = add_queue_request(session, employee_id=1)
+    own_personalized.status = "REFUSED"
+    own_personalized.reason = "Not currently needed"
+    own_deleted = add_queue_request(session, employee_id=1, training_id=1, deleted=True)
+    other = add_queue_request(session, employee_id=2, training_id=1)
+    session.commit()
+
+    result = request_service(session).get_mine(actor(1, 1))
+
+    assert {item.id_training_request for item in result} == {
+        own_pending.id_training_request,
+        own_personalized.id_training_request,
+        own_deleted.id_training_request,
+    }
+    assert other.id_training_request not in {item.id_training_request for item in result}
+    personalized = next(
+        item for item in result if item.id_training_request == own_personalized.id_training_request
+    )
+    assert personalized.status == "REFUSED"
+    assert personalized.reason == "Not currently needed"
+    assert personalized.id_training is None
+    assert personalized.training_title is None
+
+
+def test_mine_uses_one_sql_query_for_multiple_requests(session):
+    for _ in range(4):
+        add_queue_request(session, employee_id=1, training_id=1)
+    session.commit()
+    statements = []
+
+    def count_statement(conn, cursor, statement, parameters, context, executemany):
+        if statement.lstrip().upper().startswith("SELECT"):
+            statements.append(statement)
+
+    event.listen(session.bind, "before_cursor_execute", count_statement)
+    try:
+        result = request_service(session).get_mine(actor(1, 1))
+    finally:
+        event.remove(session.bind, "before_cursor_execute", count_statement)
+
+    assert len(result) == 4
+    assert len(statements) == 1
+
+
 def add_request(
     session,
     *,
