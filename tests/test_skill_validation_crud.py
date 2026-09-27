@@ -1,6 +1,7 @@
 from datetime import date
 
 import pytest
+from types import SimpleNamespace
 from pydantic import ValidationError
 
 from dto.skill_validation_dto import (
@@ -8,6 +9,9 @@ from dto.skill_validation_dto import (
     UpdateSkillValidationDTO,
 )
 from services.skill_validation_service import SkillValidationService
+from dto.auth_dto import AuthEmployeeDTO
+from errors.training_request_errors import TrainingRequestForbidden
+from services.training_request_authorization import TrainingRequestAuthorization
 
 
 class FakeSkillValidationRepository:
@@ -48,7 +52,6 @@ class FakeSkillValidationRepository:
     [
         "id_validation",
         "id_employee",
-        "id_validator",
         "id_skill",
     ],
 )
@@ -93,11 +96,11 @@ def test_skill_validation_crud_and_partial_update():
             date_=date(2026, 9, 25),
             level_skill=None,
             id_validation=1,
-            id_employee=2,
-            id_validator=3,
-            id_skill=4,
+                id_employee=2,
+                id_skill=4,
+            ),
+            validator_id=3,
         )
-    )
 
     assert created.id_skill_validation == 1
     assert created.id_validation == 1
@@ -128,3 +131,38 @@ def test_skill_validation_crud_and_partial_update():
 
     assert deleted.is_deleted is True
     assert service.get_all() == []
+
+
+def _actor(employee_id: int, access_level: int) -> AuthEmployeeDTO:
+    return AuthEmployeeDTO(
+        id_employee=employee_id,
+        first_name="Test",
+        last_name="User",
+        mail="test@example.com",
+        role_name=None,
+        access_level_label=None,
+        access_level=access_level,
+    )
+
+
+@pytest.mark.parametrize(
+    ("actor", "target", "allowed"),
+    [
+        (_actor(1, 1), SimpleNamespace(id_employee=1, id_manager=None), False),
+        (_actor(2, 2), SimpleNamespace(id_employee=3, id_manager=2), True),
+        (_actor(2, 2), SimpleNamespace(id_employee=2, id_manager=None), False),
+        (_actor(2, 2), SimpleNamespace(id_employee=4, id_manager=9), False),
+        (_actor(3, 3), SimpleNamespace(id_employee=99, id_manager=42), True),
+    ],
+)
+def test_skill_validation_creation_scope(actor, target, allowed):
+    if allowed:
+        TrainingRequestAuthorization.authorize_action(actor, target)
+    else:
+        with pytest.raises(TrainingRequestForbidden):
+            TrainingRequestAuthorization.authorize_action(actor, target)
+
+
+def test_skill_validation_input_does_not_accept_validator():
+    assert "id_validator" not in CreateSkillValidationDTO.model_fields
+    assert "id_validator" not in UpdateSkillValidationDTO.model_fields

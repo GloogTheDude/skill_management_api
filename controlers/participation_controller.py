@@ -19,6 +19,11 @@ from errors.participation_errors import (
 )
 from services.participation_completion_service import ParticipationCompletionService
 from services.participation_service import ParticipationService
+from controlers.auth_controller import get_current_employee, require_hr_employee
+from dto.auth_dto import AuthEmployeeDTO
+from errors.training_request_errors import TrainingRequestForbidden
+from models.employee import Employee
+from services.training_request_authorization import TrainingRequestAuthorization
 
 
 router = APIRouter(
@@ -34,13 +39,15 @@ def _participation_service(session: Session) -> ParticipationService:
 @router.get("", response_model=list[ResponseParticipationDTO])
 def get_participations(
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> list[ResponseParticipationDTO]:
-    return _participation_service(session).get_all()
+    return _participation_service(session).get_all(current_employee.id_employee, current_employee.access_level)
 
 
 @router.get("/completable", response_model=list[CompletableParticipationDTO])
 def get_completable_participations(
     session: Session = Depends(get_session),
+    _: AuthEmployeeDTO = Depends(require_hr_employee),
 ) -> list[CompletableParticipationDTO]:
     return _participation_service(session).get_completable()
 
@@ -53,8 +60,17 @@ def get_participation(
     id_employee: int,
     id_training: int,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> ResponseParticipationDTO:
-    return _participation_service(session).get_by_id(id_employee, id_training)
+    result = _participation_service(session).get_by_id(id_employee, id_training)
+    target = session.get(Employee, result.id_employee)
+    if target is None or target.is_deleted:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    try:
+        TrainingRequestAuthorization.require_self_or_direct_manager_or_hr(current_employee, target)
+    except TrainingRequestForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return result
 
 
 @router.delete("/{id_employee}/{id_training}")
@@ -62,6 +78,7 @@ def delete_participation(
     id_employee: int,
     id_training: int,
     session: Session = Depends(get_session),
+    _: AuthEmployeeDTO = Depends(require_hr_employee),
 ):
     repository = ParticipationRepository(session)
     participation = repository.get_one((id_employee, id_training))
@@ -78,6 +95,7 @@ def complete_participation(
     id_employee: int,
     id_training: int,
     session: Session = Depends(get_session),
+    _: AuthEmployeeDTO = Depends(require_hr_employee),
 ) -> ResponseParticipationDTO:
     service = ParticipationCompletionService(
         ParticipationRepository(session),

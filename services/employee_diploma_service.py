@@ -5,12 +5,17 @@ from dto.employee_diploma_dto import (
 )
 from models.employee_diploma import EmployeeDiploma
 from services.base_crud_service import BaseCrudService
+from sqlalchemy.exc import NoResultFound
 
 
 class EmployeeDiplomaService(BaseCrudService[EmployeeDiploma]):
 
-    def get_all(self) -> list[ResponseEmployeeDiplomaDTO]:
-        employee_diplomas = self._get_all_entities()
+    def get_all(self, employee_id: int | None = None, access_level: int | None = None) -> list[ResponseEmployeeDiplomaDTO]:
+        employee_diplomas = (
+            self.repository.get_for_scope(employee_id, access_level)
+            if employee_id is not None and access_level is not None
+            else self._get_all_entities()
+        )
 
         return [
             ResponseEmployeeDiplomaDTO.from_entity(employee_diploma)
@@ -23,6 +28,8 @@ class EmployeeDiplomaService(BaseCrudService[EmployeeDiploma]):
         id_diploma: int,
     ) -> ResponseEmployeeDiplomaDTO:
         employee_diploma = self._get_entity_by_id((id_employee, id_diploma))
+        if employee_diploma.is_deleted:
+            raise NoResultFound()
         return ResponseEmployeeDiplomaDTO.from_entity(employee_diploma)
 
     def create(

@@ -19,8 +19,12 @@ class ParticipationService(BaseCrudService[Participation]):
             raise NoResultFound()
         return participation
 
-    def get_all(self) -> list[ResponseParticipationDTO]:
-        participations = self._get_all_entities()
+    def get_all(self, employee_id: int | None = None, access_level: int | None = None) -> list[ResponseParticipationDTO]:
+        participations = (
+            self.repository.get_for_scope(employee_id, access_level)
+            if employee_id is not None and access_level is not None
+            else self._get_all_entities()
+        )
         return [
             ResponseParticipationDTO.from_entity(participation)
             for participation in participations

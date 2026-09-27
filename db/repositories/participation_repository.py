@@ -12,6 +12,20 @@ from models.training import Training
 class ParticipationRepository(BaseRepository[Participation]):
     model = Participation
 
+    def get_for_scope(self, employee_id: int, access_level: int) -> list[Participation]:
+        stmt = select(Participation)
+        if access_level != 3:
+            if access_level == 1:
+                stmt = stmt.where(Participation.id_employee == employee_id)
+            else:
+                stmt = stmt.join(Employee, Employee.id_employee == Participation.id_employee).where(
+                    Employee.is_deleted.is_(False),
+                    (Participation.id_employee == employee_id)
+                    | (Employee.id_manager == employee_id)
+                )
+        stmt = stmt.where(Participation.is_deleted.is_(False))
+        return list(self._session.scalars(stmt).all())
+
     def get_existing(
         self,
         id_employee: int,

@@ -5,6 +5,7 @@ from core.database import get_session
 from db.repositories.training_skill_repository import TrainingSkillRepository
 from dto.training_skill_dto import CreateTrainingSkillDTO, UpdateTrainingSkillDTO, ResponseTrainingSkillDTO
 from services.training_skill_service import TrainingSkillService
+from controlers.auth_controller import get_current_employee, require_hr_employee
 router = APIRouter(
     prefix="/training_skill",
     tags=["training_skill"]
@@ -14,6 +15,7 @@ router = APIRouter(
 def create_training_skill(
     dto:CreateTrainingSkillDTO,
     session:Session=Depends(get_session)
+    ,_: object = Depends(require_hr_employee)
 )-> ResponseTrainingSkillDTO:
     repo = TrainingSkillRepository(session)
     service = TrainingSkillService(repo)
@@ -24,6 +26,7 @@ def get_training_skill_by_ids(
     id_training:int,
     id_skill: int,
     session: Session = Depends(get_session)
+    ,_: object = Depends(get_current_employee)
 )->ResponseTrainingSkillDTO:
     repo = TrainingSkillRepository(session)
     service = TrainingSkillService(repo)
@@ -33,6 +36,7 @@ def get_training_skill_by_ids(
 @router.get("")
 def get_training_skills(
     session: Session = Depends(get_session)
+    ,_: object = Depends(get_current_employee)
 )->list[ResponseTrainingSkillDTO]:
     repo = TrainingSkillRepository(session)
     service = TrainingSkillService(repo)
@@ -45,6 +49,7 @@ def update_training_skill(
     id_skill: int,
     dto:UpdateTrainingSkillDTO,
     session: Session = Depends(get_session)
+    ,_: object = Depends(require_hr_employee)
 )->ResponseTrainingSkillDTO:
     repo = TrainingSkillRepository(session)
     service = TrainingSkillService(repo)
@@ -55,6 +60,7 @@ def delete_training_skill(
     id_training:int,
     id_skill: int,
     session: Session = Depends(get_session)
+    ,_: object = Depends(require_hr_employee)
 ):
     repo = TrainingSkillRepository(session)
     service = TrainingSkillService(repo)

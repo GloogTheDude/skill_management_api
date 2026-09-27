@@ -9,6 +9,7 @@ from dto.diploma_skill_dto import (
     ResponseDiplomaSkillDTO,
 )
 from services.diploma_skill_service import DiplomaSkillService
+from controlers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(
@@ -21,6 +22,7 @@ router = APIRouter(
 def create_diploma_skill(
     dto: CreateDiplomaSkillDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseDiplomaSkillDTO:
 
     repo = DiplomaSkillRepository(session)
@@ -34,6 +36,7 @@ def get_diploma_skill_by_ids(
     id_diploma: int,
     id_skill: int,
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> ResponseDiplomaSkillDTO:
 
     repo = DiplomaSkillRepository(session)
@@ -45,6 +48,7 @@ def get_diploma_skill_by_ids(
 @router.get("")
 def get_diploma_skills(
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> list[ResponseDiplomaSkillDTO]:
 
     repo = DiplomaSkillRepository(session)
@@ -59,6 +63,7 @@ def update_diploma_skill(
     id_skill: int,
     dto: UpdateDiplomaSkillDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseDiplomaSkillDTO:
 
     repo = DiplomaSkillRepository(session)
@@ -76,6 +81,7 @@ def delete_diploma_skill(
     id_diploma: int,
     id_skill: int,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ):
     repo = DiplomaSkillRepository(session)
     service = DiplomaSkillService(repo)

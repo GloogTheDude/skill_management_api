@@ -36,7 +36,6 @@ class CreateSkillValidationDTO(BaseModel):
     level_skill: int | None = None
     id_validation: int = Field(gt=0)
     id_employee: int = Field(gt=0)
-    id_validator: int = Field(gt=0)
     id_skill: int = Field(gt=0)
 
 
@@ -45,13 +44,11 @@ class UpdateSkillValidationDTO(BaseModel):
     level_skill: int | None = None
     id_validation: int | None = Field(default=None, gt=0)
     id_employee: int | None = Field(default=None, gt=0)
-    id_validator: int | None = Field(default=None, gt=0)
     id_skill: int | None = Field(default=None, gt=0)
 
     _non_nullable_foreign_keys: ClassVar[frozenset[str]] = frozenset({
         "id_validation",
         "id_employee",
-        "id_validator",
         "id_skill",
     })
 

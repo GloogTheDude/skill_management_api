@@ -17,6 +17,7 @@ from dto.employee_certification_expiration_dto import (
 )
 from models.employee_certification import EmployeeCertification
 from services.base_crud_service import BaseCrudService
+from sqlalchemy.exc import NoResultFound
 
 
 class EmployeeCertificationService(
@@ -69,8 +70,12 @@ class EmployeeCertificationService(
 
         return result
 
-    def get_all(self) -> list[ResponseEmployeeCertificationDTO]:
-        employee_certifications = self._get_all_entities()
+    def get_all(self, employee_id: int | None = None, access_level: int | None = None) -> list[ResponseEmployeeCertificationDTO]:
+        employee_certifications = (
+            self.repository.get_for_scope(employee_id, access_level)
+            if employee_id is not None and access_level is not None
+            else self._get_all_entities()
+        )
         return [
             ResponseEmployeeCertificationDTO.from_entity(employee_certification)
             for employee_certification in employee_certifications
@@ -81,6 +86,8 @@ class EmployeeCertificationService(
         id_employee_certification: int,
     ) -> ResponseEmployeeCertificationDTO:
         employee_certification = self._get_entity_by_id(id_employee_certification)
+        if employee_certification.is_deleted:
+            raise NoResultFound()
         return ResponseEmployeeCertificationDTO.from_entity(employee_certification)
 
     def create(

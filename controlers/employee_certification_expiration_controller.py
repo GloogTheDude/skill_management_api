@@ -9,6 +9,8 @@ from dto.employee_certification_expiration_dto import (
     EmployeeCertificationExpirationDTO,
 )
 from services.employee_certification_service import EmployeeCertificationService
+from controlers.auth_controller import require_hr_employee
+from dto.auth_dto import AuthEmployeeDTO
 
 
 router = APIRouter(tags=["employee certifications"])
@@ -20,6 +22,7 @@ router = APIRouter(tags=["employee certifications"])
 )
 def get_expiring_employee_certifications(
     session: Session = Depends(get_session),
+    _: AuthEmployeeDTO = Depends(require_hr_employee),
 ) -> list[EmployeeCertificationExpirationDTO]:
     service = EmployeeCertificationService(EmployeeCertificationRepository(session))
     return service.get_expiring()
