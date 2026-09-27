@@ -12,14 +12,10 @@ class TrainingRequestRepository():
     def __init__(self, session: Session):
         self.session = session
 
-    def add_request_preplanned_training(self,
-                                        training_request: TrainingRequest):
+    def add(self, training_request: TrainingRequest):
         self.session.add(training_request)
         self.session.flush()
         return training_request
-
-    def add(self, training_request: TrainingRequest):
-        return self.add_request_preplanned_training(training_request)
 
     def get_active_by_id(self, id_request: int):
         request = self.session.get(TrainingRequest, id_request)
@@ -45,7 +41,7 @@ class TrainingRequestRepository():
         )
         return self.session.execute(stmt).one_or_none()
     
-    def get_employee_request(self, id_employee: int):
+    def get_for_employee(self, id_employee: int):
         stmt = (
             select(
                 TrainingRequest,
@@ -58,7 +54,7 @@ class TrainingRequestRepository():
         )
         return self.session.execute(stmt).all()
 
-    def get_pending_request_for_manager(self, id_manager: int):
+    def get_pending_for_manager(self, id_manager: int):
         stmt = (
             select(
                 TrainingRequest,
@@ -78,7 +74,7 @@ class TrainingRequestRepository():
 
         return self.session.execute(stmt).all()
     
-    def get_pending_request_for_hr(self):
+    def get_pending_for_hr(self):
         stmt = (
             select(
                 TrainingRequest,

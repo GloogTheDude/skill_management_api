@@ -33,7 +33,7 @@ class TrainingRequestService:
     def get_mine(self, current_employee: AuthEmployeeDTO) -> list[ResponseTrainingRequestDTO]:
         return [
             self._to_response(*row)
-            for row in self.repository.get_employee_request(current_employee.id_employee)
+            for row in self.repository.get_for_employee(current_employee.id_employee)
         ]
 
     def get_by_id(self, id_request: int) -> ResponseTrainingRequestDTO:

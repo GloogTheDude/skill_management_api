@@ -87,7 +87,7 @@ class RepositorySQLiteTestCase(unittest.TestCase):
     def test_training_request_repository_returns_employee_preplanned_requests(self):
         repo = TrainingRequestRepository(self.session)
 
-        rows = repo.get_employee_request(id_employee=4)
+        rows = repo.get_for_employee(id_employee=4)
         rows_by_id = {tr.id_training_request: (tr, title, domaine_name) for tr, title, domaine_name in rows}
 
         self.assertIn(1, rows_by_id)
@@ -98,7 +98,7 @@ class RepositorySQLiteTestCase(unittest.TestCase):
         """Current implementation uses inner joins, so requests with id_training=None are lost."""
         repo = TrainingRequestRepository(self.session)
 
-        rows = repo.get_employee_request(id_employee=4)
+        rows = repo.get_for_employee(id_employee=4)
         ids = {tr.id_training_request for tr, title, domaine_name in rows}
 
         self.assertIn(2, ids)

@@ -10,12 +10,12 @@ class TrainingRequestQueueService:
 
     def get_for_manager(self, current_employee: AuthEmployeeDTO) -> list[PendingTrainingRequestDTO]:
         TrainingRequestAuthorization.require_manager_queue(current_employee)
-        rows = self.repository.get_pending_request_for_manager(current_employee.id_employee)
+        rows = self.repository.get_pending_for_manager(current_employee.id_employee)
         return [self._to_response(*row) for row in rows]
 
     def get_for_hr(self, current_employee: AuthEmployeeDTO) -> list[PendingTrainingRequestDTO]:
         TrainingRequestAuthorization.require_hr_queue(current_employee)
-        rows = self.repository.get_pending_request_for_hr()
+        rows = self.repository.get_pending_for_hr()
         return [self._to_response(*row) for row in rows]
 
     @staticmethod
