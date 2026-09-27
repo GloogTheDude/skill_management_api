@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS public.employee
     id_employee serial NOT NULL,
     first_name character varying(50) COLLATE pg_catalog."default",
     last_name character varying(50) COLLATE pg_catalog."default",
-    hash_password character varying(50) COLLATE pg_catalog."default",
+    hash_password character varying(255) COLLATE pg_catalog."default",
     mail character varying(50) COLLATE pg_catalog."default",
     is_deleted boolean NOT NULL DEFAULT false,
     id_role integer NOT NULL,

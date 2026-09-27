@@ -88,22 +88,23 @@ INSERT INTO public.training_source (id_source, name_source, is_deleted) VALUES
 (7, 'Internal HR', false);
 
 -- Employees
+-- Development passwords are hash_<first_name>; the stored values are Argon2 hashes.
 INSERT INTO public.employee (id_employee, first_name, last_name, hash_password, mail, is_deleted, id_role, id_manager) VALUES
-(1, 'Alice', 'Lambert', 'hash_alice', 'alice.lambert@example.com', false, 1, NULL),
-(2, 'Marc', 'Dubois', 'hash_marc', 'marc.dubois@example.com', false, 2, 1),
-(3, 'Sophie', 'Renard', 'hash_sophie', 'sophie.renard@example.com', false, 6, 1),
-(4, 'David', 'Henrichmann', 'hash_david', 'david.henrichmann@example.com', false, 3, 2),
-(5, 'Nora', 'Simon', 'hash_nora', 'nora.simon@example.com', false, 3, 2),
-(6, 'Thomas', 'Moreau', 'hash_thomas', 'thomas.moreau@example.com', false, 3, 2),
-(7, 'Elise', 'Laurent', 'hash_elise', 'elise.laurent@example.com', false, 4, 3),
-(8, 'Karim', 'Benali', 'hash_karim', 'karim.benali@example.com', false, 4, 3),
-(9, 'Julie', 'Petit', 'hash_julie', 'julie.petit@example.com', false, 5, 2),
-(10, 'Hugo', 'Martin', 'hash_hugo', 'hugo.martin@example.com', false, 7, 4),
-(11, 'Emma', 'Leclercq', 'hash_emma', 'emma.leclercq@example.com', false, 7, 5),
-(12, 'Louis', 'Fontaine', 'hash_louis', 'louis.fontaine@example.com', false, 3, 2),
-(13, 'Maya', 'Bernard', 'hash_maya', 'maya.bernard@example.com', false, 5, 9),
-(14, 'Noah', 'Dupont', 'hash_noah', 'noah.dupont@example.com', false, 4, 3),
-(15, 'Claire', 'Rousseau', 'hash_claire', 'claire.rousseau@example.com', true, 3, 2);
+(1, 'Alice', 'Lambert', '$argon2id$v=19$m=65536,t=3,p=4$A4sm3PJ0i4/Wdgw8UOFQBw$kLYLQQQgPw5tYL+dihAAi+MwGsB32REk2Dq9HcpOjPE', 'alice.lambert@example.com', false, 1, NULL),
+(2, 'Marc', 'Dubois', '$argon2id$v=19$m=65536,t=3,p=4$7maTauIqdHE+Gkl9u4AsfA$ONiYiGWGZvrNqqyEZk8H9UEXwQB3FsUf/skY0JOPaok', 'marc.dubois@example.com', false, 2, 1),
+(3, 'Sophie', 'Renard', '$argon2id$v=19$m=65536,t=3,p=4$YvzCXsiEzdJqjS1pcuEZCw$A2+7UpfqwjCBnkcoLRIHwdYybLZvvTy2hkyzFov11HM', 'sophie.renard@example.com', false, 6, 1),
+(4, 'David', 'Henrichmann', '$argon2id$v=19$m=65536,t=3,p=4$UwG2tZMzTOp58AeCuxSs8A$8dralvfTgD+K8IDFxp23FcwJdNnGN0haTJi0Tm8AqCs', 'david.henrichmann@example.com', false, 3, 2),
+(5, 'Nora', 'Simon', '$argon2id$v=19$m=65536,t=3,p=4$Pdkb4JCISE3bhBEr/Bqlww$OW2Wv70q8acIm1ZHQuaPmNTvPnK2eq6+Eh8pQJqO+xE', 'nora.simon@example.com', false, 3, 2),
+(6, 'Thomas', 'Moreau', '$argon2id$v=19$m=65536,t=3,p=4$p+pH8CmSffdUbZ6Rxn9IJg$KibA3ZMEUF8Zr18AmRzJCggazHwsEgMQemXvHlNEdTo', 'thomas.moreau@example.com', false, 3, 2),
+(7, 'Elise', 'Laurent', '$argon2id$v=19$m=65536,t=3,p=4$JsnRXI9D14eEv8yr7bnHbw$3rXax7hVopkvM1NjyVL4wxsKD7eljpK8i6IobJePJ4M', 'elise.laurent@example.com', false, 4, 3),
+(8, 'Karim', 'Benali', '$argon2id$v=19$m=65536,t=3,p=4$xRJDKK+274ehKTjCl8Q4Nw$KO+Yz+xddR/bwJNkzvy+r8e7v3N70n5g8JMF09iVLjI', 'karim.benali@example.com', false, 4, 3),
+(9, 'Julie', 'Petit', '$argon2id$v=19$m=65536,t=3,p=4$/v6sxbT+bVOWoeWKS/8+Hw$B6hkLL6CQ4we+To79McHSUblJ1wUry9a+qCl9sm0l/k', 'julie.petit@example.com', false, 5, 2),
+(10, 'Hugo', 'Martin', '$argon2id$v=19$m=65536,t=3,p=4$NwycOHCVpLj8IAa4hdYEJA$hsvZsjy/baCBX+5API+dPn3QTeAz4RebyNB4rtCWBGs', 'hugo.martin@example.com', false, 7, 4),
+(11, 'Emma', 'Leclercq', '$argon2id$v=19$m=65536,t=3,p=4$o5QTQXXgqmchJMdFpjR9zg$XA3ff28QSBR/nZsWBWaIhhO3xtro5xuP3EWH2EmGWmo', 'emma.leclercq@example.com', false, 7, 5),
+(12, 'Louis', 'Fontaine', '$argon2id$v=19$m=65536,t=3,p=4$UhxaW+WC7pcEMBDTGReUgg$HLbirXY6u/QBeudLH7YrOiiOvH6sExfZB8mqHFrta7w', 'louis.fontaine@example.com', false, 3, 2),
+(13, 'Maya', 'Bernard', '$argon2id$v=19$m=65536,t=3,p=4$kmMyKtuY281kQr1mSqK30Q$cesdO0CbATlOvyhZx3iTsDi/FkwKezF+FVneHW+pTCg', 'maya.bernard@example.com', false, 5, 9),
+(14, 'Noah', 'Dupont', '$argon2id$v=19$m=65536,t=3,p=4$AjMMEjCW0qaYVZP+yKZd/A$pBKSKJRZf7Uancw6tDstQaNBT4zPlPCJToQJIJ6BDUg', 'noah.dupont@example.com', false, 4, 3),
+(15, 'Claire', 'Rousseau', '$argon2id$v=19$m=65536,t=3,p=4$d1nxw9UmkTn1MgNpNfHZZg$q4Ocnlc8xoPwrazJNOYdtnZyG+o4wM56JkNXutBZG00', 'claire.rousseau@example.com', true, 3, 2);
 
 -- Diplomas and certifications
 INSERT INTO public.diploma (id_diploma, subject_diploma, level_diploma, is_deleted, id_domaine) VALUES

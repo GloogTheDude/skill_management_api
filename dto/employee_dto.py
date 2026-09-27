@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from models.employee import Employee
 
@@ -47,10 +47,7 @@ class CreateEmployeeDTO(BaseModel):
         max_length=50,
     )
 
-    # POC: currently stored as plain text in Employee.hash_password.
-    # Keep the API field named "password" so hashing can later be added
-    # in EmployeeService without changing the API contract.
-    password: str | None = None
+    password: str = Field(min_length=1)
 
     mail: str | None = Field(
         default=None,
@@ -74,9 +71,14 @@ class UpdateEmployeeDTO(BaseModel):
         max_length=50,
     )
 
-    # POC: currently stored as plain text in Employee.hash_password.
-    # Hashing should later remain an implementation detail of EmployeeService.
-    password: str | None = None
+    password: str | None = Field(default=None, min_length=1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_explicit_null_password(cls, values):
+        if isinstance(values, dict) and "password" in values and values["password"] is None:
+            raise ValueError("password cannot be null when provided")
+        return values
 
     mail: str | None = Field(
         default=None,

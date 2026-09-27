@@ -2,6 +2,7 @@ from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.role_repository import RoleRepository
 from dto.employee_dto import EmployeeCrudDTO
 from models.employee import Employee
+from core.security import hash_password as make_password_hash
 
 
 class EmployeeService:
@@ -71,7 +72,7 @@ class EmployeeService:
         employee.first_name = first_name
         employee.last_name = last_name
         employee.mail = mail
-        employee.hash_password = hash_password
+        employee.hash_password = make_password_hash(hash_password)
         employee.id_role = id_role
         employee.id_manager = id_manager
         employee.is_deleted = False
@@ -117,7 +118,7 @@ class EmployeeService:
         employee.id_manager = id_manager
 
         if hash_password is not None and hash_password != "":
-            employee.hash_password = hash_password
+            employee.hash_password = make_password_hash(hash_password)
 
         return employee
 

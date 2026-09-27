@@ -1,6 +1,7 @@
 from db.repositories.employee_repository import EmployeeRepository
 from models.employee import Employee
 from dto.employee_dto import EmployeeDTO
+from core.security import verify_password
 
 class LoginService():
     
@@ -15,9 +16,8 @@ class LoginService():
 
         employee, role_name, access_label, access_level = row
 
-        # MVP temporaire : comparaison directe.
-        # Plus tard : hash sécurisé.
-        if employee.hash_password != password:
+        # Legacy login now verifies the Argon2 hash used by all new writes.
+        if not verify_password(password, employee.hash_password or ""):
             return None
 
         if employee.is_deleted:
@@ -35,5 +35,3 @@ class LoginService():
             access_label=access_label,
             access_level=access_level,
         )
-
-

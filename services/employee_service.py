@@ -5,6 +5,7 @@ from dto.employee_dto import (
 )
 from models.employee import Employee
 from services.base_crud_service import BaseCrudService
+from core.security import hash_password
 
 
 class EmployeeService(BaseCrudService[Employee]):
@@ -35,9 +36,7 @@ class EmployeeService(BaseCrudService[Employee]):
             first_name=dto.first_name,
             last_name=dto.last_name,
 
-            # POC: password is currently stored as plain text.
-            # Replace this assignment with hashing later.
-            hash_password=dto.password,
+            hash_password=hash_password(dto.password),
 
             mail=dto.mail,
             id_role=dto.id_role,
@@ -56,11 +55,8 @@ class EmployeeService(BaseCrudService[Employee]):
 
         data = dto.model_dump(exclude_unset=True)
 
-        # API exposes "password", while the ORM model currently uses
-        # "hash_password". Keeping this translation here allows hashing
-        # to be introduced later without changing the API contract.
         if "password" in data:
-            data["hash_password"] = data.pop("password")
+            data["hash_password"] = hash_password(data.pop("password"))
 
         employee = self.repository.update(
             id_employee,
