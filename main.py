@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError, NoResultFound
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
@@ -34,6 +35,7 @@ from controlers import (
     training_request_controller,
     employee_skill_profile_controller,
     employee_skill_search_controller,
+    auth_controller,
 )
 
 from errors.handlers import (
@@ -68,6 +70,21 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173",
+        ).split(",")
+        if origin.strip()
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.add_exception_handler(
     IntegrityError,
     integrity_error_handler,
@@ -100,6 +117,7 @@ app.include_router(participation_controller.router)
 app.include_router(training_request_controller.router)
 app.include_router(employee_skill_profile_controller.router)
 app.include_router(employee_skill_search_controller.router)
+app.include_router(auth_controller.router)
 
 
 

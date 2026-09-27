@@ -41,6 +41,7 @@ def test_hash_and_verify_password():
     assert hashed != "secret"
     assert verify_password("secret", hashed) is True
     assert verify_password("wrong", hashed) is False
+    assert verify_password("secret", "not-an-argon2-hash") is False
 
 
 def test_hash_password_uses_a_new_salt_each_time():
