@@ -44,4 +44,11 @@ button, input { font: inherit; }
 .empty-state, .page-alert { max-width: 760px; padding: 1.5rem; background: white; border: 1px solid #e2e8f0; border-radius: 14px; }
 .empty-state h2 { margin-top: 0; }
 .page-alert { color: #991b1b; background: #fef2f2; }
+.training-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.training-card { padding: 1.25rem; background: white; border: 1px solid #e2e8f0; border-radius: 14px; }
+.training-card h2 { margin: .4rem 0 1.2rem; font-size: 1.15rem; }
+.training-dates { display: flex; gap: 1.5rem; margin: 0; }
+.training-dates div { display: grid; gap: .25rem; }
+.training-dates dt { color: #64748b; font-size: .8rem; }
+.training-dates dd { margin: 0; color: #334155; font-weight: 600; }
 @media (max-width: 720px) { .app-shell { display: block; } .sidebar { width: 100%; } .sidebar nav { display: flex; overflow-x: auto; } .topbar, .page-content { padding: 1rem; } }

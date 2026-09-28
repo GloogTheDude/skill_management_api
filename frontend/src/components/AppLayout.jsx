@@ -5,7 +5,7 @@ function navigationFor(accessLevel) {
   const employee = [
     ["/app", "Accueil"],
     ["/app/skills", "Mes compétences"],
-    ["/app/available-trainings", "Formations disponibles"],
+    ["/app/trainings", "Formations disponibles"],
     ["/app/training-requests", "Mes demandes"],
   ];
   if (accessLevel === 1) return employee;
@@ -17,7 +17,7 @@ function navigationFor(accessLevel) {
     ["/app/employee-search", "Recherche employés"],
     ["/app/approvals", "Training requests"],
     ["/app/employees", "Employees"],
-    ["/app/trainings", "Trainings"],
+    ["/app/training-admin", "Trainings"],
     ["/app/references", "Référentiels"],
     ["/app/participations", "Participations"],
     ["/app/skill-validations", "Skill validations"],

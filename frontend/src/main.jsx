@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import MySkillsPage from "./pages/MySkillsPage";
+import AvailableTrainingsPage from "./pages/AvailableTrainingsPage";
 import "./styles.css";
 
 function App() {
@@ -19,12 +20,13 @@ function App() {
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="skills" element={<MySkillsPage />} />
-            <Route path="available-trainings" element={<PlaceholderPage title="Formations disponibles" />} />
+            <Route path="available-trainings" element={<AvailableTrainingsPage />} />
+            <Route path="trainings" element={<AvailableTrainingsPage />} />
             <Route path="training-requests" element={<PlaceholderPage title="Mes demandes de formation" />} />
             <Route path="employee-search" element={<PlaceholderPage title="Recherche employés" />} />
             <Route path="approvals" element={<PlaceholderPage title="Validations" />} />
             <Route path="employees" element={<PlaceholderPage title="Employees" />} />
-            <Route path="trainings" element={<PlaceholderPage title="Trainings" />} />
+            <Route path="training-admin" element={<PlaceholderPage title="Trainings" />} />
             <Route path="references" element={<PlaceholderPage title="Référentiels" />} />
             <Route path="participations" element={<PlaceholderPage title="Participations" />} />
             <Route path="skill-validations" element={<PlaceholderPage title="Skill validations" />} />
