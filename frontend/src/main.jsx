@@ -12,6 +12,7 @@ import AvailableTrainingsPage from "./pages/AvailableTrainingsPage";
 import MyTrainingRequestsPage from "./pages/MyTrainingRequestsPage";
 import ManageTrainingRequestsPage from "./pages/ManageTrainingRequestsPage";
 import EmployeeSkillSearchPage from "./pages/EmployeeSkillSearchPage";
+import EmployeeSkillProfilePage from "./pages/EmployeeSkillProfilePage";
 import "./styles.css";
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
             <Route path="requests" element={<MyTrainingRequestsPage />} />
             <Route path="manage-requests" element={<ManageTrainingRequestsPage />} />
             <Route path="employee-search" element={<EmployeeSkillSearchPage />} />
+            <Route path="employees/:idEmployee/skills" element={<EmployeeSkillProfilePage />} />
             <Route path="approvals" element={<PlaceholderPage title="Validations" />} />
             <Route path="employees" element={<PlaceholderPage title="Employees" />} />
             <Route path="training-admin" element={<PlaceholderPage title="Trainings" />} />

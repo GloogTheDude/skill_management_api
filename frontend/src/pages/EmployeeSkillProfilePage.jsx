@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getEmployeeSkillProfile } from "../api/skills";
+import { useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
-import { useAuth } from "../auth/AuthContext";
+import { getEmployeeSkillProfile } from "../api/skills";
 import SkillProfileList from "../components/SkillProfileList";
+import { useAuth } from "../auth/AuthContext";
 
-export default function MySkillsPage() {
-  const { user, logout } = useAuth();
+export default function EmployeeSkillProfilePage() {
+  const { idEmployee } = useParams();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,12 +15,11 @@ export default function MySkillsPage() {
 
   useEffect(() => {
     let cancelled = false;
-
     async function loadProfile() {
       setLoading(true);
       setError(null);
       try {
-        const profile = await getEmployeeSkillProfile(user.id_employee);
+        const profile = await getEmployeeSkillProfile(idEmployee);
         if (!cancelled) setSkills(profile);
       } catch (requestError) {
         if (cancelled) return;
@@ -33,38 +33,27 @@ export default function MySkillsPage() {
         if (!cancelled) setLoading(false);
       }
     }
-
     loadProfile();
     return () => { cancelled = true; };
-  }, [user.id_employee, logout, navigate]);
+  }, [idEmployee, logout, navigate]);
 
-  if (loading) return <div className="screen-state">Chargement de vos compétences…</div>;
-
+  if (loading) return <div className="screen-state">Chargement du profil de compétences…</div>;
   if (error) {
-    const message = error instanceof ApiError && error.status === 403
-      ? "Vous n’êtes pas autorisé à consulter ce profil."
-      : "Impossible de charger votre profil de compétences. Réessayez plus tard.";
+    let message = "Impossible de charger ce profil de compétences. Réessayez plus tard.";
+    if (error instanceof ApiError && error.status === 403) message = "Vous n’êtes pas autorisé à consulter ce profil.";
+    if (error instanceof ApiError && error.status === 404) message = "Cet Employee ou ce profil n’existe pas.";
     return <div className="alert page-alert" role="alert">{message}</div>;
   }
 
   return (
     <section>
       <div className="page-heading">
-        <div>
-          <p className="eyebrow">Profil de compétences</p>
-          <h1>Mes compétences</h1>
-        </div>
+        <div><p className="eyebrow">Profil de compétences</p><h1>Profil de compétences</h1></div>
         <span className="skill-count">{skills.length} compétence{skills.length === 1 ? "" : "s"}</span>
       </div>
-
       {skills.length === 0 ? (
-        <div className="empty-state">
-          <h2>Aucune compétence à afficher</h2>
-          <p>Votre profil ne contient pas encore de compétence acquise ou validée.</p>
-        </div>
-      ) : (
-        <SkillProfileList skills={skills} />
-      )}
+        <div className="empty-state"><h2>Aucune compétence à afficher</h2><p>Ce profil ne contient pas encore de compétence acquise ou validée.</p></div>
+      ) : <SkillProfileList skills={skills} />}
     </section>
   );
 }
