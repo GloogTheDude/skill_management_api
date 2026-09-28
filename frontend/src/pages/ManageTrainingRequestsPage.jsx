@@ -7,6 +7,7 @@ import {
   getManagerPendingTrainingRequests,
   rejectTrainingRequest,
 } from "../api/trainingRequests";
+import { getTrainings } from "../api/trainings";
 import { useAuth } from "../auth/AuthContext";
 
 function formatDate(value) {
@@ -34,6 +35,9 @@ export default function ManageTrainingRequestsPage() {
   const [mutationId, setMutationId] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [rejectReasons, setRejectReasons] = useState({});
+  const [candidateTraining, setCandidateTraining] = useState({});
+  const [candidateLoading, setCandidateLoading] = useState(null);
+  const [candidateError, setCandidateError] = useState({});
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
@@ -62,7 +66,10 @@ export default function ManageTrainingRequestsPage() {
     setMutationId(request.id_training_request);
     setFeedback("");
     try {
-      await approveTrainingRequest(request.id_training_request);
+      await approveTrainingRequest(
+        request.id_training_request,
+        request.id_training === null ? candidateTraining[request.id_training_request] : null,
+      );
       setFeedback("La demande a été approuvée.");
       await loadRequests();
     } catch (requestError) {
@@ -76,6 +83,37 @@ export default function ManageTrainingRequestsPage() {
     } finally {
       setMutationId(null);
     }
+  }
+
+  async function loadCandidates(requestId) {
+    setCandidateLoading(requestId);
+    setCandidateError((current) => ({ ...current, [requestId]: null }));
+    try {
+      const trainings = await getTrainings();
+      setCandidateTraining((current) => ({ ...current, [`${requestId}_options`]: trainings }));
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        await logout().catch(() => undefined);
+        navigate("/login", { replace: true });
+        return;
+      }
+      setCandidateError((current) => ({
+        ...current,
+        [requestId]: requestError instanceof ApiError && requestError.status === 403
+          ? "Vous n’êtes pas autorisé à consulter les Trainings."
+          : "Impossible de charger les Trainings candidates.",
+      }));
+    } finally {
+      setCandidateLoading(null);
+    }
+  }
+
+  function selectCandidates(requestId) {
+    if (candidateTraining[`${requestId}_options`]) {
+      setCandidateTraining((current) => ({ ...current, [`${requestId}_options`]: null }));
+      return;
+    }
+    loadCandidates(requestId);
   }
 
   async function handleReject(request) {
@@ -153,6 +191,56 @@ export default function ManageTrainingRequestsPage() {
                 </div>
                 <p className="request-date">Demandée le {formatDate(request.requested_at)}</p>
                 {personalized && <p className="request-hint">Cette demande doit être liée à une formation avant approbation.</p>}
+                {personalized && (
+                  <div className="request-candidate-picker">
+                    <button
+                      className="button button-secondary"
+                      type="button"
+                      onClick={() => selectCandidates(request.id_training_request)}
+                      disabled={mutationId !== null || candidateLoading === request.id_training_request}
+                    >
+                      {candidateLoading === request.id_training_request ? "Chargement…" : "Associer une formation"}
+                    </button>
+                    {candidateError[request.id_training_request] && (
+                      <p className="form-error" role="alert">{candidateError[request.id_training_request]}</p>
+                    )}
+                    {candidateTraining[`${request.id_training_request}_options`] && (
+                      <>
+                        <select
+                          className="training-select"
+                          value={candidateTraining[request.id_training_request] || ""}
+                          onChange={(event) => setCandidateTraining((current) => ({
+                            ...current,
+                            [request.id_training_request]: event.target.value ? Number(event.target.value) : null,
+                          }))}
+                          disabled={mutationId !== null}
+                        >
+                          <option value="">Sélectionner une formation</option>
+                          {candidateTraining[`${request.id_training_request}_options`].map((training) => (
+                            <option key={training.id_training} value={training.id_training}>
+                              {training.title} — {displayValue(training.domaine_name)}
+                            </option>
+                          ))}
+                        </select>
+                        {candidateTraining[request.id_training_request] && (() => {
+                          const selected = candidateTraining[`${request.id_training_request}_options`]
+                            .find((training) => training.id_training === candidateTraining[request.id_training_request]);
+                          return selected ? (
+                            <div className="request-training-details">
+                              <p><strong>Organisme :</strong> {displayValue(selected.source_name)}</p>
+                              <p><strong>Lieu :</strong> {displayValue(selected.location)}</p>
+                              <p><strong>Dates :</strong> {selected.start_ || selected.end_
+                                ? `${formatDate(selected.start_)} au ${formatDate(selected.end_)}`
+                                : "Non renseignées"}</p>
+                              <p><strong>Durée :</strong> {selected.duration_hours == null ? "Non renseignée" : `${selected.duration_hours} h`}</p>
+                              <p><strong>Coût horaire :</strong> {selected.cost_hour == null ? "Non renseigné" : `${selected.cost_hour} €/h`}</p>
+                            </div>
+                          ) : null;
+                        })()}
+                      </>
+                    )}
+                  </div>
+                )}
                 <textarea
                   className="reject-reason"
                   rows="2"
@@ -162,7 +250,7 @@ export default function ManageTrainingRequestsPage() {
                   disabled={mutationId !== null}
                 />
                 <div className="request-actions">
-                  {!personalized && <button className="button button-primary" type="button" onClick={() => handleApprove(request)} disabled={mutationId !== null}> {busy ? "Traitement…" : "Approuver"}</button>}
+                  {(!personalized || candidateTraining[request.id_training_request]) && <button className="button button-primary" type="button" onClick={() => handleApprove(request)} disabled={mutationId !== null}> {busy ? "Traitement…" : "Approuver"}</button>}
                   <button className="button button-danger" type="button" onClick={() => handleReject(request)} disabled={mutationId !== null}>{busy ? "Traitement…" : "Rejeter"}</button>
                 </div>
               </article>

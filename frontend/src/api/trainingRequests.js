@@ -26,10 +26,10 @@ export function getHrPendingTrainingRequests() {
   return apiFetch("/training-requests/pending/hr");
 }
 
-export function approveTrainingRequest(idTrainingRequest) {
+export function approveTrainingRequest(idTrainingRequest, idTraining = null) {
   return apiFetch(`/training-requests/${idTrainingRequest}/approve`, {
     method: "POST",
-    body: JSON.stringify({}),
+    body: JSON.stringify(idTraining === null ? {} : { id_training: idTraining }),
   });
 }
 
