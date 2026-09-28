@@ -15,6 +15,7 @@ from dto.participation_crud_dto import (
     ResponseParticipationDTO,
 )
 from errors.participation_errors import (
+    ParticipationCannotStart,
     ParticipationInvalidStatus,
     TrainingNotCompleted,
 )
@@ -63,7 +64,10 @@ def get_participation(
     session: Session = Depends(get_session),
     current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> ResponseParticipationDTO:
-    result = _participation_service(session).get_by_id(id_employee, id_training)
+    try:
+        result = _participation_service(session).get_by_id(id_employee, id_training)
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Participation not found") from exc
     target = session.get(Employee, result.id_employee)
     if target is None or target.is_deleted:
         raise HTTPException(status_code=404, detail="Employee not found")
@@ -82,10 +86,38 @@ def delete_participation(
     _: AuthEmployeeDTO = Depends(require_hr_employee),
 ):
     repository = ParticipationRepository(session)
-    participation = repository.get_one((id_employee, id_training))
+    try:
+        participation = repository.get_one((id_employee, id_training))
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Participation not found") from exc
     if participation.is_deleted:
-        raise NoResultFound()
+        raise HTTPException(status_code=404, detail="Participation not found")
     return repository.soft_delete((id_employee, id_training))
+
+
+@router.post(
+    "/{id_employee}/{id_training}/start",
+    response_model=ResponseParticipationDTO,
+)
+def start_participation(
+    id_employee: int,
+    id_training: int,
+    session: Session = Depends(get_session),
+    _: AuthEmployeeDTO = Depends(require_hr_employee),
+) -> ResponseParticipationDTO:
+    service = ParticipationCompletionService(
+        ParticipationRepository(session),
+        TrainingRepository(session),
+        EmployeeDiplomaRepository(session),
+        EmployeeCertificationRepository(session),
+    )
+    try:
+        participation = service.start(id_employee, id_training)
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Participation or Training not found.") from exc
+    except ParticipationCannotStart as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return ResponseParticipationDTO.from_entity(participation)
 
 
 @router.post(
@@ -107,6 +139,8 @@ def complete_participation(
 
     try:
         participation = service.complete(id_employee, id_training)
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Participation or Training not found.") from exc
     except ParticipationInvalidStatus as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

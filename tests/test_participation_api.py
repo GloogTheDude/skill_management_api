@@ -11,9 +11,12 @@ from db.repositories.employee_certification_repository import (
     EmployeeCertificationRepository,
 )
 from db.repositories.employee_diploma_repository import EmployeeDiplomaRepository
+from db.repositories.acquisition_skill_repository import AcquisitionSkillRepository
+from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
 from errors.participation_errors import (
+    ParticipationCannotStart,
     ParticipationInvalidStatus,
     TrainingNotCompleted,
 )
@@ -28,9 +31,12 @@ from models.employee_diploma import EmployeeDiploma
 from models.participation import Participation
 from models.role import Role
 from models.training import Training
+from models.skill import Skill
+from models.training_skill import TrainingSkill
 from models.training_source import TrainingSource
 from services.participation_completion_service import ParticipationCompletionService
 from services.participation_service import ParticipationService
+from services.employee_skill_profile_service import EmployeeSkillProfileService
 
 
 @pytest.fixture
@@ -228,6 +234,59 @@ def test_complete_rejects_status_other_than_in_progress(session, status):
 
     with pytest.raises(ParticipationInvalidStatus):
         completion_service(session).complete(1, 1)
+
+
+def test_start_moves_registered_to_in_progress(session):
+    add_training_and_participation(
+        session,
+        training_id=1,
+        status=PARTICIPATIONSTATUS.REGISTERED.value,
+    )
+
+    started = completion_service(session).start(1, 1)
+
+    assert started.status == PARTICIPATIONSTATUS.IN_PROGRESS.value
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        PARTICIPATIONSTATUS.IN_PROGRESS.value,
+        PARTICIPATIONSTATUS.COMPLETED.value,
+        PARTICIPATIONSTATUS.FAILED.value,
+        PARTICIPATIONSTATUS.ABSENT.value,
+        PARTICIPATIONSTATUS.CANCELLED.value,
+    ],
+)
+def test_start_rejects_non_registered_status(session, status):
+    add_training_and_participation(session, training_id=1, status=status)
+
+    with pytest.raises(ParticipationCannotStart):
+        completion_service(session).start(1, 1)
+
+
+def test_full_cycle_completion_exposes_training_skill_in_profile(session):
+    session.add(Skill(id_skill=1, name_skill="Python", id_domaine=1, is_deleted=False))
+    add_training_and_participation(
+        session,
+        training_id=1,
+        status=PARTICIPATIONSTATUS.REGISTERED.value,
+        end_=date.today(),
+    )
+    session.add(TrainingSkill(id_training=1, id_skill=1, granted_level=4, is_deleted=False))
+    session.commit()
+
+    completion_service(session).start(1, 1)
+    completed = completion_service(session).complete(1, 1)
+    profile = EmployeeSkillProfileService(
+        EmployeeRepository(session),
+        AcquisitionSkillRepository(session),
+    ).get_profile(1)
+
+    assert completed.status == PARTICIPATIONSTATUS.COMPLETED.value
+    python = next(skill for skill in profile if skill.skill_id == 1)
+    assert python.displayed_level == 4
+    assert python.primary_source.source_type == "TRAINING"
 
 
 def test_complete_rejects_missing_or_deleted_participation(session):
