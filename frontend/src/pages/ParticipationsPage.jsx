@@ -23,7 +23,7 @@ function displayValue(value) {
 }
 
 export default function ParticipationsPage() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [participations, setParticipations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +62,7 @@ export default function ParticipationsPage() {
   return (
     <section>
       <div className="page-heading">
-        <div><p className="eyebrow">Formation</p><h1>Mes participations</h1></div>
+        <div><p className="eyebrow">Formation</p><h1>Participations</h1></div>
         <span className="skill-count">{participations.length} participation{participations.length === 1 ? "" : "s"}</span>
       </div>
       {participations.length === 0 ? (
@@ -75,6 +75,9 @@ export default function ParticipationsPage() {
                 <div>
                   <p className="eyebrow">Participation</p>
                   <h2>{displayValue(participation.training_title)}</h2>
+                  {user.access_level !== 1 && (
+                    <p>{displayValue(participation.employee_first_name)} {displayValue(participation.employee_last_name)}</p>
+                  )}
                 </div>
                 <span className="status-badge">{statusLabels[participation.status] || participation.status}</span>
               </div>
