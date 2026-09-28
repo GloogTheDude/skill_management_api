@@ -34,6 +34,9 @@ from models.training_request import TrainingRequest
 from services.training_request_service import TrainingRequestService
 from services.training_request_workflow_service import TrainingRequestWorkflowService
 from services.training_request_queue_service import TrainingRequestQueueService
+from controllers.auth_controller import get_current_employee
+from controllers.training_request_controller import router as training_request_router
+from main import app
 
 
 @pytest.fixture
@@ -302,7 +305,8 @@ def add_request(
 
 def test_create_planned_forces_server_values(session):
     result = request_service(session).create_planned(
-        CreatePlannedTrainingRequestDTO(id_employee=1, id_training=1)
+        1,
+        CreatePlannedTrainingRequestDTO(id_training=1),
     )
 
     assert result.status == TRAININGREQUESTSTATUS.PENDING.value
@@ -314,13 +318,14 @@ def test_create_planned_forces_server_values(session):
 
 def test_create_personalized_preserves_description_and_forces_server_values(session):
     result = request_service(session).create_personalized(
+        1,
         CreatePersonalizedTrainingRequestDTO(
-            id_employee=1,
             request_desc="Formation Kubernetes",
         )
     )
 
     assert result.status == TRAININGREQUESTSTATUS.PENDING.value
+    assert result.id_employee == 1
     assert result.id_training is None
     assert result.request_desc == "Formation Kubernetes"
     assert result.reason is None
@@ -329,7 +334,7 @@ def test_create_personalized_preserves_description_and_forces_server_values(sess
 
 def test_create_personalized_rejects_blank_description():
     with pytest.raises(ValueError):
-        CreatePersonalizedTrainingRequestDTO(id_employee=1, request_desc="  ")
+        CreatePersonalizedTrainingRequestDTO(request_desc="  ")
 
 
 def test_approve_planned_creates_registered_participation(session):
@@ -543,6 +548,29 @@ def test_approve_is_atomic_when_participation_creation_fails(session):
 
 def test_dto_rejects_non_positive_identifiers():
     with pytest.raises(ValueError):
-        CreatePlannedTrainingRequestDTO(id_employee=0, id_training=1)
+        CreatePlannedTrainingRequestDTO(id_training=0)
     with pytest.raises(ValueError):
         ApproveTrainingRequestDTO(id_training=0)
+
+
+def test_self_service_creation_contract_uses_session_identity():
+    schema = app.openapi()
+    planned = schema["paths"]["/training-requests/planned"]["post"]
+    personalized = schema["paths"]["/training-requests/personalized"]["post"]
+
+    planned_properties = planned["requestBody"]["content"]["application/json"]["schema"]["$ref"]
+    personalized_properties = personalized["requestBody"]["content"]["application/json"]["schema"]["$ref"]
+    schemas = schema["components"]["schemas"]
+
+    assert "id_employee" not in schemas[planned_properties.rsplit("/", 1)[-1]]["properties"]
+    assert "id_employee" not in schemas[personalized_properties.rsplit("/", 1)[-1]]["properties"]
+    assert "id_training" in schemas[planned_properties.rsplit("/", 1)[-1]]["properties"]
+    assert "request_desc" in schemas[personalized_properties.rsplit("/", 1)[-1]]["properties"]
+
+    for path in ("/training-requests/planned", "/training-requests/personalized"):
+        route = next(
+            route
+            for route in training_request_router.routes
+            if route.path == path
+        )
+        assert any(dependency.call is get_current_employee for dependency in route.dependant.dependencies)

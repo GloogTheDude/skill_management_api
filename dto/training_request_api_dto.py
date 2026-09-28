@@ -4,12 +4,10 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class CreatePlannedTrainingRequestDTO(BaseModel):
-    id_employee: int = Field(gt=0)
     id_training: int = Field(gt=0)
 
 
 class CreatePersonalizedTrainingRequestDTO(BaseModel):
-    id_employee: int = Field(gt=0)
     request_desc: str
 
     @field_validator("request_desc")

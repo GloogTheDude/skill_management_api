@@ -44,14 +44,15 @@ class TrainingRequestService:
 
     def create_planned(
         self,
+        id_employee: int,
         dto: CreatePlannedTrainingRequestDTO,
     ) -> ResponseTrainingRequestDTO:
         request = self._new_request(
-            id_employee=dto.id_employee,
+            id_employee=id_employee,
             id_training=dto.id_training,
         )
         self._validate_related_entities(
-            dto.id_employee,
+            id_employee,
             dto.id_training,
         )
         self.repository.add(request)
@@ -59,13 +60,14 @@ class TrainingRequestService:
 
     def create_personalized(
         self,
+        id_employee: int,
         dto: CreatePersonalizedTrainingRequestDTO,
     ) -> ResponseTrainingRequestDTO:
         request = self._new_request(
-            id_employee=dto.id_employee,
+            id_employee=id_employee,
             request_desc=dto.request_desc,
         )
-        self._validate_related_entities(dto.id_employee, None)
+        self._validate_related_entities(id_employee, None)
         self.repository.add(request)
         return self._response_after_flush(request)
 

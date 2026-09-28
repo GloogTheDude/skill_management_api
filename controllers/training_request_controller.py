@@ -48,13 +48,14 @@ def _workflow(session: Session) -> TrainingRequestWorkflowService:
 def create_planned(
     dto: CreatePlannedTrainingRequestDTO,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ):
     try:
         return TrainingRequestService(
             TrainingRequestRepository(session),
             EmployeeRepository(session),
             TrainingRepository(session),
-        ).create_planned(dto)
+        ).create_planned(current_employee.id_employee, dto)
     except RelatedEntityNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -63,13 +64,14 @@ def create_planned(
 def create_personalized(
     dto: CreatePersonalizedTrainingRequestDTO,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ):
     try:
         return TrainingRequestService(
             TrainingRequestRepository(session),
             EmployeeRepository(session),
             TrainingRepository(session),
-        ).create_personalized(dto)
+        ).create_personalized(current_employee.id_employee, dto)
     except RelatedEntityNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
