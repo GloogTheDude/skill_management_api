@@ -7,7 +7,7 @@ import {
   getManagerPendingTrainingRequests,
   rejectTrainingRequest,
 } from "../api/trainingRequests";
-import { getTrainings } from "../api/trainings";
+import { getAvailableTrainings } from "../api/trainings";
 import { useAuth } from "../auth/AuthContext";
 
 function formatDate(value) {
@@ -89,7 +89,9 @@ export default function ManageTrainingRequestsPage() {
     setCandidateLoading(requestId);
     setCandidateError((current) => ({ ...current, [requestId]: null }));
     try {
-      const trainings = await getTrainings();
+      const trainings = await getAvailableTrainings(requests.find(
+        (request) => request.id_training_request === requestId,
+      )?.id_employee);
       setCandidateTraining((current) => ({ ...current, [`${requestId}_options`]: trainings }));
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
