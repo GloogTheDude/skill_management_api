@@ -138,6 +138,31 @@ def test_training_requires_active_domaine_and_source():
         service.create(training_dto(id_source=3))
 
 
+def test_training_location_is_created_and_returned_or_null():
+    service = make_training_service()
+
+    with_location = service.create(training_dto(location="Sart Tilman — Bâtiment B37"))
+    assert with_location.location == "Sart Tilman — Bâtiment B37"
+
+    without_location = service.create(training_dto(location=None))
+    assert without_location.location is None
+
+
+def test_training_location_patch_preserves_absent_and_clears_explicit_null():
+    training = make_training()
+    training.location = "Sart Tilman — Bâtiment B37"
+    service = make_training_service(training)
+
+    service.update(10, UpdateTrainingDTO(title="Python avancé"))
+    assert training.location == "Sart Tilman — Bâtiment B37"
+
+    service.update(10, UpdateTrainingDTO(location="Microsoft Teams"))
+    assert training.location == "Microsoft Teams"
+
+    service.update(10, UpdateTrainingDTO(location=None))
+    assert training.location is None
+
+
 def test_training_rejects_both_diploma_and_certification():
     service = make_training_service()
     with pytest.raises(ValueError):

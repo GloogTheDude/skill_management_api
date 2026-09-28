@@ -31,6 +31,8 @@ class Training(Base):
         nullable=True,
     )
 
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     id_certification: Mapped[int | None] = mapped_column(
         ForeignKey("certification.id_certification"),
         nullable=True,

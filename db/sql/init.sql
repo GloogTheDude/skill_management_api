@@ -163,6 +163,7 @@ CREATE TABLE IF NOT EXISTS public.training
     id_training serial NOT NULL,
     title character varying(50) COLLATE pg_catalog."default",
     id_domaine integer,
+    location character varying(255),
     start_ date,
     end_ date,
     is_deleted boolean NOT NULL DEFAULT false,

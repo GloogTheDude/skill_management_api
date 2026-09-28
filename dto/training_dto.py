@@ -12,6 +12,7 @@ class ResponseTrainingDTO(BaseModel):
     title: str | None 
     domaine_name: str | None
     source_name: str | None
+    location: str | None
     certification_name: str | None
     diploma_name: str | None
     start_: date | None
@@ -25,6 +26,7 @@ class ResponseTrainingDTO(BaseModel):
             title=training.title,
             domaine_name=training.domaine.nom_domaine,
             source_name=training.source.name_source,
+            location=training.location,
             certification_name=(
                 training.certification.subject_certification
                 if training.certification
@@ -47,6 +49,7 @@ class UpdateTrainingDTO (BaseModel):
     title: str | None = None
     id_domaine: int | None = None
     id_source: int | None = None
+    location: str | None = Field(default=None, max_length=255)
     id_certification: int | None = None
     id_diploma: int | None = None
     start_: date | None = None
@@ -67,6 +70,7 @@ class CreateTrainingDTO(BaseModel):
     title: str
     id_domaine: int
     id_source: int
+    location: str | None = Field(default=None, max_length=255)
     id_certification: int | None = None
     id_diploma: int | None = None
     start_: date

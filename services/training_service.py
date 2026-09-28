@@ -61,6 +61,7 @@ class TrainingService(BaseCrudService[Training]):
             title=dto.title,
             id_domaine=dto.id_domaine,
             id_source=dto.id_source,
+            location=dto.location,
             id_certification=dto.id_certification,
             id_diploma=dto.id_diploma,
             start_=dto.start_,
