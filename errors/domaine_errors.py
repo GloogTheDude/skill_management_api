@@ -1,2 +1,0 @@
-class ErrorIDDomaineMissing(Exception):
-    pass

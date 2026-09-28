@@ -11,7 +11,6 @@ from dto.employee_certification_crud_dto import (
     ResponseEmployeeCertificationDTO,
     UpdateEmployeeCertificationDTO,
 )
-from dto.employee_certification_dto import CloseToExpirationDTO
 from dto.employee_certification_expiration_dto import (
     EmployeeCertificationExpirationDTO,
 )
@@ -23,21 +22,6 @@ from sqlalchemy.exc import NoResultFound
 class EmployeeCertificationService(
     BaseCrudService[EmployeeCertification]
 ):
-
-    def get_close_to_expiration(self) -> list[CloseToExpirationDTO]:
-        """Keep the legacy HR workflow compatible during migration."""
-        return [
-            CloseToExpirationDTO(
-                employee_id=dto.employee_id,
-                employee_first_name=dto.employee_first_name,
-                employee_last_name=dto.employee_last_name,
-                certification_id=dto.certification_id,
-                certification_name=dto.certification_name,
-                expiration_date=dto.expiration_date,
-                status=dto.status,
-            )
-            for dto in self._get_expiring_dtos()
-        ]
 
     def get_expiring(self) -> list[EmployeeCertificationExpirationDTO]:
         return self._get_expiring_dtos()

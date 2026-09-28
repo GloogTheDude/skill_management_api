@@ -44,10 +44,6 @@ class FakeEmployeeCertificationRepository:
         entity.is_deleted = True
         return entity
 
-    def get_close_to_expiration(self):
-        return self.close_to_expiration
-
-
 @pytest.mark.parametrize("field", ["id_employee", "id_certification"])
 def test_update_dto_rejects_explicit_null_foreign_keys(field):
     with pytest.raises(ValidationError):
@@ -106,40 +102,3 @@ def test_crud_service_handles_update_and_soft_delete():
 
     service.delete(1)
     assert service.get_all() == []
-
-def test_legacy_close_to_expiration_maps_repository_results():
-    repository = FakeEmployeeCertificationRepository()
-    repository.close_to_expiration = [
-        (
-            EmployeeCertification(
-                id_employee_certification=1,
-                id_employee=4,
-                id_certification=8,
-                expiration=date.today(),
-            ),
-            type(
-                "Employee",
-                (),
-                {
-                    "id_employee": 4,
-                    "first_name": "Ada",
-                    "last_name": "Lovelace",
-                },
-            )(),
-            type(
-                "Certification",
-                (),
-                {
-                    "id_certification": 8,
-                    "subject_certification": "Python",
-                },
-            )(),
-        )
-    ]
-    service = EmployeeCertificationService(repository)
-
-    result = service.get_close_to_expiration()
-
-    assert len(result) == 1
-    assert result[0].employee_id == 4
-    assert result[0].certification_name == "Python"

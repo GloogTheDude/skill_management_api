@@ -1,2 +1,0 @@
-class ErrorIDTrainingSourceMissing(Exception):
-    pass
