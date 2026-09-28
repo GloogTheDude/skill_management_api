@@ -6,7 +6,7 @@ function navigationFor(accessLevel) {
     ["/app", "Accueil"],
     ["/app/skills", "Mes compétences"],
     ["/app/trainings", "Formations disponibles"],
-    ["/app/training-requests", "Mes demandes"],
+    ["/app/requests", "Mes demandes"],
   ];
   if (accessLevel === 1) return employee;
   if (accessLevel === 2) {
