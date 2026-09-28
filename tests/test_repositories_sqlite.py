@@ -56,13 +56,11 @@ class RepositorySQLiteTestCase(unittest.TestCase):
     def test_employee_repository_basic_queries(self):
         repo = EmployeeRepository(self.session)
 
-        self.assertEqual(repo.get_by_id(4).first_name, "David")
-        self.assertIsNone(repo.get_by_id(999))
-        self.assertEqual(repo.get_by_mail_with_access("david@company.be")[0].id_employee, 4)
-        self.assertIsNone(repo.get_by_mail_with_access("missing@company.be"))
-        self.assertEqual({e.id_employee for e in repo.get_by_role("Employee")}, {4, 5})
-        self.assertEqual({e.id_employee for e in repo.get_subordinates(1)}, {4, 5})
-        self.assertEqual(repo.count_all(), 3)
+        self.assertEqual(repo.get_active_by_id(4).first_name, "David")
+        self.assertIsNone(repo.get_active_by_id(999))
+        self.assertEqual(repo.get_active_by_mail("david@company.be").id_employee, 4)
+        self.assertIsNone(repo.get_active_by_mail("missing@company.be"))
+        self.assertEqual({e.id_employee for e in repo.get_all()}, {1, 4, 5})
 
     def test_employee_repository_save_and_delete(self):
         repo = EmployeeRepository(self.session)
@@ -71,15 +69,15 @@ class RepositorySQLiteTestCase(unittest.TestCase):
         repo.add(employee)
         self.session.flush()
         self.assertIsNotNone(employee.id_employee)
-        self.assertEqual(repo.get_by_mail_with_access("test@company.be")[0].first_name, "Test")
+        self.assertEqual(repo.get_active_by_mail("test@company.be").first_name, "Test")
 
-        repo.delete(employee)
-        self.assertIsNone(repo.get_by_mail_with_access("test@company.be"))
+        repo.delete(employee.id_employee)
+        self.assertIsNone(repo.get_active_by_mail("test@company.be"))
 
     def test_training_repository_excludes_requested_past_deleted_and_deleted_domaines(self):
         repo = TrainingRepository(self.session)
 
-        rows = repo.get_future_trainings(id_employee=4)
+        rows = repo.get_available_for_employee(id_employee=4)
         titles = {training.title for training, domaine_name in rows}
 
         self.assertEqual(titles, {"Available future"})
