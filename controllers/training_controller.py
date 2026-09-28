@@ -11,7 +11,7 @@ from dto.training_dto import (
     ResponseTrainingDTO,
 )
 from services.training_service import TrainingService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 from dto.skill_link_replacement_dto import ReplaceTrainingSkillsDTO
 from dto.training_skill_dto import ResponseTrainingSkillDTO
 from services.training_support_service import TrainingSupportService

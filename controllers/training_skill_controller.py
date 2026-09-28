@@ -5,7 +5,7 @@ from core.database import get_session
 from db.repositories.training_skill_repository import TrainingSkillRepository
 from dto.training_skill_dto import CreateTrainingSkillDTO, UpdateTrainingSkillDTO, ResponseTrainingSkillDTO
 from services.training_skill_service import TrainingSkillService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 router = APIRouter(
     prefix="/training_skill",
     tags=["training_skill"]

@@ -9,7 +9,7 @@ from dto.skill_validation_dto import (
     ResponseSkillValidationDTO,
 )
 from services.skill_validation_service import SkillValidationService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from models.employee import Employee

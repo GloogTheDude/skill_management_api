@@ -9,7 +9,7 @@ from dto.access_level_dto import (
     ResponseAccessLevelDTO,
 )
 from services.access_level_service import AccessLevelService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(

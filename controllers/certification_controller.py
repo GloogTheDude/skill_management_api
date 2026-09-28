@@ -5,7 +5,7 @@ from core.database import get_session
 from db.repositories.certification_repository import CertificationRepository
 from dto.certification_dto import CreateCertificationDTO, UpdateCertificationDTO,ResponseCertificationDTO
 from services.certification_service import CertificationService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 from dto.skill_link_replacement_dto import ReplaceSkillsDTO
 from dto.certification_skill_dto import ResponseCertificationSkillDTO
 from models.certification import Certification

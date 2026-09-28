@@ -9,7 +9,7 @@ from dto.role_dto import (
     ResponseRoleDTO,
 )
 from services.role_service import RoleService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(

@@ -12,15 +12,15 @@ from redis import asyncio as aioredis
 from sqlalchemy.orm import Session
 from core.cache import custom_key_builder
 
-from controlers import (
-    certification_controler,
-    certification_skill_controler,
-    skill_controler,
-    domaine_controler,
-    training_source_controler,
-    diploma_controler,
+from controllers import (
+    certification_controller,
+    certification_skill_controller,
+    skill_controller,
+    domaine_controller,
+    training_source_controller,
+    diploma_controller,
     training_controller,
-    training_skill_controler,
+    training_skill_controller,
     diploma_skill_controller,
     validation_type_controller,
     employee_controller,
@@ -95,14 +95,14 @@ app.add_exception_handler(
     no_result_found_handler,
 )
 
-app.include_router(skill_controler.router)
-app.include_router(domaine_controler.router)
-app.include_router(training_source_controler.router)
-app.include_router(certification_controler.router)
-app.include_router(diploma_controler.router)
+app.include_router(skill_controller.router)
+app.include_router(domaine_controller.router)
+app.include_router(training_source_controller.router)
+app.include_router(certification_controller.router)
+app.include_router(diploma_controller.router)
 app.include_router(training_controller.router)
-app.include_router(training_skill_controler.router)
-app.include_router(certification_skill_controler.router)
+app.include_router(training_skill_controller.router)
+app.include_router(certification_skill_controller.router)
 app.include_router(diploma_skill_controller.router)
 app.include_router(validation_type_controller.router)
 app.include_router(employee_controller.router)

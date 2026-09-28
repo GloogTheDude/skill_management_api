@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException, Response
 from starlette.requests import Request
 
-from controlers.auth_controller import get_current_employee, login, logout
+from controllers.auth_controller import get_current_employee, login, logout
 from core.auth import SESSION_KEY_PREFIX, SESSION_TTL_SECONDS, RedisSessionStore
 from core.security import hash_password
 from dto.auth_dto import LoginDTO

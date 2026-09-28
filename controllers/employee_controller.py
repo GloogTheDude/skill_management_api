@@ -10,7 +10,7 @@ from dto.employee_dto import (
     ResponseEmployeeDTO,
 )
 from services.employee_service import EmployeeService
-from controlers.auth_controller import get_current_employee
+from controllers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from services.employee_authorization_service import EmployeeAuthorizationService

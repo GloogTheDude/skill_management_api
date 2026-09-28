@@ -10,7 +10,7 @@ from dto.employee_skill_search_dto import (
     EmployeeSkillSearchResultDTO,
 )
 from services.employee_skill_search_service import EmployeeSkillSearchService
-from controlers.auth_controller import get_current_employee
+from controllers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 

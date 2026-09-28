@@ -4,7 +4,7 @@ import inspect
 import pytest
 from fastapi import HTTPException
 
-from controlers.auth_controller import require_hr_employee
+from controllers.auth_controller import require_hr_employee
 from dto.auth_dto import AuthEmployeeDTO
 
 
@@ -33,14 +33,14 @@ def test_reference_mutation_dependency_accepts_only_hr():
 
 def test_reference_controllers_expose_auth_dependencies():
     controller_modules = (
-        "controlers.domaine_controler",
-        "controlers.skill_controler",
-        "controlers.training_controller",
-        "controlers.training_source_controler",
-        "controlers.certification_controler",
-        "controlers.diploma_controler",
-        "controlers.role_controller",
-        "controlers.access_level_controller",
+        "controllers.domaine_controller",
+        "controllers.skill_controller",
+        "controllers.training_controller",
+        "controllers.training_source_controller",
+        "controllers.certification_controller",
+        "controllers.diploma_controller",
+        "controllers.role_controller",
+        "controllers.access_level_controller",
     )
     for module_name in controller_modules:
         module = __import__(module_name, fromlist=["router"])

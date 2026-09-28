@@ -9,7 +9,7 @@ from dto.domaine_dto import (
     ResponseDomaineDTO,
 )
 from services.domaine_service import DomaineService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 from errors.authorization_errors import AuthorizationForbidden
 
 

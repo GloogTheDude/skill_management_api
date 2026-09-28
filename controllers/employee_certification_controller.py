@@ -11,7 +11,7 @@ from dto.employee_certification_crud_dto import (
     UpdateEmployeeCertificationDTO,
 )
 from services.employee_certification_service import EmployeeCertificationService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from models.employee import Employee

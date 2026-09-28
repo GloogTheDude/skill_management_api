@@ -9,7 +9,7 @@ from dto.certification_skill_dto import (
     ResponseCertificationSkillDTO,
 )
 from services.certification_skill_service import CertificationSkillService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(

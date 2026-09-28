@@ -9,7 +9,7 @@ from dto.employee_certification_expiration_dto import (
     EmployeeCertificationExpirationDTO,
 )
 from services.employee_certification_service import EmployeeCertificationService
-from controlers.auth_controller import require_hr_employee
+from controllers.auth_controller import require_hr_employee
 from dto.auth_dto import AuthEmployeeDTO
 
 

@@ -9,7 +9,7 @@ from dto.diploma_skill_dto import (
     ResponseDiplomaSkillDTO,
 )
 from services.diploma_skill_service import DiplomaSkillService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(

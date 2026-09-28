@@ -9,7 +9,7 @@ from dto.training_source_dto import (
     ResponseTrainingSourceDTO,
 )
 from services.training_source_service import TrainingSourceService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(

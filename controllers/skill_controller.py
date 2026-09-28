@@ -9,7 +9,7 @@ from dto.skill_dto import (
     ResponseSkillDTO,
 )
 from services.skill_service import SkillService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(prefix="/skill", tags=["skill"])

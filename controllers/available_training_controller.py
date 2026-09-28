@@ -6,7 +6,7 @@ from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.training_repository import TrainingRepository
 from dto.available_training_dto import AvailableTrainingDTO
 from services.available_training_service import AvailableTrainingService
-from controlers.auth_controller import get_current_employee
+from controllers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from sqlalchemy.exc import NoResultFound

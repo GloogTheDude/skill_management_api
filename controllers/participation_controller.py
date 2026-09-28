@@ -19,7 +19,7 @@ from errors.participation_errors import (
 )
 from services.participation_completion_service import ParticipationCompletionService
 from services.participation_service import ParticipationService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from models.employee import Employee

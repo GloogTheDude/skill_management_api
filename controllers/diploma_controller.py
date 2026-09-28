@@ -7,7 +7,7 @@ from core.database import get_session
 from db.repositories.diploma_repository import DiplomaRepository
 from dto.diploma_dto import CreateDiplomaDTO, UpdateDiplomaDTO,ResponseDiplomaDTO
 from services.diploma_service import DiplomaService
-from controlers.auth_controller import get_current_employee, require_hr_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 from dto.skill_link_replacement_dto import ReplaceSkillsDTO
 from dto.diploma_skill_dto import ResponseDiplomaSkillDTO
 from models.diploma import Diploma

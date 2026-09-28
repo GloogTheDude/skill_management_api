@@ -6,7 +6,7 @@ from db.repositories.acquisition_skill_repository import AcquisitionSkillReposit
 from db.repositories.employee_repository import EmployeeRepository
 from dto.skill_dto import SkillProfileDTO
 from services.employee_skill_profile_service import EmployeeSkillProfileService
-from controlers.auth_controller import get_current_employee
+from controllers.auth_controller import get_current_employee
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from sqlalchemy.exc import NoResultFound

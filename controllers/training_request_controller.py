@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_session
-from controlers.auth_controller import get_current_employee
+from controllers.auth_controller import get_current_employee
 from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
