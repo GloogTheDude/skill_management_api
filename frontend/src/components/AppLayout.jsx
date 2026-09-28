@@ -10,12 +10,12 @@ function navigationFor(accessLevel) {
   ];
   if (accessLevel === 1) return employee;
   if (accessLevel === 2) {
-    return [...employee, ["/app/employee-search", "Recherche employés"], ["/app/approvals", "Validations"]];
+    return [...employee, ["/app/manage-requests", "Demandes à traiter"], ["/app/employee-search", "Recherche employés"]];
   }
   return [
     ...employee,
     ["/app/employee-search", "Recherche employés"],
-    ["/app/approvals", "Training requests"],
+    ["/app/manage-requests", "Demandes à traiter"],
     ["/app/employees", "Employees"],
     ["/app/training-admin", "Trainings"],
     ["/app/references", "Référentiels"],

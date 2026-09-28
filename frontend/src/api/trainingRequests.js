@@ -17,3 +17,25 @@ export function createPersonalizedTrainingRequest(requestDesc) {
     body: JSON.stringify({ request_desc: requestDesc }),
   });
 }
+
+export function getManagerPendingTrainingRequests() {
+  return apiFetch("/training-requests/pending/manager");
+}
+
+export function getHrPendingTrainingRequests() {
+  return apiFetch("/training-requests/pending/hr");
+}
+
+export function approveTrainingRequest(idTrainingRequest) {
+  return apiFetch(`/training-requests/${idTrainingRequest}/approve`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export function rejectTrainingRequest(idTrainingRequest, reason) {
+  return apiFetch(`/training-requests/${idTrainingRequest}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
