@@ -10,10 +10,19 @@ from models.certification_skill import CertificationSkill
 from models.diploma import Diploma
 from models.diploma_skill import DiplomaSkill
 from models.domaine import Domaine
+from models.training_source import TrainingSource
 from models.skill import Skill
 from models.training import Training
 from models.training_skill import TrainingSkill
 from services.skill_link_replacement_service import SkillLinkReplacementService
+from services.training_support_service import TrainingSupportService
+from services.training_service import TrainingService
+from db.repositories.training_repository import TrainingRepository
+from db.repositories.domaine_repository import DomaineRepository
+from db.repositories.training_source_repository import TrainingSourceRepository
+from dto.training_dto import CreateTrainingDTO
+from datetime import date
+from decimal import Decimal
 
 
 @pytest.fixture
@@ -23,10 +32,13 @@ def session():
     session = sessionmaker(bind=engine)()
     session.add_all([
         Domaine(id_domaine=1, nom_domaine="Backend", is_deleted=False),
+        TrainingSource(id_source=1, name_source="Internal", is_deleted=False),
         Skill(id_skill=1, name_skill="Python", id_domaine=1, is_deleted=False),
         Skill(id_skill=2, name_skill="SQL", id_domaine=1, is_deleted=False),
         Skill(id_skill=3, name_skill="Rust", id_domaine=1, is_deleted=False),
-        Training(id_training=1, title="T", id_domaine=1, is_deleted=False),
+        Skill(id_skill=4, name_skill="Go", id_domaine=1, is_deleted=False),
+        Skill(id_skill=5, name_skill="Java", id_domaine=1, is_deleted=False),
+        Training(id_training=1, title="T", id_domaine=1, id_diploma=1, is_deleted=False),
         Diploma(id_diploma=1, subject_diploma="D", id_domaine=1, is_deleted=False),
         Certification(id_certification=1, subject_certification="C", id_domaine=1, is_deleted=False),
     ])
@@ -117,6 +129,74 @@ def test_replacement_query_count_is_constant_for_one_or_many_skills(session):
     many_count = len(statements)
     event.remove(session.bind, "before_cursor_execute", count_selects)
     assert many_count == one_count
+
+
+def test_training_without_target_cannot_remove_last_support(session):
+    training = Training(id_training=2, title="Skills", id_domaine=1, is_deleted=False)
+    session.add(training)
+    session.flush()
+    service = TrainingSupportService(session)
+    service.replace_skills(2, [(1, 2)])
+
+    with pytest.raises(ValueError):
+        service.replace_skills(2, [])
+
+    assert session.query(TrainingSkill).filter_by(id_training=2).one().is_deleted is False
+
+
+def test_training_target_allows_empty_skill_replacement(session):
+    service = TrainingSupportService(session)
+    service.replace_skills(1, [(1, 2)])
+    service.replace_skills(1, [])
+    assert session.query(TrainingSkill).filter_by(id_training=1).one().is_deleted is True
+
+
+def test_training_support_query_count_is_constant_for_one_or_five_skills(session):
+    training = Training(id_training=3, title="Many skills", id_domaine=1, is_deleted=False)
+    session.add(training)
+    session.flush()
+    statements = []
+
+    def count_selects(conn, cursor, statement, parameters, context, executemany):
+        if statement.lstrip().upper().startswith("SELECT"):
+            statements.append(statement)
+
+    event.listen(session.bind, "before_cursor_execute", count_selects)
+    service = TrainingSupportService(session)
+    service.replace_skills(3, [(1, 1)])
+    one_count = len(statements)
+    statements.clear()
+    service.replace_skills(3, [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)])
+    five_count = len(statements)
+    event.remove(session.bind, "before_cursor_execute", count_selects)
+    assert five_count == one_count
+
+
+def test_training_create_rolls_back_after_skill_sync_failure(session, monkeypatch):
+    def fail_after_creation(*args, **kwargs):
+        raise RuntimeError("skill synchronization failed")
+
+    monkeypatch.setattr(TrainingSupportService, "replace_skills", fail_after_creation)
+    service = TrainingService(
+        TrainingRepository(session),
+        DomaineRepository(session),
+        TrainingSourceRepository(session),
+    )
+
+    with pytest.raises(RuntimeError):
+        service.create(CreateTrainingDTO(
+            title="Atomic",
+            id_domaine=1,
+            id_source=1,
+            start_=date(2030, 1, 1),
+            end_=date(2030, 1, 2),
+            cost_hour=Decimal("1"),
+            duration_hours=Decimal("1"),
+            skills=[{"id_skill": 1, "level": 1}],
+        ))
+    session.rollback()
+    assert session.query(Training).filter_by(title="Atomic").count() == 0
+    assert session.query(TrainingSkill).filter_by(id_skill=1).count() == 0
 
 
 @pytest.mark.parametrize("dto_type", [ReplaceSkillsDTO, ReplaceTrainingSkillsDTO])

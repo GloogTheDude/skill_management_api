@@ -1,7 +1,8 @@
 from datetime import date
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
+from dto.skill_link_replacement_dto import TrainingSkillReplacementItemDTO
 
 from models.training import Training
 
@@ -52,6 +53,15 @@ class UpdateTrainingDTO (BaseModel):
     end_: date | None = None
     cost_hour: Decimal | None = None
     duration_hours: Decimal | None = None
+    skills: list[TrainingSkillReplacementItemDTO] | None = None
+
+    @model_validator(mode="after")
+    def reject_duplicate_skills(self):
+        if self.skills is not None:
+            ids = [item.id_skill for item in self.skills]
+            if len(ids) != len(set(ids)):
+                raise ValueError("A skill may only appear once in the replacement list.")
+        return self
 
 class CreateTrainingDTO(BaseModel):
     title: str
@@ -63,3 +73,11 @@ class CreateTrainingDTO(BaseModel):
     end_: date
     cost_hour: Decimal
     duration_hours: Decimal
+    skills: list[TrainingSkillReplacementItemDTO] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def reject_duplicate_skills(self):
+        ids = [item.id_skill for item in self.skills]
+        if len(ids) != len(set(ids)):
+            raise ValueError("A skill may only appear once in the replacement list.")
+        return self

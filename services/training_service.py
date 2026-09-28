@@ -5,6 +5,7 @@ from services.base_crud_service import BaseCrudService
 from sqlalchemy.exc import NoResultFound
 from db.repositories.domaine_repository import DomaineRepository
 from db.repositories.training_source_repository import TrainingSourceRepository
+from services.training_support_service import TrainingSupportService
 
 
 class TrainingService(BaseCrudService[Training]):
@@ -47,6 +48,15 @@ class TrainingService(BaseCrudService[Training]):
         self._validate_domaine(dto.id_domaine)
         self._validate_source(dto.id_source)
         self._validate_targets(dto.id_diploma, dto.id_certification)
+        requested = [(item.id_skill, item.level) for item in dto.skills]
+        session = getattr(self.repository, "_session", None)
+        if session is None:
+            if dto.id_diploma is None and dto.id_certification is None and not requested:
+                raise ValueError("A training must have a diploma, certification, or skill.")
+            support = None
+        else:
+            support = TrainingSupportService(session)
+            support.validate_support(dto.id_diploma, dto.id_certification, [item.id_skill for item in dto.skills])
         training = Training(
             title=dto.title,
             id_domaine=dto.id_domaine,
@@ -58,7 +68,10 @@ class TrainingService(BaseCrudService[Training]):
             cost_hour=dto.cost_hour,
             duration_hours=dto.duration_hours
         )
-        return ResponseTrainingDTO.from_entity(self.repository.add(training))
+        created = self.repository.add(training)
+        if requested and support is not None:
+            support.replace_skills(created.id_training, requested)
+        return ResponseTrainingDTO.from_entity(created)
 
     def update(self,id_training: int,dto: UpdateTrainingDTO) -> ResponseTrainingDTO:
         data = dto.model_dump(exclude_unset=True)
@@ -71,9 +84,44 @@ class TrainingService(BaseCrudService[Training]):
             data.get("id_diploma", training.id_diploma),
             data.get("id_certification", training.id_certification),
         )
+        final_diploma = data.get("id_diploma", training.id_diploma)
+        final_certification = data.get("id_certification", training.id_certification)
+        session = getattr(self.repository, "_session", None)
+        support = TrainingSupportService(session) if session is not None else None
+        support_changed = (
+            "skills" in data
+            or "id_diploma" in data
+            or "id_certification" in data
+        )
+        if not support_changed:
+            requested = None
+            support = None
+        elif "skills" in data:
+            requested = data.pop("skills") or []
+            if support is not None:
+                support.validate_final_state(
+                    id_training,
+                    final_diploma,
+                    final_certification,
+                    [item["id_skill"] for item in requested],
+                )
+            elif final_diploma is None and final_certification is None and not requested:
+                raise ValueError("A training must have a diploma, certification, or skill.")
+        else:
+            requested = None
+            if support is not None:
+                support.validate_final_state(id_training, final_diploma, final_certification)
+            elif final_diploma is None and final_certification is None:
+                raise ValueError("A training must have a diploma, certification, or skill.")
         training = self.repository.update(
             id_training,
             **data
         )
+
+        if requested is not None and support is not None:
+            support.replace_skills(
+                id_training,
+                [(item["id_skill"], item["level"]) for item in requested],
+            )
 
         return ResponseTrainingDTO.from_entity(training)

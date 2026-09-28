@@ -5,6 +5,7 @@ from dto.training_skill_dto import (
 )
 from models.training_skill import TrainingSkill
 from services.base_crud_service import BaseCrudService
+from services.training_support_service import TrainingSupportService
 
 
 class TrainingSkillService(BaseCrudService[TrainingSkill]):
@@ -59,3 +60,10 @@ class TrainingSkillService(BaseCrudService[TrainingSkill]):
         )
 
         return ResponseTrainingSkillDTO.from_entity(ts)
+
+    def delete(self, ident):
+        id_skill, id_training = ident
+        TrainingSupportService(self.repository._session).validate_link_deletion(
+            id_training, id_skill
+        )
+        return self.repository.soft_delete(ident)

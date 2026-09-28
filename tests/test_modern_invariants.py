@@ -63,6 +63,7 @@ def training_dto(**overrides):
         "title": "Python",
         "id_domaine": 1,
         "id_source": 1,
+        "id_diploma": 1,
         "start_": date(2030, 1, 1),
         "end_": date(2030, 1, 2),
         "cost_hour": Decimal("10"),

@@ -14,9 +14,7 @@ from services.training_service import TrainingService
 from controlers.auth_controller import get_current_employee, require_hr_employee
 from dto.skill_link_replacement_dto import ReplaceTrainingSkillsDTO
 from dto.training_skill_dto import ResponseTrainingSkillDTO
-from models.training import Training
-from models.training_skill import TrainingSkill
-from services.skill_link_replacement_service import SkillLinkReplacementService
+from services.training_support_service import TrainingSupportService
 
 
 router = APIRouter(prefix="/training", tags=["training"])
@@ -27,12 +25,14 @@ def replace_training_skills(id_training: int, dto: ReplaceTrainingSkillsDTO,
                             session: Session = Depends(get_session),
                             _: object = Depends(require_hr_employee)):
     try:
-        links = SkillLinkReplacementService(session).replace(
-            Training, id_training, "id_training", TrainingSkill, "id_skill", "granted_level",
+        links = TrainingSupportService(session).replace_skills(
+            id_training,
             [(item.id_skill, item.level) for item in dto.skills],
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return [ResponseTrainingSkillDTO.from_entity(link) for link in links]
 
 @router.post('',status_code=201)
@@ -41,7 +41,12 @@ def create_training(dto:CreateTrainingDTO,
                     _: object = Depends(require_hr_employee))->ResponseTrainingDTO:
     repo = TrainingRepository(session)
     service = TrainingService(repo, DomaineRepository(session), TrainingSourceRepository(session))
-    return service.create(dto)
+    try:
+        return service.create(dto)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 @router.get('/{id_training}')
 def get_training_by_id(id_training:int,
@@ -72,6 +77,8 @@ def update_training(id_training:int,
         return service.update(id_training, dto)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 @router.delete('/{id_training}')
 def delete_training(id_training:int,

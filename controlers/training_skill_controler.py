@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_session
@@ -64,4 +64,9 @@ def delete_training_skill(
 ):
     repo = TrainingSkillRepository(session)
     service = TrainingSkillService(repo)
-    return service.delete((id_skill, id_training))
+    try:
+        return service.delete((id_skill, id_training))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
