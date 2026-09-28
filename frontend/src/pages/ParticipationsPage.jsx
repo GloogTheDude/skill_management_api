@@ -1,0 +1,69 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ApiError } from "../api/client";
+import { getParticipations } from "../api/participations";
+import { useAuth } from "../auth/AuthContext";
+
+export default function ParticipationsPage() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [participations, setParticipations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadParticipations() {
+      try {
+        const result = await getParticipations();
+        if (!cancelled) setParticipations(result);
+      } catch (requestError) {
+        if (cancelled) return;
+        if (requestError instanceof ApiError && requestError.status === 401) {
+          await logout().catch(() => undefined);
+          navigate("/login", { replace: true });
+          return;
+        }
+        setError(requestError);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadParticipations();
+    return () => { cancelled = true; };
+  }, [logout, navigate]);
+
+  if (loading) return <div className="screen-state">Chargement des participations…</div>;
+  if (error) {
+    const message = error instanceof ApiError && error.status === 403
+      ? "Vous n’êtes pas autorisé à consulter ces participations."
+      : "Impossible de charger les participations. Réessayez plus tard.";
+    return <div className="alert page-alert" role="alert">{message}</div>;
+  }
+
+  return (
+    <section>
+      <div className="page-heading">
+        <div><p className="eyebrow">Formation</p><h1>Mes participations</h1></div>
+        <span className="skill-count">{participations.length} participation{participations.length === 1 ? "" : "s"}</span>
+      </div>
+      {participations.length === 0 ? (
+        <div className="empty-state"><h2>Aucune participation</h2><p>Vous n’avez pas encore de participation enregistrée.</p></div>
+      ) : (
+        <div className="request-list">
+          {participations.map((participation) => (
+            <article className="request-card" key={`${participation.id_employee}-${participation.id_training}`}>
+              <div className="request-card-header">
+                <div>
+                  <p className="eyebrow">Formation #{participation.id_training}</p>
+                  <h2>Participation à la formation</h2>
+                </div>
+                <span className="status-badge">{participation.status}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
