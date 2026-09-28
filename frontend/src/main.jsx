@@ -7,6 +7,7 @@ import PlaceholderPage from "./components/PlaceholderPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
+import MySkillsPage from "./pages/MySkillsPage";
 import "./styles.css";
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<DashboardPage />} />
-            <Route path="skills" element={<PlaceholderPage title="Mes compétences" />} />
+            <Route path="skills" element={<MySkillsPage />} />
             <Route path="available-trainings" element={<PlaceholderPage title="Formations disponibles" />} />
             <Route path="training-requests" element={<PlaceholderPage title="Mes demandes de formation" />} />
             <Route path="employee-search" element={<PlaceholderPage title="Recherche employés" />} />
