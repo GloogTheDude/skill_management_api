@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { searchEmployeesBySkills } from "../api/employeeSearch";
 import { getAllSkills } from "../api/skills";
@@ -13,9 +13,26 @@ function sourceLabel(source) {
   return `${source.source_type} · niveau ${source.level ?? "non renseigné"}`;
 }
 
+function parseCriteria(params, skills) {
+  const skillIds = params.getAll("skill");
+  const operators = params.getAll("operator");
+  const levels = params.getAll("level");
+  if (!skillIds.length || skillIds.length !== operators.length || skillIds.length !== levels.length) return null;
+  const knownSkills = new Set(skills.map((skill) => skill.id_skill));
+  const parsed = skillIds.map((skillId, index) => ({ id_skill: skillId, operator: operators[index], level: levels[index] }));
+  if (parsed.some((criterion) => (
+    !/^\d+$/.test(criterion.id_skill)
+    || !knownSkills.has(Number(criterion.id_skill))
+    || !["gt", "gte", "eq"].includes(criterion.operator)
+    || !/^[1-5]$/.test(criterion.level)
+  ))) return null;
+  return parsed;
+}
+
 export default function EmployeeSkillSearchPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [skills, setSkills] = useState([]);
   const [requirements, setRequirements] = useState([emptyRequirement()]);
   const [results, setResults] = useState(null);
@@ -41,6 +58,43 @@ export default function EmployeeSkillSearchPage() {
     loadSkills();
   }, [logout, navigate]);
 
+  useEffect(() => {
+    if (loadingSkills) return undefined;
+    const parsed = parseCriteria(searchParams, skills);
+    if (!parsed) {
+      if ([...searchParams.keys()].length > 0) setSearchParams({}, { replace: true });
+      setRequirements([emptyRequirement()]);
+      setResults(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setRequirements(parsed);
+    setSearching(true);
+    setError(null);
+    searchEmployeesBySkills(parsed.map((criterion) => ({
+      id_skill: Number(criterion.id_skill),
+      operator: criterion.operator,
+      level: Number(criterion.level),
+    }))).then((response) => {
+      if (!cancelled) setResults(response);
+    }).catch(async (requestError) => {
+      if (cancelled) return;
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        await logout().catch(() => undefined);
+        navigate("/login", { replace: true });
+        return;
+      }
+      setError(requestError instanceof ApiError && requestError.status === 403
+        ? "Vous n’êtes pas autorisé à effectuer cette recherche."
+        : "La recherche n’a pas pu être effectuée. Réessayez plus tard.");
+      setResults(null);
+    }).finally(() => {
+      if (!cancelled) setSearching(false);
+    });
+    return () => { cancelled = true; };
+  }, [loadingSkills, skills, searchParams, setSearchParams, logout, navigate]);
+
   function updateRequirement(index, field, value) {
     setRequirements((current) => current.map((requirement, requirementIndex) => (
       requirementIndex === index ? { ...requirement, [field]: value } : requirement
@@ -61,29 +115,13 @@ export default function EmployeeSkillSearchPage() {
       setError("Sélectionnez une compétence pour chaque critère.");
       return;
     }
-    setSearching(true);
-    setError(null);
-    try {
-      const payload = requirements.map((requirement) => ({
-        id_skill: Number(requirement.id_skill),
-        operator: requirement.operator,
-        level: Number(requirement.level),
-      }));
-      setResults(await searchEmployeesBySkills(payload));
-    } catch (requestError) {
-      if (requestError instanceof ApiError && requestError.status === 401) {
-        await logout().catch(() => undefined);
-        navigate("/login", { replace: true });
-        return;
-      }
-      setError(requestError instanceof ApiError && requestError.status === 403
-        ? "Vous n’êtes pas autorisé à effectuer cette recherche."
-        : requestError instanceof ApiError && requestError.status === 422 && requestError.detail
-          ? requestError.detail
-          : "La recherche n’a pas pu être effectuée. Réessayez plus tard.");
-    } finally {
-      setSearching(false);
-    }
+    const params = new window.URLSearchParams();
+    requirements.forEach((requirement) => {
+      params.append("skill", requirement.id_skill);
+      params.append("operator", requirement.operator);
+      params.append("level", requirement.level);
+    });
+    setSearchParams(params);
   }
 
   if (loadingSkills) return <div className="screen-state">Chargement des compétences…</div>;
@@ -144,7 +182,13 @@ export default function EmployeeSkillSearchPage() {
                   {skill.sources.length > 0 && <ul className="skill-sources">{skill.sources.map((source) => <li key={`${source.source_type}-${source.source_id}`}>{sourceLabel(source)}</li>)}</ul>}
                 </div>
               ))}
-              <button className="button button-secondary" type="button" onClick={() => navigate(`/app/employees/${employee.id_employee}/skills`)}>Voir le profil</button>
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={() => navigate(`/app/employees/${employee.id_employee}/skills`, {
+                  state: { returnTo: `/app/employee-search?${searchParams.toString()}` },
+                })}
+              >Voir le profil</button>
             </article>
           ))}
         </div>
