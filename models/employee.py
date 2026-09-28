@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String,Boolean
+from sqlalchemy import ForeignKey, String, Boolean, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -63,3 +63,12 @@ class Employee(Base):
     diplomas = relationship("EmployeeDiploma", back_populates="employee")
     certifications = relationship("EmployeeCertification", back_populates="employee")
     participations = relationship("Participation", back_populates="employee")
+
+
+Index(
+    "uq_employee_mail_active",
+    Employee.mail,
+    unique=True,
+    postgresql_where=Employee.is_deleted.is_(False),
+    sqlite_where=Employee.is_deleted.is_(False),
+)

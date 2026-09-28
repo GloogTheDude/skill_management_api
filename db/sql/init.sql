@@ -76,6 +76,10 @@ CREATE TABLE IF NOT EXISTS public.employee
     CONSTRAINT employee_pkey PRIMARY KEY (id_employee)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_employee_mail_active
+    ON public.employee (mail)
+    WHERE is_deleted = false;
+
 CREATE TABLE IF NOT EXISTS public.employeexcertification
 (
     id_employee_certification serial NOT NULL,
