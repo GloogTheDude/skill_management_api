@@ -31,6 +31,7 @@ from models.participation import Participation
 from models.role import Role
 from models.training import Training
 from models.training_request import TrainingRequest
+from models.training_source import TrainingSource
 from services.training_request_service import TrainingRequestService
 from services.training_request_workflow_service import TrainingRequestWorkflowService
 from services.training_request_queue_service import TrainingRequestQueueService
@@ -60,6 +61,7 @@ def session():
             Role(id_role=2, denomination_role="Manager", id_access_level=2),
             Role(id_role=3, denomination_role="HR", id_access_level=3),
             Domaine(id_domaine=1, nom_domaine="Backend", is_deleted=False),
+            TrainingSource(id_source=1, name_source="Tech Provider", is_deleted=False),
             Employee(
                 id_employee=1,
                 first_name="Ada",
@@ -92,6 +94,8 @@ def session():
                 id_training=1,
                 title="REST API",
                 id_domaine=1,
+                id_source=1,
+                location="Sart Tilman — Bâtiment B37",
                 start_=date(2026, 1, 1),
                 end_=date(2026, 1, 2),
                 is_deleted=False,
@@ -176,10 +180,23 @@ def test_manager_queue_returns_direct_reports_and_both_request_types(session):
     planned_result = next(item for item in result if item.id_training_request == planned.id_training_request)
     personalized_result = next(item for item in result if item.id_training_request == personalized.id_training_request)
     assert planned_result.training_title == "REST API"
+    assert planned_result.domaine_name == "Backend"
+    assert planned_result.source_name == "Tech Provider"
+    assert planned_result.location == "Sart Tilman — Bâtiment B37"
+    assert planned_result.start_ == date(2026, 1, 1)
+    assert planned_result.end_ == date(2026, 1, 2)
+    assert planned_result.duration_hours is None
+    assert planned_result.cost_hour is None
     assert planned_result.first_name_employee == "Ada"
     assert personalized_result.id_training is None
     assert personalized_result.training_title is None
     assert personalized_result.request_desc == "custom request"
+    assert personalized_result.source_name is None
+    assert personalized_result.location is None
+    assert personalized_result.start_ is None
+    assert personalized_result.end_ is None
+    assert personalized_result.duration_hours is None
+    assert personalized_result.cost_hour is None
 
 
 def test_manager_queue_requires_manager_and_direct_scope(session):
@@ -205,6 +222,15 @@ def test_hr_queue_returns_all_pending_and_requires_hr(session):
         first.id_training_request,
         second.id_training_request,
     }
+    first_result = next(item for item in result if item.id_training_request == first.id_training_request)
+    assert first_result.training_title == "REST API"
+    assert first_result.domaine_name == "Backend"
+    assert first_result.source_name == "Tech Provider"
+    assert first_result.location == "Sart Tilman — Bâtiment B37"
+    assert first_result.start_ == date(2026, 1, 1)
+    assert first_result.end_ == date(2026, 1, 2)
+    assert first_result.duration_hours is None
+    assert first_result.cost_hour is None
     with pytest.raises(AuthorizationForbidden):
         queue_service(session).get_for_hr(actor(2, 2))
     with pytest.raises(AuthorizationForbidden):

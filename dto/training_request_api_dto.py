@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -61,3 +62,9 @@ class PendingTrainingRequestDTO(BaseModel):
     id_training: int | None
     training_title: str | None
     domaine_name: str | None
+    source_name: str | None
+    location: str | None
+    start_: date | None
+    end_: date | None
+    duration_hours: Decimal | None
+    cost_hour: Decimal | None

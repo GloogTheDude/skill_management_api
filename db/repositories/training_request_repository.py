@@ -7,6 +7,7 @@ from models.training_request import TrainingRequest
 from models.training import Training
 from models.domaine import Domaine
 from models.employee import Employee
+from models.training_source import TrainingSource
 
 class TrainingRequestRepository():
     def __init__(self, session: Session):
@@ -61,10 +62,17 @@ class TrainingRequestRepository():
                 Employee,
                 Training,
                 Domaine.nom_domaine,
+                TrainingSource.name_source,
+                Training.location,
+                Training.start_,
+                Training.end_,
+                Training.duration_hours,
+                Training.cost_hour,
             )
             .join(TrainingRequest.employee)
             .outerjoin(TrainingRequest.training)
             .outerjoin(Training.domaine)
+            .outerjoin(Training.source)
             .where(
                 TrainingRequest.status == TRAININGREQUESTSTATUS.PENDING.value,
                 TrainingRequest.is_deleted.is_(False),
@@ -81,10 +89,17 @@ class TrainingRequestRepository():
                 Employee,
                 Training,
                 Domaine.nom_domaine,
+                TrainingSource.name_source,
+                Training.location,
+                Training.start_,
+                Training.end_,
+                Training.duration_hours,
+                Training.cost_hour,
             )
             .join(TrainingRequest.employee)
             .outerjoin(TrainingRequest.training)
             .outerjoin(Training.domaine)
+            .outerjoin(Training.source)
             .where(
                 TrainingRequest.status == TRAININGREQUESTSTATUS.PENDING.value,
                 TrainingRequest.is_deleted.is_(False),

@@ -19,7 +19,18 @@ class TrainingRequestQueueService:
         return [self._to_response(*row) for row in rows]
 
     @staticmethod
-    def _to_response(request, employee, training, domaine_name):
+    def _to_response(
+        request,
+        employee,
+        training,
+        domaine_name,
+        source_name,
+        location,
+        start_,
+        end_,
+        duration_hours,
+        cost_hour,
+    ):
         return PendingTrainingRequestDTO(
             id_training_request=request.id_training_request,
             request_desc=request.request_desc,
@@ -32,4 +43,10 @@ class TrainingRequestQueueService:
             id_training=training.id_training if training else None,
             training_title=training.title if training else None,
             domaine_name=domaine_name,
+            source_name=source_name,
+            location=location,
+            start_=start_,
+            end_=end_,
+            duration_hours=duration_hours,
+            cost_hour=cost_hour,
         )

@@ -14,6 +14,10 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("fr-BE").format(new Date(`${value}T00:00:00`));
 }
 
+function displayValue(value, fallback = "Non renseigné") {
+  return value === null || value === undefined || value === "" ? fallback : value;
+}
+
 function errorMessage(error, fallback) {
   if (!(error instanceof ApiError)) return fallback;
   if (error.status === 403) return "Vous n’êtes pas autorisé à traiter cette demande.";
@@ -133,6 +137,17 @@ export default function ManageTrainingRequestsPage() {
                     <h2>{request.training_title || request.request_desc}</h2>
                     <p>{request.first_name_employee} {request.last_name_employee} · Employee #{request.id_employee}</p>
                     {request.domaine_name && <p>{request.domaine_name}</p>}
+                    {!personalized && (
+                      <div className="request-training-details">
+                        <p><strong>Organisme :</strong> {displayValue(request.source_name)}</p>
+                        <p><strong>Lieu :</strong> {displayValue(request.location)}</p>
+                        <p><strong>Dates :</strong> {request.start_ || request.end_
+                          ? `${formatDate(request.start_)} au ${formatDate(request.end_)}`
+                          : "Non renseignées"}</p>
+                        <p><strong>Durée :</strong> {request.duration_hours == null ? "Non renseignée" : `${request.duration_hours} h`}</p>
+                        <p><strong>Coût horaire :</strong> {request.cost_hour == null ? "Non renseigné" : `${request.cost_hour} €/h`}</p>
+                      </div>
+                    )}
                   </div>
                   <span className="status-badge">{request.status}</span>
                 </div>
