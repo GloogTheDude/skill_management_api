@@ -12,7 +12,6 @@ from services.skill_profile_aggregation import (
     should_replace_primary_source,
 )
 from dto.auth_dto import AuthEmployeeDTO
-from errors.authorization_errors import AuthorizationForbidden
 from services.employee_authorization_service import EmployeeAuthorizationService
 
 

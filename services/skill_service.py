@@ -1,4 +1,3 @@
-from db.repositories.skills_repository import SkillRepository
 from dto.skill_dto import CreateSkillDTO, UpdateSkillDTO, ResponseSkillDTO
 from models.skill import Skill
 from services.base_crud_service import BaseCrudService

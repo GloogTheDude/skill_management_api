@@ -1,6 +1,4 @@
 from datetime import date
-from dataclasses import dataclass
-
 from pydantic import BaseModel, Field
 
 from models.skill import Skill
@@ -22,12 +20,6 @@ class SkillProfileDTO(BaseModel):
     displayed_level: int | None
     primary_source: SkillSourceDTO | None
     sources: list[SkillSourceDTO]
-
-@dataclass
-class SkillCrudDTO:
-    id_skill: int
-    name_skill: str
-    domaine_name: str | None
 
 class CreateSkillDTO(BaseModel):
     name_skill: str = Field(

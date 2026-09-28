@@ -3,9 +3,6 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from core.constants import CERTIFICATIONSTATUS
-from db.repositories.employee_certification_repository import (
-    EmployeeCertificationRepository,
-)
 from dto.employee_certification_crud_dto import (
     CreateEmployeeCertificationDTO,
     ResponseEmployeeCertificationDTO,

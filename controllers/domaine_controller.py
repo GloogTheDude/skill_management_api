@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from core.database import get_session
@@ -10,9 +10,6 @@ from dto.domaine_dto import (
 )
 from services.domaine_service import DomaineService
 from controllers.auth_controller import get_current_employee, require_hr_employee
-from errors.authorization_errors import AuthorizationForbidden
-
-
 router = APIRouter(prefix="/domaine", tags=["domaine"])
 
 
