@@ -11,6 +11,7 @@ import MySkillsPage from "./pages/MySkillsPage";
 import AvailableTrainingsPage from "./pages/AvailableTrainingsPage";
 import MyTrainingRequestsPage from "./pages/MyTrainingRequestsPage";
 import ManageTrainingRequestsPage from "./pages/ManageTrainingRequestsPage";
+import EmployeeSkillSearchPage from "./pages/EmployeeSkillSearchPage";
 import "./styles.css";
 
 function App() {
@@ -27,7 +28,7 @@ function App() {
             <Route path="training-requests" element={<PlaceholderPage title="Mes demandes de formation" />} />
             <Route path="requests" element={<MyTrainingRequestsPage />} />
             <Route path="manage-requests" element={<ManageTrainingRequestsPage />} />
-            <Route path="employee-search" element={<PlaceholderPage title="Recherche employés" />} />
+            <Route path="employee-search" element={<EmployeeSkillSearchPage />} />
             <Route path="approvals" element={<PlaceholderPage title="Validations" />} />
             <Route path="employees" element={<PlaceholderPage title="Employees" />} />
             <Route path="training-admin" element={<PlaceholderPage title="Trainings" />} />
