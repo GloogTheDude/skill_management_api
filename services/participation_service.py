@@ -5,6 +5,7 @@ from sqlalchemy.exc import NoResultFound
 from core.constants import TYPEPARTICIPATIONDTO
 from dto.participation_crud_dto import (
     CompletableParticipationDTO,
+    ParticipationListDTO,
     ResponseParticipationDTO,
 )
 from models.participation import Participation
@@ -19,12 +20,30 @@ class ParticipationService(BaseCrudService[Participation]):
             raise NoResultFound()
         return participation
 
-    def get_all(self, employee_id: int | None = None, access_level: int | None = None) -> list[ResponseParticipationDTO]:
-        participations = (
-            self.repository.get_for_scope(employee_id, access_level)
-            if employee_id is not None and access_level is not None
-            else self._get_all_entities()
-        )
+    def get_all(self, employee_id: int | None = None, access_level: int | None = None):
+        if employee_id is not None and access_level is not None:
+            return [
+                ParticipationListDTO(
+                    id_employee=participation.id_employee,
+                    id_training=participation.id_training,
+                    status=participation.status,
+                    employee_first_name=first_name,
+                    employee_last_name=last_name,
+                    training_title=title,
+                    domaine_name=domaine_name,
+                    source_name=source_name,
+                    location=location,
+                    start_=start_,
+                    end_=end_,
+                    duration_hours=duration_hours,
+                    cost_hour=cost_hour,
+                )
+                for (
+                    participation, first_name, last_name, title, domaine_name,
+                    source_name, location, start_, end_, duration_hours, cost_hour,
+                ) in self.repository.get_for_scope(employee_id, access_level)
+            ]
+        participations = self._get_all_entities()
         return [
             ResponseParticipationDTO.from_entity(participation)
             for participation in participations

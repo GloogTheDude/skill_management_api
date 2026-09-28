@@ -11,6 +11,7 @@ from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
 from dto.participation_crud_dto import (
     CompletableParticipationDTO,
+    ParticipationListDTO,
     ResponseParticipationDTO,
 )
 from errors.participation_errors import (
@@ -36,11 +37,11 @@ def _participation_service(session: Session) -> ParticipationService:
     return ParticipationService(ParticipationRepository(session))
 
 
-@router.get("", response_model=list[ResponseParticipationDTO])
+@router.get("", response_model=list[ParticipationListDTO])
 def get_participations(
     session: Session = Depends(get_session),
     current_employee: AuthEmployeeDTO = Depends(get_current_employee),
-) -> list[ResponseParticipationDTO]:
+) -> list[ParticipationListDTO]:
     return _participation_service(session).get_all(current_employee.id_employee, current_employee.access_level)
 
 

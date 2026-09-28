@@ -4,6 +4,24 @@ import { ApiError } from "../api/client";
 import { getParticipations } from "../api/participations";
 import { useAuth } from "../auth/AuthContext";
 
+const statusLabels = {
+  REGISTERED: "Inscrit",
+  IN_PROGRESS: "En cours",
+  COMPLETED: "Terminée",
+  FAILED: "Échec",
+  ABSENT: "Absent",
+  CANCELLED: "Annulée",
+};
+
+function formatDate(value) {
+  if (!value) return "Non renseignée";
+  return new Intl.DateTimeFormat("fr-BE").format(new Date(`${value}T00:00:00`));
+}
+
+function displayValue(value) {
+  return value === null || value === undefined || value === "" ? "Non renseigné" : value;
+}
+
 export default function ParticipationsPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -55,10 +73,20 @@ export default function ParticipationsPage() {
             <article className="request-card" key={`${participation.id_employee}-${participation.id_training}`}>
               <div className="request-card-header">
                 <div>
-                  <p className="eyebrow">Formation #{participation.id_training}</p>
-                  <h2>Participation à la formation</h2>
+                  <p className="eyebrow">Participation</p>
+                  <h2>{displayValue(participation.training_title)}</h2>
                 </div>
-                <span className="status-badge">{participation.status}</span>
+                <span className="status-badge">{statusLabels[participation.status] || participation.status}</span>
+              </div>
+              <div className="participation-details">
+                <p><strong>Organisme :</strong> {displayValue(participation.source_name)}</p>
+                <p><strong>Domaine :</strong> {displayValue(participation.domaine_name)}</p>
+                <p><strong>Lieu :</strong> {displayValue(participation.location)}</p>
+                <p><strong>Dates :</strong> {participation.start_ || participation.end_
+                  ? `${formatDate(participation.start_)} au ${formatDate(participation.end_)}`
+                  : "Non renseignées"}</p>
+                <p><strong>Durée :</strong> {participation.duration_hours == null ? "Non renseignée" : `${participation.duration_hours} h`}</p>
+                <p><strong>Coût horaire :</strong> {participation.cost_hour == null ? "Non renseigné" : `${participation.cost_hour} €/h`}</p>
               </div>
             </article>
           ))}

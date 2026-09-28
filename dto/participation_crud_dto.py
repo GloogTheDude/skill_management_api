@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from pydantic import BaseModel
 
@@ -17,6 +18,22 @@ class ResponseParticipationDTO(BaseModel):
             id_training=participation.id_training,
             status=participation.status,
         )
+
+
+class ParticipationListDTO(BaseModel):
+    id_employee: int
+    id_training: int
+    status: str
+    employee_first_name: str | None
+    employee_last_name: str | None
+    training_title: str | None
+    domaine_name: str | None
+    source_name: str | None
+    location: str | None
+    start_: date | None
+    end_: date | None
+    duration_hours: Decimal | None
+    cost_hour: Decimal | None
 
 
 class CompletableParticipationDTO(BaseModel):

@@ -176,6 +176,39 @@ def test_get_all_and_get_by_id_exclude_soft_deleted(session):
         service.get_by_id(1, 2)
 
 
+def test_scoped_participations_include_training_details_and_nullable_fields(session):
+    add_training_and_participation(session, training_id=1, end_=date.today())
+
+    result = ParticipationService(ParticipationRepository(session)).get_all(1, 1)
+
+    assert len(result) == 1
+    assert result[0].employee_first_name == "Ada"
+    assert result[0].training_title == "Training 1"
+    assert result[0].domaine_name == "Backend"
+    assert result[0].source_name == "Training provider"
+    assert result[0].location is None
+    assert result[0].start_ == date.today() - timedelta(days=10)
+    assert result[0].end_ == date.today()
+    assert result[0].duration_hours is None
+    assert result[0].cost_hour is None
+
+
+def test_manager_and_hr_receive_enriched_participations_without_scope_leak(session):
+    session.get(Employee, 1).id_manager = 2
+    session.commit()
+    add_training_and_participation(session, training_id=1, employee_id=1, end_=date.today())
+    add_training_and_participation(session, training_id=2, employee_id=2, end_=date.today())
+
+    manager_result = ParticipationService(ParticipationRepository(session)).get_all(2, 2)
+    assert {item.id_employee for item in manager_result} == {1, 2}
+    assert all(item.training_title for item in manager_result)
+    assert all(item.source_name == "Training provider" for item in manager_result)
+
+    hr_result = ParticipationService(ParticipationRepository(session)).get_all(3, 3)
+    assert {item.id_employee for item in hr_result} == {1, 2}
+    assert all(item.training_title for item in hr_result)
+
+
 @pytest.mark.parametrize(
     "status",
     [
