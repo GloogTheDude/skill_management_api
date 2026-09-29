@@ -112,6 +112,28 @@ def get_pending_hr_requests(
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
+@router.get("/history/manager", response_model=list[PendingTrainingRequestDTO])
+def get_history_manager_requests(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        return TrainingRequestQueueService(TrainingRequestRepository(session)).get_history_for_manager(current_employee)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.get("/history/hr", response_model=list[PendingTrainingRequestDTO])
+def get_history_hr_requests(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        return TrainingRequestQueueService(TrainingRequestRepository(session)).get_history_for_hr(current_employee)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
 @router.get("/mine", response_model=list[ResponseTrainingRequestDTO])
 def get_my_training_requests(
     session: Session = Depends(get_session),

@@ -26,6 +26,14 @@ export function getHrPendingTrainingRequests() {
   return apiFetch("/training-requests/pending/hr");
 }
 
+export function getManagerTrainingRequestHistory() {
+  return apiFetch("/training-requests/history/manager");
+}
+
+export function getHrTrainingRequestHistory() {
+  return apiFetch("/training-requests/history/hr");
+}
+
 export function approveTrainingRequest(idTrainingRequest, idTraining = null) {
   return apiFetch(`/training-requests/${idTrainingRequest}/approve`, {
     method: "POST",

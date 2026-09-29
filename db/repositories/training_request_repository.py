@@ -123,3 +123,38 @@ class TrainingRequestRepository():
         )
 
         return self.session.execute(stmt).all()
+
+    def get_history_for_manager(self, id_manager: int):
+        return self._get_history(Employee.id_manager == id_manager)
+
+    def get_history_for_hr(self):
+        return self._get_history()
+
+    def _get_history(self, scope=None):
+        conditions = [
+            TrainingRequest.status.in_(("VALIDATED", "REFUSED")),
+            TrainingRequest.is_deleted.is_(False),
+        ]
+        if scope is not None:
+            conditions.append(scope)
+        stmt = (
+            select(
+                TrainingRequest,
+                Employee,
+                Training,
+                Domaine.nom_domaine,
+                TrainingSource.name_source,
+                Training.location,
+                Training.start_,
+                Training.end_,
+                Training.duration_hours,
+                Training.cost_hour,
+            )
+            .join(TrainingRequest.employee)
+            .outerjoin(TrainingRequest.training)
+            .outerjoin(Training.domaine)
+            .outerjoin(Training.source)
+            .where(*conditions)
+            .order_by(TrainingRequest.requested_at.desc(), TrainingRequest.id_training_request.desc())
+        )
+        return self.session.execute(stmt).all()

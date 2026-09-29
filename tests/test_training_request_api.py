@@ -258,6 +258,28 @@ def test_pending_queue_uses_one_sql_query(session):
     assert len(statements) == 1
 
 
+def test_history_queue_is_scoped_and_contains_only_terminal_requests(session):
+    validated = add_queue_request(session, employee_id=1, training_id=1, status="VALIDATED")
+    refused = add_queue_request(session, employee_id=1, training_id=1, status="REFUSED")
+    pending = add_queue_request(session, employee_id=1, training_id=1, status="PENDING")
+    outside = add_queue_request(session, employee_id=2, training_id=1, status="VALIDATED")
+    session.commit()
+
+    result = queue_service(session).get_history_for_manager(actor(2, 2))
+    assert {item.id_training_request for item in result} == {validated.id_training_request, refused.id_training_request}
+    assert pending.id_training_request not in {item.id_training_request for item in result}
+    assert outside.id_training_request not in {item.id_training_request for item in result}
+
+
+def test_hr_history_queue_is_global(session):
+    validated = add_queue_request(session, employee_id=1, training_id=1, status="VALIDATED")
+    refused = add_queue_request(session, employee_id=2, training_id=1, status="REFUSED")
+    session.commit()
+
+    result = queue_service(session).get_history_for_hr(actor(3, 3))
+    assert {item.id_training_request for item in result} == {validated.id_training_request, refused.id_training_request}
+
+
 def test_mine_returns_all_request_statuses_and_personalized_requests(session):
     own_pending = add_queue_request(session, employee_id=1, training_id=1)
     own_personalized = add_queue_request(session, employee_id=1)

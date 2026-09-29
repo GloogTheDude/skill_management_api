@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import {
   approveTrainingRequest,
+  getHrTrainingRequestHistory,
   getHrPendingTrainingRequests,
+  getManagerTrainingRequestHistory,
   getManagerPendingTrainingRequests,
   rejectTrainingRequest,
 } from "../api/trainingRequests";
@@ -29,6 +31,10 @@ function errorMessage(error, fallback) {
 export default function ManageTrainingRequestsPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get("view") === "history" ? "history" : "pending";
+  const query = searchParams.get("q") || "";
+  const statusFilter = searchParams.get("status") || "";
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,8 +50,8 @@ export default function ManageTrainingRequestsPage() {
     setError(null);
     try {
       const loader = user.access_level === 3
-        ? getHrPendingTrainingRequests
-        : getManagerPendingTrainingRequests;
+        ? (view === "history" ? getHrTrainingRequestHistory : getHrPendingTrainingRequests)
+        : (view === "history" ? getManagerTrainingRequestHistory : getManagerPendingTrainingRequests);
       setRequests(await loader());
       setCandidateTraining({});
       setCandidateError({});
@@ -59,9 +65,25 @@ export default function ManageTrainingRequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user.access_level, logout, navigate]);
+  }, [user.access_level, view, logout, navigate]);
 
   useEffect(() => { loadRequests(); }, [loadRequests]);
+
+  const visibleRequests = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return requests.filter((request) => {
+      if (view === "history" && statusFilter && request.status !== statusFilter) return false;
+      if (!needle) return true;
+      return [request.first_name_employee, request.last_name_employee, request.training_title, request.request_desc]
+        .filter(Boolean).join(" ").toLowerCase().includes(needle);
+    });
+  }, [requests, query, statusFilter, view]);
+
+  function updateFilter(name, value) {
+    const next = Object.fromEntries(searchParams.entries());
+    if (value) next[name] = value; else delete next[name];
+    setSearchParams(next);
+  }
 
   async function handleApprove(request) {
     if (mutationId !== null) return;
@@ -169,16 +191,24 @@ export default function ManageTrainingRequestsPage() {
       <div className="page-heading">
         <div>
           <p className="eyebrow">Manager / HR</p>
-          <h1>Demandes à traiter</h1>
+          <h1>{view === "pending" ? "Demandes à traiter" : "Historique des demandes"}</h1>
         </div>
-        <span className="skill-count">{requests.length} demande{requests.length === 1 ? "" : "s"}</span>
+        <span className="skill-count">{visibleRequests.length} demande{visibleRequests.length === 1 ? "" : "s"}</span>
+      </div>
+      <nav className="training-tabs" aria-label="Vues des demandes">
+        <button className={`button ${view === "pending" ? "button-primary" : "button-secondary"}`} type="button" onClick={() => updateFilter("view", "pending")}>À traiter</button>
+        <button className={`button ${view === "history" ? "button-primary" : "button-secondary"}`} type="button" onClick={() => updateFilter("view", "history")}>Historique</button>
+      </nav>
+      <div className="reference-toolbar">
+        <input value={query} onChange={(event) => updateFilter("q", event.target.value)} placeholder="Rechercher un Employee, une Training…" />
+        {view === "history" && <select value={statusFilter} onChange={(event) => updateFilter("status", event.target.value)}><option value="">Tous les statuts</option><option value="VALIDATED">Acceptées</option><option value="REFUSED">Refusées</option></select>}
       </div>
       {feedback && <p className="form-feedback" role="status">{feedback}</p>}
-      {requests.length === 0 ? (
-        <div className="empty-state"><h2>Aucune demande en attente</h2><p>La file de traitement est vide.</p></div>
+      {visibleRequests.length === 0 ? (
+        <div className="empty-state"><h2>{query || statusFilter ? "Aucun résultat pour ces filtres" : view === "pending" ? "Aucune demande en attente" : "Aucune demande dans l’historique"}</h2><p>{view === "pending" ? "La file de traitement est vide." : "Les demandes traitées apparaîtront ici."}</p></div>
       ) : (
         <div className="request-list">
-          {requests.map((request) => {
+          {visibleRequests.map((request) => {
             const personalized = request.id_training === null;
             const busy = mutationId === request.id_training_request;
             return (
@@ -204,8 +234,8 @@ export default function ManageTrainingRequestsPage() {
                   <span className="status-badge">{request.status}</span>
                 </div>
                 <p className="request-date">Demandée le {formatDate(request.requested_at)}</p>
-                {personalized && <p className="request-hint">Cette demande doit être liée à une formation avant approbation.</p>}
-                {personalized && (
+                {view === "pending" && personalized && <p className="request-hint">Cette demande doit être liée à une formation avant approbation.</p>}
+                {view === "pending" && personalized && (
                   <div className="request-candidate-picker">
                     <button
                       className="button button-secondary"
@@ -255,18 +285,18 @@ export default function ManageTrainingRequestsPage() {
                     )}
                   </div>
                 )}
-                <textarea
+                {view === "pending" && <textarea
                   className="reject-reason"
                   rows="2"
                   placeholder="Motif du rejet"
                   value={rejectReasons[request.id_training_request] || ""}
                   onChange={(event) => setRejectReasons((current) => ({ ...current, [request.id_training_request]: event.target.value }))}
                   disabled={mutationId !== null}
-                />
-                <div className="request-actions">
+                />}
+                {view === "pending" && <div className="request-actions">
                   {(!personalized || candidateTraining[request.id_training_request]) && <button className="button button-primary" type="button" onClick={() => handleApprove(request)} disabled={mutationId !== null}> {busy ? "Traitement…" : "Approuver"}</button>}
                   <button className="button button-danger" type="button" onClick={() => handleReject(request)} disabled={mutationId !== null}>{busy ? "Traitement…" : "Rejeter"}</button>
-                </div>
+                </div>}
               </article>
             );
           })}
