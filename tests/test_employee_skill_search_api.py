@@ -314,7 +314,6 @@ def test_active_sources_use_highest_relevant_level(session):
     result = search(session, requirement(1, "gte", 3))
 
     skill = next(skill for skill in result[0].skills if skill.skill_id == 1)
-    assert skill.displayed_level == 4
 
 
 def test_expired_only_source_does_not_match(session):

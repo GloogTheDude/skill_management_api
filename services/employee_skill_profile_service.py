@@ -9,7 +9,6 @@ from dto.skill_dto import CurrentSkillValidationDTO, SkillProfileDTO, SkillSourc
 from models.skill import Skill
 from services.skill_profile_aggregation import (
     add_skill_source,
-    should_replace_primary_source,
 )
 from dto.auth_dto import AuthEmployeeDTO
 from services.employee_authorization_service import EmployeeAuthorizationService
@@ -184,10 +183,3 @@ class EmployeeSkillProfileService:
             skill_domaine=domaine,
             source=source,
         )
-
-    @staticmethod
-    def _should_replace_primary_source(
-        new_source: SkillSourceDTO,
-        current_source: SkillSourceDTO | None,
-    ) -> bool:
-        return should_replace_primary_source(new_source, current_source)

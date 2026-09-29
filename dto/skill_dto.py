@@ -33,9 +33,6 @@ class SkillProfileDTO(BaseModel):
     primary_acquired_source: SkillSourceDTO | None = None
     acquired_sources: list[SkillSourceDTO] = []
     current_validation: CurrentSkillValidationDTO | None = None
-    # Transitional fields. Their legacy semantics remain unchanged.
-    displayed_level: int | None = None
-    primary_source: SkillSourceDTO | None = None
     sources: list[SkillSourceDTO] = []
 
 class CreateSkillDTO(BaseModel):

@@ -211,8 +211,6 @@ def test_profile_consolidates_sources_and_uses_active_highest_level(session):
     assert all(isinstance(profile, SkillProfileDTO) for profile in result)
     python = next(profile for profile in result if profile.skill_id == 1)
 
-    assert python.displayed_level == 3
-    assert python.primary_source.source_type == "CERTIFICATION"
     assert python.acquired_level == 3
     assert python.evaluated_level == 3
     assert python.primary_acquired_source.source_type == "CERTIFICATION"
