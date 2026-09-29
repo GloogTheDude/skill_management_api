@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
-import { getParticipations } from "../api/participations";
+import {
+  completeParticipation,
+  getCompletableParticipations,
+  getParticipations,
+  startParticipation,
+} from "../api/participations";
 import { useAuth } from "../auth/AuthContext";
 
 const statusLabels = {
@@ -28,28 +33,66 @@ export default function ParticipationsPage() {
   const [participations, setParticipations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [completable, setCompletable] = useState(new Set());
+  const [mutationKey, setMutationKey] = useState(null);
+  const [feedback, setFeedback] = useState("");
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const participationResult = await getParticipations();
+      let completableResult = [];
+      if (user.access_level === 3) {
+        completableResult = await getCompletableParticipations();
+      }
+      setParticipations(participationResult);
+      setCompletable(new Set(completableResult.map((item) => `${item.id_employee}-${item.id_training}`)));
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        await logout().catch(() => undefined);
+        navigate("/login", { replace: true });
+        return;
+      }
+      setError(requestError);
+    } finally {
+      setLoading(false);
+    }
+  }, [logout, navigate, user.access_level]);
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadParticipations() {
-      try {
-        const result = await getParticipations();
-        if (!cancelled) setParticipations(result);
-      } catch (requestError) {
-        if (cancelled) return;
-        if (requestError instanceof ApiError && requestError.status === 401) {
-          await logout().catch(() => undefined);
-          navigate("/login", { replace: true });
-          return;
-        }
-        setError(requestError);
-      } finally {
-        if (!cancelled) setLoading(false);
+    loadData();
+  }, [loadData]);
+
+  async function handleTransition(participation, transition) {
+    const key = `${participation.id_employee}-${participation.id_training}`;
+    if (mutationKey !== null) return;
+    setMutationKey(key);
+    setFeedback("");
+    try {
+      if (transition === "start") {
+        await startParticipation(participation.id_employee, participation.id_training);
+        setFeedback("La participation a été démarrée.");
+      } else {
+        await completeParticipation(participation.id_employee, participation.id_training);
+        setFeedback("La participation a été terminée.");
       }
+      await loadData();
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        await logout().catch(() => undefined);
+        navigate("/login", { replace: true });
+        return;
+      }
+      const detail = requestError instanceof ApiError && requestError.detail;
+      setFeedback(detail || "La transition de participation a échoué. Réessayez plus tard.");
+      if (requestError instanceof ApiError && [404, 409].includes(requestError.status)) {
+        await loadData();
+      }
+    } finally {
+      setMutationKey(null);
     }
-    loadParticipations();
-    return () => { cancelled = true; };
-  }, [logout, navigate]);
+  }
 
   if (loading) return <div className="screen-state">Chargement des participations…</div>;
   if (error) {
@@ -65,11 +108,16 @@ export default function ParticipationsPage() {
         <div><p className="eyebrow">Formation</p><h1>Participations</h1></div>
         <span className="skill-count">{participations.length} participation{participations.length === 1 ? "" : "s"}</span>
       </div>
+      {feedback && <p className="form-feedback" role="status">{feedback}</p>}
       {participations.length === 0 ? (
         <div className="empty-state"><h2>Aucune participation</h2><p>Vous n’avez pas encore de participation enregistrée.</p></div>
       ) : (
         <div className="request-list">
-          {participations.map((participation) => (
+          {participations.map((participation) => {
+            const key = `${participation.id_employee}-${participation.id_training}`;
+            const busy = mutationKey === key;
+            const canComplete = completable.has(key);
+            return (
             <article className="request-card" key={`${participation.id_employee}-${participation.id_training}`}>
               <div className="request-card-header">
                 <div>
@@ -91,8 +139,26 @@ export default function ParticipationsPage() {
                 <p><strong>Durée :</strong> {participation.duration_hours == null ? "Non renseignée" : `${participation.duration_hours} h`}</p>
                 <p><strong>Coût horaire :</strong> {participation.cost_hour == null ? "Non renseigné" : `${participation.cost_hour} €/h`}</p>
               </div>
+              {user.access_level === 3 && participation.status === "REGISTERED" && (
+                <div className="request-actions">
+                  <button className="button button-primary" type="button" onClick={() => handleTransition(participation, "start")} disabled={mutationKey !== null}>
+                    {busy ? "Démarrage…" : "Démarrer"}
+                  </button>
+                </div>
+              )}
+              {user.access_level === 3 && participation.status === "IN_PROGRESS" && canComplete && (
+                <div className="request-actions">
+                  <button className="button button-primary" type="button" onClick={() => handleTransition(participation, "complete")} disabled={mutationKey !== null}>
+                    {busy ? "Finalisation…" : "Terminer"}
+                  </button>
+                </div>
+              )}
+              {user.access_level === 3 && participation.status === "IN_PROGRESS" && !canComplete && (
+                <p className="request-hint">Formation non terminée.</p>
+              )}
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
