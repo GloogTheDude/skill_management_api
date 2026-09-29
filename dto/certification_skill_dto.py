@@ -27,8 +27,8 @@ class ResponseCertificationSkillDTO(BaseModel):
 class CreateCertificationSkillDTO(BaseModel):
     id_certification: int = Field(gt=0)
     id_skill: int = Field(gt=0)
-    granted_level: int | None = None
+    granted_level: int | None = Field(default=None, ge=1, le=5)
 
 
 class UpdateCertificationSkillDTO(BaseModel):
-    granted_level: int | None = None
+    granted_level: int | None = Field(default=None, ge=1, le=5)

@@ -27,11 +27,12 @@ class ResponseTrainingSkillDTO(BaseModel):
 class CreateTrainingSkillDTO(BaseModel):
     id_skill: int = Field(gt=0)
     id_training: int = Field(gt=0)
-    granted_level: int = Field(gt=0)
+    granted_level: int = Field(ge=1, le=5)
 
 
 class UpdateTrainingSkillDTO(BaseModel):
     granted_level: int | None = Field(
         default=None,
-        gt=0,
+        ge=1,
+        le=5,
     )

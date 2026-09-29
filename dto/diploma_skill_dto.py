@@ -27,8 +27,8 @@ class ResponseDiplomaSkillDTO(BaseModel):
 class CreateDiplomaSkillDTO(BaseModel):
     id_diploma: int = Field(gt=0)
     id_skill: int = Field(gt=0)
-    min_level: int | None = None
+    min_level: int | None = Field(default=None, ge=1, le=5)
 
 
 class UpdateDiplomaSkillDTO(BaseModel):
-    min_level: int | None = None
+    min_level: int | None = Field(default=None, ge=1, le=5)

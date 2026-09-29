@@ -45,7 +45,7 @@ class ResponseSkillValidationDTO(BaseModel):
 
 class CreateSkillValidationDTO(BaseModel):
     date_: date | None = None
-    level_skill: int | None = None
+    level_skill: int | None = Field(default=None, ge=1, le=5)
     id_validation: int = Field(gt=0)
     id_employee: int = Field(gt=0)
     id_skill: int = Field(gt=0)
@@ -54,7 +54,7 @@ class CreateSkillValidationDTO(BaseModel):
 
 class UpdateSkillValidationDTO(BaseModel):
     date_: date | None = None
-    level_skill: int | None = None
+    level_skill: int | None = Field(default=None, ge=1, le=5)
     id_validation: int | None = Field(default=None, gt=0)
     id_employee: int | None = Field(default=None, gt=0)
     id_skill: int | None = Field(default=None, gt=0)

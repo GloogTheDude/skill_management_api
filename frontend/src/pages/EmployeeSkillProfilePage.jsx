@@ -150,7 +150,10 @@ export default function EmployeeSkillProfilePage() {
             {evaluation.skill.current_validation && <p>Évaluation actuelle : niveau {evaluation.skill.current_validation.level}</p>}
             <form onSubmit={submitEvaluation}>
               <label>Niveau terrain
-                <input required type="number" step="1" value={evaluation.level} onChange={(event) => setEvaluation({ ...evaluation, level: event.target.value })} />
+                <select required value={evaluation.level} onChange={(event) => setEvaluation({ ...evaluation, level: event.target.value })}>
+                  <option value="">Choisir un niveau</option>
+                  {[1, 2, 3, 4, 5].map((level) => <option key={level} value={level}>{level}</option>)}
+                </select>
               </label>
               <label>Type de validation
                 <select required value={evaluation.idValidation} onChange={(event) => setEvaluation({ ...evaluation, idValidation: event.target.value })}>
