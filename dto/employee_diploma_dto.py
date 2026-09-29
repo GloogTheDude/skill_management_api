@@ -13,6 +13,7 @@ class ResponseEmployeeDiplomaDTO(BaseModel):
     start_: date | None
     distinction: str | None
     doc: str | None
+    diploma_name: str | None = None
 
     @classmethod
     def from_entity(
@@ -27,6 +28,7 @@ class ResponseEmployeeDiplomaDTO(BaseModel):
             start_=employee_diploma.start_,
             distinction=employee_diploma.distinction,
             doc=employee_diploma.doc,
+            diploma_name=(getattr(employee_diploma.diploma, "subject_diploma", None) if getattr(employee_diploma, "diploma", None) else None),
         )
 
 

@@ -32,6 +32,12 @@ class EmployeeDiplomaService(BaseCrudService[EmployeeDiploma]):
             raise NoResultFound()
         return ResponseEmployeeDiplomaDTO.from_entity(employee_diploma)
 
+    def get_for_employee(self, employee_id: int) -> list[ResponseEmployeeDiplomaDTO]:
+        return [
+            ResponseEmployeeDiplomaDTO.from_entity(item)
+            for item in self.repository.get_for_employee(employee_id)
+        ]
+
     def create(
         self,
         dto: CreateEmployeeDiplomaDTO,

@@ -16,6 +16,7 @@ class ResponseEmployeeCertificationDTO(BaseModel):
     organism: str | None
     evaluation: str | None
     doc: str | None
+    certification_name: str | None = None
 
     @classmethod
     def from_entity(
@@ -32,6 +33,7 @@ class ResponseEmployeeCertificationDTO(BaseModel):
             organism=employee_certification.organism,
             evaluation=employee_certification.evaluation,
             doc=employee_certification.doc,
+            certification_name=(getattr(employee_certification.certification, "subject_certification", None) if getattr(employee_certification, "certification", None) else None),
         )
 
 

@@ -22,6 +22,9 @@ class FakeEmployeeDiplomaRepository:
     def get_one(self, ident):
         return self.entities[ident]
 
+    def get_for_employee(self, employee_id):
+        return [entity for entity in self.entities.values() if entity.id_employee == employee_id and not entity.is_deleted]
+
     def add(self, entity):
         self.entities[(entity.id_employee, entity.id_diploma)] = entity
         return entity
@@ -111,3 +114,14 @@ def test_crud_service_handles_composite_key_and_soft_delete():
 
     service.delete((3, 7))
     assert service.get_all() == []
+
+
+def test_service_lists_active_acquisitions_for_one_employee():
+    repository = FakeEmployeeDiplomaRepository()
+    service = EmployeeDiplomaService(repository)
+    service.create(CreateEmployeeDiplomaDTO(id_employee=3, id_diploma=7))
+    service.create(CreateEmployeeDiplomaDTO(id_employee=4, id_diploma=8))
+
+    result = service.get_for_employee(3)
+
+    assert [(item.id_employee, item.id_diploma) for item in result] == [(3, 7)]

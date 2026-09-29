@@ -71,6 +71,12 @@ class EmployeeCertificationService(
             raise NoResultFound()
         return ResponseEmployeeCertificationDTO.from_entity(employee_certification)
 
+    def get_for_employee(self, employee_id: int) -> list[ResponseEmployeeCertificationDTO]:
+        return [
+            ResponseEmployeeCertificationDTO.from_entity(item)
+            for item in self.repository.get_for_employee(employee_id)
+        ]
+
     def create(
         self,
         dto: CreateEmployeeCertificationDTO,

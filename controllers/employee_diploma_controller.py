@@ -63,6 +63,22 @@ def get_employee_diplomas(
     return service.get_all(current_employee.id_employee, current_employee.permission_profile)
 
 
+@router.get("/employee/{id_employee}")
+def get_diplomas_for_employee(
+    id_employee: int,
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+) -> list[ResponseEmployeeDiplomaDTO]:
+    employee = session.get(Employee, id_employee)
+    if employee is None or employee.is_deleted:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    try:
+        EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(current_employee, employee)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return EmployeeDiplomaService(EmployeeDiplomaRepository(session)).get_for_employee(id_employee)
+
+
 @router.patch("/{id_employee}/{id_diploma}")
 def update_employee_diploma(
     id_employee: int,

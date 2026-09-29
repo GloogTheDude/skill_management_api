@@ -2,6 +2,7 @@ from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
 from db.repositories.base_repository import BaseRepository
 from models.certification import Certification
@@ -29,6 +30,17 @@ class EmployeeCertificationRepository(BaseRepository[EmployeeCertification]):
                 )
         stmt = stmt.where(EmployeeCertification.is_deleted.is_(False))
         return list(self._session.scalars(stmt).all())
+
+    def get_for_employee(self, employee_id: int) -> list[EmployeeCertification]:
+        statement = (
+            select(EmployeeCertification)
+            .options(joinedload(EmployeeCertification.certification))
+            .where(
+                EmployeeCertification.id_employee == employee_id,
+                EmployeeCertification.is_deleted.is_(False),
+            )
+        )
+        return list(self._session.scalars(statement).all())
 
     def get_close_to_expiration(
         self,

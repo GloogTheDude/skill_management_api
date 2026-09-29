@@ -2,6 +2,7 @@ from db.repositories.base_repository import BaseRepository
 from models.employee_diploma import EmployeeDiploma
 from models.employee import Employee
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from core.constants import PermissionProfile, coerce_permission_profile
 
 
@@ -24,3 +25,14 @@ class EmployeeDiplomaRepository(BaseRepository[EmployeeDiploma]):
                 )
         stmt = stmt.where(EmployeeDiploma.is_deleted.is_(False))
         return list(self._session.scalars(stmt).all())
+
+    def get_for_employee(self, employee_id: int) -> list[EmployeeDiploma]:
+        statement = (
+            select(EmployeeDiploma)
+            .options(joinedload(EmployeeDiploma.diploma))
+            .where(
+                EmployeeDiploma.id_employee == employee_id,
+                EmployeeDiploma.is_deleted.is_(False),
+            )
+        )
+        return list(self._session.scalars(statement).all())

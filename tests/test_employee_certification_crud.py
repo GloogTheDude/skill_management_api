@@ -26,6 +26,9 @@ class FakeEmployeeCertificationRepository:
     def get_one(self, ident):
         return self.entities[ident]
 
+    def get_for_employee(self, employee_id):
+        return [entity for entity in self.entities.values() if entity.id_employee == employee_id and not entity.is_deleted]
+
     def add(self, entity):
         if entity.id_employee_certification is None:
             entity.id_employee_certification = self.next_id
@@ -102,3 +105,14 @@ def test_crud_service_handles_update_and_soft_delete():
 
     service.delete(1)
     assert service.get_all() == []
+
+
+def test_service_lists_active_acquisitions_for_one_employee():
+    repository = FakeEmployeeCertificationRepository()
+    service = EmployeeCertificationService(repository)
+    service.create(CreateEmployeeCertificationDTO(id_employee=4, id_certification=8))
+    service.create(CreateEmployeeCertificationDTO(id_employee=5, id_certification=9))
+
+    result = service.get_for_employee(4)
+
+    assert [(item.id_employee, item.id_certification) for item in result] == [(4, 8)]
