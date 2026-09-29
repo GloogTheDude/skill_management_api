@@ -11,6 +11,9 @@ class ResponseEmployeeDTO(BaseModel):
 
     id_role: int
     denomination_role: str | None
+    id_access_level: int | None = None
+    access_level_label: str | None = None
+    access_level: int | None = None
 
     id_manager: int | None
     manager_name: str | None
@@ -27,6 +30,9 @@ class ResponseEmployeeDTO(BaseModel):
             mail=employee.mail,
             id_role=employee.id_role,
             denomination_role=employee.role.denomination_role,
+            id_access_level=employee.role.id_access_level,
+            access_level_label=employee.role.access_level.label if employee.role.access_level else None,
+            access_level=employee.role.access_level.level if employee.role.access_level else None,
             id_manager=employee.id_manager,
             manager_name=(
                 f"{employee.manager.first_name} "

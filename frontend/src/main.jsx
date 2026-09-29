@@ -16,6 +16,7 @@ import EmployeeSkillProfilePage from "./pages/EmployeeSkillProfilePage";
 import ParticipationsPage from "./pages/ParticipationsPage";
 import TrainingAdminPage from "./pages/TrainingAdminPage";
 import ReferenceAdminPage from "./pages/ReferenceAdminPage";
+import EmployeeAdminPage from "./pages/EmployeeAdminPage";
 import "./styles.css";
 
 function App() {
@@ -35,7 +36,7 @@ function App() {
             <Route path="employee-search" element={<EmployeeSkillSearchPage />} />
             <Route path="employees/:idEmployee/skills" element={<EmployeeSkillProfilePage />} />
             <Route path="approvals" element={<PlaceholderPage title="Validations" />} />
-            <Route path="employees" element={<PlaceholderPage title="Employees" />} />
+            <Route path="employees" element={<EmployeeAdminPage />} />
             <Route path="training-admin" element={<TrainingAdminPage />} />
             <Route path="references" element={<ReferenceAdminPage />} />
             <Route path="participations" element={<ParticipationsPage />} />

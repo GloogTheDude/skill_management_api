@@ -18,7 +18,7 @@ class EmployeeService(BaseCrudService[Employee]):
         self.role_repository = role_repository
 
     def get_all(self) -> list[ResponseEmployeeDTO]:
-        employees = self._get_all_entities()
+        employees = self.repository.get_all_with_details()
 
         return [
             ResponseEmployeeDTO.from_entity(employee)
@@ -50,6 +50,7 @@ class EmployeeService(BaseCrudService[Employee]):
             role = self.role_repository.get_one(dto.id_role)
             if role.is_deleted:
                 raise NoResultFound()
+        self._validate_manager(dto.id_manager, None)
 
         employee = Employee(
             first_name=dto.first_name,
@@ -76,6 +77,8 @@ class EmployeeService(BaseCrudService[Employee]):
 
         if data.get("id_manager") == id_employee:
             raise ValueError("An employee cannot be their own manager.")
+        if "id_manager" in data:
+            self._validate_manager(data["id_manager"], id_employee)
         if "id_role" in data and self.role_repository is not None:
             role = self.role_repository.get_one(data["id_role"])
             if role.is_deleted:
@@ -90,3 +93,26 @@ class EmployeeService(BaseCrudService[Employee]):
         )
 
         return ResponseEmployeeDTO.from_entity(employee)
+
+    def _validate_manager(self, manager_id, employee_id):
+        if manager_id is None:
+            return
+        if not hasattr(self.repository, "get_active_by_id"):
+            return
+        manager = self.repository.get_active_by_id(manager_id)
+        if manager is None:
+            raise NoResultFound()
+        if employee_id is None:
+            return
+        seen = {employee_id}
+        current = manager
+        while current is not None:
+            if current.id_employee in seen:
+                raise ValueError("The manager assignment would create a hierarchy cycle.")
+            seen.add(current.id_employee)
+            current = current.manager
+
+    def delete(self, id_employee: int):
+        if self.repository.has_active_reports(id_employee):
+            raise ValueError("An employee with active direct reports cannot be archived.")
+        return super().delete(id_employee)

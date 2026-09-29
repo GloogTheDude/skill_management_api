@@ -31,7 +31,7 @@ def create_employee(
 ) -> ResponseEmployeeDTO:
 
     repo = EmployeeRepository(session)
-    service = EmployeeService(repo)
+    service = EmployeeService(repo, RoleRepository(session))
 
     try:
         EmployeeAuthorizationService.require_hr(current_employee)
@@ -90,8 +90,10 @@ def update_employee(
         return service.update(id_employee, dto)
     except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Employee or reference not found.") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.delete("/{id_employee}")
@@ -108,3 +110,5 @@ def delete_employee(
         return service.delete(id_employee)
     except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
