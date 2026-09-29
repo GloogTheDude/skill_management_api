@@ -9,6 +9,7 @@ from dto.validation_type_dto import (
     ResponseValidationTypeDTO,
 )
 from services.validation_type_service import ValidationTypeService
+from controllers.auth_controller import get_current_employee, require_hr_employee
 
 
 router = APIRouter(
@@ -21,6 +22,7 @@ router = APIRouter(
 def create_validation_type(
     dto: CreateValidationTypeDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseValidationTypeDTO:
     repo = ValidationTypeRepository(session)
     service = ValidationTypeService(repo)
@@ -31,6 +33,7 @@ def create_validation_type(
 def get_validation_type_by_id(
     id_validation: int,
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> ResponseValidationTypeDTO:
     repo = ValidationTypeRepository(session)
     service = ValidationTypeService(repo)
@@ -40,6 +43,7 @@ def get_validation_type_by_id(
 @router.get("")
 def get_validation_types(
     session: Session = Depends(get_session),
+    _: object = Depends(get_current_employee),
 ) -> list[ResponseValidationTypeDTO]:
     repo = ValidationTypeRepository(session)
     service = ValidationTypeService(repo)
@@ -51,6 +55,7 @@ def update_validation_type(
     id_validation: int,
     dto: UpdateValidationTypeDTO,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ) -> ResponseValidationTypeDTO:
     repo = ValidationTypeRepository(session)
     service = ValidationTypeService(repo)
@@ -61,6 +66,7 @@ def update_validation_type(
 def delete_validation_type(
     id_validation: int,
     session: Session = Depends(get_session),
+    _: object = Depends(require_hr_employee),
 ):
     repo = ValidationTypeRepository(session)
     service = ValidationTypeService(repo)

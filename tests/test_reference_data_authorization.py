@@ -41,6 +41,7 @@ def test_reference_controllers_expose_auth_dependencies():
         "controllers.diploma_controller",
         "controllers.role_controller",
         "controllers.access_level_controller",
+        "controllers.validation_type_controller",
     )
     for module_name in controller_modules:
         module = __import__(module_name, fromlist=["router"])
@@ -52,3 +53,17 @@ def test_reference_controllers_expose_auth_dependencies():
                 if hasattr(parameter.default, "dependency")
             }
             assert "get_current_employee" in dependency_names or "require_hr_employee" in dependency_names
+
+
+def test_training_request_reads_require_authentication_and_scope_dependency():
+    from controllers.training_request_controller import router
+
+    routes = {route.path: route for route in router.routes}
+    for path in ("", "/{id_training_request}"):
+        endpoint = routes[f"/training-requests{path}"].endpoint
+        dependency_names = {
+            getattr(parameter.default.dependency, "__name__", "")
+            for parameter in inspect.signature(endpoint).parameters.values()
+            if hasattr(parameter.default, "dependency")
+        }
+        assert "get_current_employee" in dependency_names or "require_hr_employee" in dependency_names

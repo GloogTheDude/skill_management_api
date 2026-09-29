@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_session
-from controllers.auth_controller import get_current_employee
+from controllers.auth_controller import get_current_employee, require_hr_employee
 from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
@@ -26,6 +26,8 @@ from errors.authorization_errors import AuthorizationForbidden
 from services.training_request_service import TrainingRequestService
 from services.training_request_workflow_service import TrainingRequestWorkflowService
 from services.training_request_queue_service import TrainingRequestQueueService
+from services.employee_authorization_service import EmployeeAuthorizationService
+from models.employee import Employee
 
 
 router = APIRouter(prefix="/training-requests", tags=["training-requests"])
@@ -79,6 +81,7 @@ def create_personalized(
 @router.get("", response_model=list[ResponseTrainingRequestDTO])
 def get_training_requests(
     session: Session = Depends(get_session),
+    _: AuthEmployeeDTO = Depends(require_hr_employee),
 ):
     return TrainingRequestService(TrainingRequestRepository(session)).get_all()
 
@@ -123,13 +126,24 @@ def get_my_training_requests(
 def get_training_request(
     id_training_request: int,
     session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ):
     try:
-        return TrainingRequestService(TrainingRequestRepository(session)).get_by_id(
+        result = TrainingRequestService(TrainingRequestRepository(session)).get_by_id(
             id_training_request
         )
     except TrainingRequestNotFound as exc:
         raise HTTPException(status_code=404, detail="Training request not found.") from exc
+    target = session.get(Employee, result.id_employee)
+    if target is None or target.is_deleted:
+        raise HTTPException(status_code=404, detail="Employee not found.")
+    try:
+        EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(
+            current_employee, target
+        )
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return result
 
 
 @router.post("/{id_training_request}/approve", response_model=ResponseTrainingRequestDTO)
