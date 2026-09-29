@@ -96,17 +96,20 @@ export default function ReferenceAdminPage() {
 
   async function save(event) {
     event.preventDefault(); setSaving(true); setError(""); setFeedback("");
+    let aggregateSaved = false;
     try {
       const values = { ...form.values };
       if (type === "skills" || type === "diplomas" || type === "certifications") values.id_domaine = Number(values.id_domaine);
       if (type === "certifications" && values.validity_month !== "") values.validity_month = Number(values.validity_month);
       const result = form.mode === "create" ? await config.create(values) : await config.update(form.id, values);
+      aggregateSaved = true;
       const id = form.mode === "create" ? (result.id_diploma || result.id_certification) : form.id;
       if (form.mode === "edit" && type === "diplomas") await replaceDiplomaSkills(id, relations.map((item) => ({ id_skill: Number(item.id_skill), level: item.level === "" ? null : Number(item.level) })));
       if (form.mode === "edit" && type === "certifications") await replaceCertificationSkills(id, relations.map((item) => ({ id_skill: Number(item.id_skill), level: item.level === "" ? null : Number(item.level) })));
       setForm(null); setFeedback(`${config.singular} enregistré.`); await load();
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) { await logout().catch(() => undefined); navigate("/login", { replace: true }); return; }
+      if (aggregateSaved) { setForm(null); await load(); }
       setError(errorMessage(requestError, `${config.singular} non enregistré.`));
     } finally { setSaving(false); }
   }

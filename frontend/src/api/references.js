@@ -27,5 +27,5 @@ export function updateValidationType(id, body) { return apiFetch(`/validation_ty
 export function archiveValidationType(id) { return apiFetch(`/validation_type/${id}`, { method: "DELETE" }); }
 export function getDiplomaSkills() { return apiFetch("/diploma_skill"); }
 export function getCertificationSkills() { return apiFetch("/certification_skill"); }
-export function replaceDiplomaSkills(id, skills) { return apiFetch(`/diploma/s/${id}/skills`, { method: "PUT", body: JSON.stringify({ skills }) }); }
-export function replaceCertificationSkills(id, skills) { return apiFetch(`/certification/s/${id}/skills`, { method: "PUT", body: JSON.stringify({ skills }) }); }
+export function replaceDiplomaSkills(id, skills) { return apiFetch(`/diplomas/${id}/skills`, { method: "PUT", body: JSON.stringify({ skills }) }); }
+export function replaceCertificationSkills(id, skills) { return apiFetch(`/certifications/${id}/skills`, { method: "PUT", body: JSON.stringify({ skills }) }); }
