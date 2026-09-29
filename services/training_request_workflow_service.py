@@ -71,6 +71,14 @@ class TrainingRequestWorkflowService:
         if training.is_deleted:
             raise RelatedEntityNotFound("Training")
 
+        if request.id_training is None and not self.training_repository.is_available_for_employee(
+            request.id_employee,
+            id_training,
+        ):
+            raise TrainingRequestConflict(
+                "The selected training is not available for this employee."
+            )
+
         existing = self.participation_repository.get_existing(
             request.id_employee,
             id_training,

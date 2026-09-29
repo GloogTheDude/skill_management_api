@@ -38,7 +38,9 @@ def session():
     current_session.add_all(
         [
             AccessLevel(id_access_level=1, label="Employee", level=1),
+            AccessLevel(id_access_level=2, label="Manager", level=2),
             Role(id_role=1, denomination_role="Employee", id_access_level=1),
+            Role(id_role=2, denomination_role="Manager", id_access_level=2),
             Domaine(id_domaine=1, nom_domaine="Backend", is_deleted=False),
             Domaine(id_domaine=2, nom_domaine="Database", is_deleted=False),
             Domaine(id_domaine=3, nom_domaine="Archived", is_deleted=True),
@@ -59,6 +61,15 @@ def session():
                 mail="deleted@example.com",
                 id_role=1,
                 is_deleted=True,
+            ),
+            Employee(
+                id_employee=3,
+                first_name="Manager",
+                last_name="Example",
+                hash_password="hash",
+                mail="manager@example.com",
+                id_role=2,
+                is_deleted=False,
             ),
         ]
     )
@@ -147,9 +158,9 @@ def test_missing_or_deleted_employee_is_not_available(session):
         service(session).get_available_trainings(2)
 
 
-def test_available_trainings_are_self_only(session):
+def test_available_trainings_authorization_uses_target_scope(session):
     session.add(Employee(
-        id_employee=3,
+        id_employee=4,
         first_name="Other",
         last_name="Employee",
         hash_password="hash",
@@ -169,7 +180,48 @@ def test_available_trainings_are_self_only(session):
     )
     assert service(session).get_available_trainings(1, current_employee=current)
     with pytest.raises(AuthorizationForbidden):
-        service(session).get_available_trainings(3, current_employee=current)
+        service(session).get_available_trainings(4, current_employee=current)
+
+
+def test_manager_can_read_direct_report_availability(session):
+    current = AuthEmployeeDTO(
+        id_employee=3,
+        first_name="Manager",
+        last_name="Example",
+        mail="manager@example.com",
+        role_name="Manager",
+        access_level_label="Manager",
+        access_level=2,
+    )
+    session.get(Employee, 1).id_manager = 3
+    session.commit()
+    result = service(session).get_available_trainings(1, current_employee=current)
+    assert result
+
+
+def test_hr_availability_is_calculated_for_target_employee(session):
+    session.add(TrainingRequest(
+        id_training_request=99,
+        id_employee=1,
+        id_training=1,
+        status=TRAININGREQUESTSTATUS.PENDING.value,
+        requested_at=date.today(),
+        is_deleted=False,
+    ))
+    session.commit()
+    current = AuthEmployeeDTO(
+        id_employee=3,
+        first_name="HR",
+        last_name="Example",
+        mail="hr@example.com",
+        role_name="HR",
+        access_level_label="HR",
+        access_level=3,
+    )
+    result = service(session).get_available_trainings(1, current_employee=current)
+    ids = {training.id_training for training in result}
+    assert 1 not in ids
+    assert 17 in ids
 
 
 def test_query_count_does_not_depend_on_training_count(session):

@@ -47,6 +47,8 @@ export default function ManageTrainingRequestsPage() {
         ? getHrPendingTrainingRequests
         : getManagerPendingTrainingRequests;
       setRequests(await loader());
+      setCandidateTraining({});
+      setCandidateError({});
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
         await logout().catch(() => undefined);
@@ -86,6 +88,12 @@ export default function ManageTrainingRequestsPage() {
   }
 
   async function loadCandidates(requestId) {
+    setCandidateTraining((current) => {
+      const next = { ...current };
+      delete next[requestId];
+      delete next[`${requestId}_options`];
+      return next;
+    });
     setCandidateLoading(requestId);
     setCandidateError((current) => ({ ...current, [requestId]: null }));
     try {
@@ -112,7 +120,11 @@ export default function ManageTrainingRequestsPage() {
 
   function selectCandidates(requestId) {
     if (candidateTraining[`${requestId}_options`]) {
-      setCandidateTraining((current) => ({ ...current, [`${requestId}_options`]: null }));
+      setCandidateTraining((current) => ({
+        ...current,
+        [requestId]: null,
+        [`${requestId}_options`]: null,
+      }));
       return;
     }
     loadCandidates(requestId);

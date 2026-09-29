@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from sqlalchemy import create_engine, event
@@ -381,6 +381,10 @@ def test_approve_planned_creates_registered_participation(session):
 
 def test_approve_personalized_requires_and_assigns_training(session):
     add_request(session, request_id=1)
+    training = session.get(Training, 1)
+    training.start_ = date.today() + timedelta(days=1)
+    training.end_ = date.today() + timedelta(days=2)
+    session.flush()
 
     with pytest.raises(TrainingRequestConflict):
         workflow_service(session).approve(
@@ -389,6 +393,10 @@ def test_approve_personalized_requires_and_assigns_training(session):
             actor(2, 2),
         )
     session.rollback()
+    training = session.get(Training, 1)
+    training.start_ = date.today() + timedelta(days=1)
+    training.end_ = date.today() + timedelta(days=2)
+    session.flush()
 
     result = workflow_service(session).approve(
         1,
@@ -396,6 +404,26 @@ def test_approve_personalized_requires_and_assigns_training(session):
         actor(2, 2),
     )
     assert result.id_training == 1
+
+
+def test_approve_personalized_rejects_training_unavailable_for_employee(session):
+    add_request(session, request_id=1)
+    session.add(TrainingRequest(
+        id_training_request=2,
+        id_employee=1,
+        id_training=1,
+        status=TRAININGREQUESTSTATUS.PENDING.value,
+        requested_at=date.today(),
+        is_deleted=False,
+    ))
+    session.commit()
+
+    with pytest.raises(TrainingRequestConflict, match="not available"):
+        workflow_service(session).approve(
+            1,
+            ApproveTrainingRequestDTO(id_training=1),
+            actor(2, 2),
+        )
 
 
 def test_approve_planned_rejects_training_override(session):

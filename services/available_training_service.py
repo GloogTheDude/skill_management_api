@@ -26,7 +26,10 @@ class AvailableTrainingService:
         if employee.is_deleted:
             raise NoResultFound()
         if current_employee is not None:
-            EmployeeAuthorizationService.require_self(current_employee, id_employee)
+            EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(
+                current_employee,
+                employee,
+            )
 
         return [
             AvailableTrainingDTO(
