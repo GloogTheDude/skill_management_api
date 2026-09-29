@@ -15,12 +15,12 @@ const tabs = [
 ];
 
 const configs = {
-  domains: { title: "Domaines", singular: "Domaine", items: "domaines", name: "nom_domaine", create: createDomaine, update: updateDomaine, archive: archiveDomaine, columns: (item) => [item.nom_domaine] },
-  sources: { title: "Sources de formation", singular: "Source", items: "sources", name: "name_source", create: createTrainingSource, update: updateTrainingSource, archive: archiveTrainingSource, columns: (item) => [item.name_source] },
-  skills: { title: "Compétences", singular: "Compétence", items: "skills", name: "name_skill", create: createSkill, update: updateSkill, archive: archiveSkill, columns: (item) => [item.name_skill, item.name_domaine || "Domaine non renseigné"] },
-  diplomas: { title: "Diplômes", singular: "Diplôme", items: "diplomas", name: "subject_diploma", create: createDiploma, update: updateDiploma, archive: archiveDiploma, columns: (item) => [item.subject_diploma, item.domaine_name || "Domaine non renseigné"] },
-  certifications: { title: "Certifications", singular: "Certification", items: "certifications", name: "subject_certification", create: createCertification, update: updateCertification, archive: archiveCertification, columns: (item) => [item.subject_certification, item.domaine_name || "Domaine non renseigné", item.validity_month ? `${item.validity_month} mois` : "Durée non renseignée"] },
-  "validation-types": { title: "Types de validation", singular: "Type de validation", items: "validationTypes", name: "denomination_validation", create: createValidationType, update: updateValidationType, archive: archiveValidationType, columns: (item) => [item.denomination_validation || "Sans dénomination", item.source || "Source non renseignée"] },
+  domains: { collection: "domains", title: "Domaines", singular: "Domaine", name: "nom_domaine", create: createDomaine, update: updateDomaine, archive: archiveDomaine, columns: (item) => [item.nom_domaine] },
+  sources: { collection: "sources", title: "Sources de formation", singular: "Source", name: "name_source", create: createTrainingSource, update: updateTrainingSource, archive: archiveTrainingSource, columns: (item) => [item.name_source] },
+  skills: { collection: "skills", title: "Compétences", singular: "Compétence", name: "name_skill", create: createSkill, update: updateSkill, archive: archiveSkill, columns: (item) => [item.name_skill, item.name_domaine || "Domaine non renseigné"] },
+  diplomas: { collection: "diplomas", title: "Diplômes", singular: "Diplôme", name: "subject_diploma", create: createDiploma, update: updateDiploma, archive: archiveDiploma, columns: (item) => [item.subject_diploma, item.domaine_name || "Domaine non renseigné"] },
+  certifications: { collection: "certifications", title: "Certifications", singular: "Certification", name: "subject_certification", create: createCertification, update: updateCertification, archive: archiveCertification, columns: (item) => [item.subject_certification, item.domaine_name || "Domaine non renseigné", item.validity_month ? `${item.validity_month} mois` : "Durée non renseignée"] },
+  "validation-types": { collection: "validationTypes", title: "Types de validation", singular: "Type de validation", name: "denomination_validation", create: createValidationType, update: updateValidationType, archive: archiveValidationType, columns: (item) => [item.denomination_validation || "Sans dénomination", item.source || "Source non renseignée"] },
 };
 
 function errorMessage(error, fallback) {
@@ -48,7 +48,7 @@ export default function ReferenceAdminPage() {
   const requestedType = searchParams.get("type");
   const type = configs[requestedType] ? requestedType : "domains";
   const config = configs[type];
-  const [data, setData] = useState({ domaines: [], sources: [], skills: [], diplomas: [], certifications: [], validationTypes: [], diplomaSkills: [], certificationSkills: [] });
+  const [data, setData] = useState({ domains: [], sources: [], skills: [], diplomas: [], certifications: [], validationTypes: [], diplomaSkills: [], certificationSkills: [] });
   const [form, setForm] = useState(null);
   const [relations, setRelations] = useState([]);
   const [query, setQuery] = useState("");
@@ -60,10 +60,10 @@ export default function ReferenceAdminPage() {
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const [domaines, sources, skills, diplomas, certifications, validationTypes, diplomaSkills, certificationSkills] = await Promise.all([
+      const [domains, sources, skills, diplomas, certifications, validationTypes, diplomaSkills, certificationSkills] = await Promise.all([
         getDomaines(), getTrainingSources(), getSkills(), getDiplomas(), getCertifications(), getValidationTypes(), getDiplomaSkills(), getCertificationSkills(),
       ]);
-      setData({ domaines, sources, skills, diplomas, certifications, validationTypes, diplomaSkills, certificationSkills });
+      setData({ domains, sources, skills, diplomas, certifications, validationTypes, diplomaSkills, certificationSkills });
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) { await logout().catch(() => undefined); navigate("/login", { replace: true }); return; }
       setError(errorMessage(requestError, "Les référentiels n’ont pas pu être chargés."));
@@ -75,7 +75,7 @@ export default function ReferenceAdminPage() {
 
   const visibleItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return (data[config.items] || []).filter((item) => !needle || config.columns(item).join(" ").toLowerCase().includes(needle));
+    return data[config.collection].filter((item) => !needle || config.columns(item).join(" ").toLowerCase().includes(needle));
   }, [config, data, query]);
 
   function openCreate() { setError(""); setFeedback(""); setRelations([]); setForm({ mode: "create", id: null, values: blankFor(type) }); }
@@ -128,6 +128,6 @@ export default function ReferenceAdminPage() {
   </section>;
 }
 
-function DomainSelect({ values, setForm, form, data }) { return <label>Domaine<select required value={values.id_domaine} onChange={(event) => setForm({ ...form, values: { ...values, id_domaine: event.target.value } })}><option value="">Sélectionner</option>{data.domaines.map((item) => <option key={item.id_domaine} value={item.id_domaine}>{item.nom_domaine}</option>)}</select></label>; }
+function DomainSelect({ values, setForm, form, data }) { return <label>Domaine<select required value={values.id_domaine} onChange={(event) => setForm({ ...form, values: { ...values, id_domaine: event.target.value } })}><option value="">Sélectionner</option>{data.domains.map((item) => <option key={item.id_domaine} value={item.id_domaine}>{item.nom_domaine}</option>)}</select></label>; }
 
 function RelationEditor({ type, relations, setRelations, skills }) { return <div className="relation-editor"><h3>Compétences associées</h3>{relations.map((relation, index) => <div className="relation-row" key={index}><select value={relation.id_skill} onChange={(event) => setRelations(relations.map((item, i) => i === index ? { ...item, id_skill: event.target.value } : item))}><option value="">Compétence</option>{skills.map((skill) => <option key={skill.id_skill} value={skill.id_skill}>{skill.name_skill}</option>)}</select><input type="number" min="1" max="5" value={relation.level} onChange={(event) => setRelations(relations.map((item, i) => i === index ? { ...item, level: event.target.value } : item))} placeholder={type === "diplomas" ? "Niveau min." : "Niveau"} /><button className="button button-secondary" type="button" onClick={() => setRelations(relations.filter((_, i) => i !== index))}>Retirer</button></div>)}<button className="button button-secondary" type="button" onClick={() => setRelations([...relations, { id_skill: "", level: "" }])}>Ajouter une compétence</button></div>; }
