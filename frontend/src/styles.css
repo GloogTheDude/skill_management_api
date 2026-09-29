@@ -76,6 +76,10 @@ button, input { font: inherit; }
 .search-result-skill { display: grid; gap: .25rem; padding-top: .75rem; margin-top: .75rem; border-top: 1px solid #e2e8f0; color: #475569; font-size: .9rem; }
 .participation-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .35rem 1rem; margin-top: 1rem; }
 .participation-details p { margin: 0; color: #475569; }
+.participation-tabs, .participation-filters { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; margin-bottom: 1rem; }
+.participation-filters { padding: 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 12px; }
+.participation-filters label { display: grid; gap: .3rem; color: #475569; font-size: .82rem; font-weight: 600; }
+.participation-filters input, .participation-filters select { min-width: 150px; padding: .6rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
 .training-admin-form { display: grid; gap: 1rem; max-width: 900px; margin-bottom: 1.5rem; padding: 1.25rem; background: white; border: 1px solid #e2e8f0; border-radius: 14px; }
 .training-admin-form label { display: grid; gap: .35rem; color: #475569; font-size: .85rem; font-weight: 600; }
 .training-admin-form input, .training-admin-form select { width: 100%; padding: .65rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }

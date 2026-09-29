@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import {
   closeParticipation,
@@ -31,9 +31,23 @@ function displayValue(value) {
   return value === null || value === undefined || value === "" ? "Non renseigné" : value;
 }
 
+const terminalStatuses = new Set(["COMPLETED", "FAILED", "ABSENT", "CANCELLED"]);
+
+function todayKey() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+}
+
+function trainingState(participation, today = todayKey()) {
+  if (participation.end_ && participation.end_ < today) return "past";
+  if (participation.start_ && participation.start_ > today) return "upcoming";
+  return "current";
+}
+
 export default function ParticipationsPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [participations, setParticipations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,6 +61,13 @@ export default function ParticipationsPage() {
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState("");
+  const requestedView = searchParams.get("view");
+  const allowedViews = useMemo(() => user.access_level === 3 ? ["current", "to-close", "history"] : ["current", "history"], [user.access_level]);
+  const view = allowedViews.includes(requestedView) ? requestedView : "current";
+  const query = searchParams.get("q") || "";
+  const dateFrom = searchParams.get("from") || "";
+  const dateTo = searchParams.get("to") || "";
+  const resultFilter = searchParams.get("result") || "";
 
   useEffect(() => () => {
     if (preview?.url) window.URL.revokeObjectURL(preview.url);
@@ -87,6 +108,40 @@ export default function ParticipationsPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (requestedView && !allowedViews.includes(requestedView)) {
+      const next = new window.URLSearchParams(searchParams);
+      next.set("view", "current");
+      setSearchParams(next, { replace: true });
+    }
+  }, [allowedViews, requestedView, searchParams, setSearchParams]);
+
+  function updateFilters(changes) {
+    const next = new window.URLSearchParams(searchParams);
+    Object.entries(changes).forEach(([key, value]) => {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    });
+    setSearchParams(next, { replace: true });
+  }
+
+  function selectView(nextView) { updateFilters({ view: nextView }); }
+
+  const filteredParticipations = participations.filter((participation) => {
+    const state = trainingState(participation);
+    const isToClose = completable.has(`${participation.id_employee}-${participation.id_training}`);
+    const isHistory = terminalStatuses.has(participation.status);
+    if (view === "to-close" && !isToClose) return false;
+    if (view === "history" && !isHistory) return false;
+    if (view === "current" && (isHistory || (user.access_level === 3 && state === "past"))) return false;
+    const searchable = `${participation.employee_first_name || ""} ${participation.employee_last_name || ""}`.toLocaleLowerCase("fr");
+    if (query && !searchable.includes(query.toLocaleLowerCase("fr"))) return false;
+    if (dateFrom && participation.end_ && participation.end_ < dateFrom) return false;
+    if (dateTo && participation.start_ && participation.start_ > dateTo) return false;
+    if (view === "history" && resultFilter && participation.status !== resultFilter) return false;
+    return true;
+  });
 
   async function handleClose(participation) {
     const key = `${participation.id_employee}-${participation.id_training}`;
@@ -246,23 +301,41 @@ export default function ParticipationsPage() {
     <section>
       <div className="page-heading">
         <div><p className="eyebrow">Formation</p><h1>Participations</h1></div>
-        <span className="skill-count">{participations.length} participation{participations.length === 1 ? "" : "s"}</span>
+        <span className="skill-count">{filteredParticipations.length} participation{filteredParticipations.length === 1 ? "" : "s"}</span>
       </div>
       {feedback && <p className="form-feedback" role="status">{feedback}</p>}
-      {participations.length === 0 ? (
-        <div className="empty-state"><h2>Aucune participation</h2><p>Vous n’avez pas encore de participation enregistrée.</p></div>
+      <div className="participation-tabs" role="tablist" aria-label="Vues des participations">
+        <button className={`button ${view === "current" ? "button-primary" : "button-secondary"}`} onClick={() => selectView("current")} role="tab" aria-selected={view === "current"}>Actuelles</button>
+        {user.access_level === 3 && <button className={`button ${view === "to-close" ? "button-primary" : "button-secondary"}`} onClick={() => selectView("to-close")} role="tab" aria-selected={view === "to-close"}>À clôturer ({completable.size})</button>}
+        <button className={`button ${view === "history" ? "button-primary" : "button-secondary"}`} onClick={() => selectView("history")} role="tab" aria-selected={view === "history"}>Historique</button>
+      </div>
+      <div className="participation-filters">
+        {(user.access_level !== 1 || view === "history") && <label>Recherche nom / prénom<input value={query} onChange={(event) => updateFilters({ q: event.target.value })} placeholder="Ex. Dupont" /></label>}
+        <label>Du<input type="date" value={dateFrom} onChange={(event) => updateFilters({ from: event.target.value })} /></label>
+        <label>Au<input type="date" value={dateTo} onChange={(event) => updateFilters({ to: event.target.value })} /></label>
+        {view === "history" && <label>Résultat<select value={resultFilter} onChange={(event) => updateFilters({ result: event.target.value })}><option value="">Tous</option><option value="COMPLETED">Réussite</option><option value="FAILED">Échec</option><option value="ABSENT">Absent</option><option value="CANCELLED">Annulée</option></select></label>}
+        <button className="button button-secondary" type="button" onClick={() => updateFilters({ q: "", from: "", to: "", result: "" })}>Réinitialiser les filtres</button>
+      </div>
+      {filteredParticipations.length === 0 ? (
+        <div className="empty-state"><h2>{view === "to-close" ? "Aucune participation à clôturer" : view === "history" ? "Aucune participation dans l’historique" : participations.length ? "Aucun résultat pour ces filtres" : "Aucune participation actuelle"}</h2><p>{participations.length ? "Modifiez les filtres ou réinitialisez-les." : "Aucune participation ne correspond à cette vue."}</p></div>
       ) : (
         <div className="request-list">
-          {participations.map((participation) => {
+          {filteredParticipations.map((participation) => {
             const key = `${participation.id_employee}-${participation.id_training}`;
             const busy = mutationKey === key;
             const canClose = completable.has(key);
-            const visualStatus = participation.status === "REGISTERED"
+            const visualStatus = view === "to-close"
+              ? "À clôturer"
+              : view === "history"
+                ? statusLabels[participation.status] || participation.status
+                : participation.status === "REGISTERED"
               && participation.start_
               && new Date(`${participation.start_}T00:00:00`) <= new Date()
               && (!participation.end_ || new Date(`${participation.end_}T00:00:00`) >= new Date())
               ? "En cours"
-              : statusLabels[participation.status] || participation.status;
+              : participation.end_ && participation.end_ < todayKey() && !terminalStatuses.has(participation.status)
+                ? "Résultat en attente"
+                : statusLabels[participation.status] || participation.status;
             return (
             <article className="request-card" key={`${participation.id_employee}-${participation.id_training}`}>
               <div className="request-card-header">
