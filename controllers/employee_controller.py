@@ -15,6 +15,7 @@ from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from services.employee_authorization_service import EmployeeAuthorizationService
 from sqlalchemy.exc import NoResultFound
+from errors.administrative_security_errors import LastHrAdministratorError
 
 
 router = APIRouter(
@@ -94,6 +95,8 @@ def update_employee(
         raise HTTPException(status_code=404, detail="Employee or reference not found.") from exc
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LastHrAdministratorError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.delete("/{id_employee}")
@@ -111,4 +114,6 @@ def delete_employee(
     except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LastHrAdministratorError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

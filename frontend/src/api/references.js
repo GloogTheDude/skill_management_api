@@ -6,6 +6,8 @@ export function getSkills() { return apiFetch("/skill"); }
 export function getDiplomas() { return apiFetch("/diploma"); }
 export function getCertifications() { return apiFetch("/certification"); }
 export function getValidationTypes() { return apiFetch("/validation_type"); }
+export function getRoles() { return apiFetch("/role"); }
+export function getAccessLevels() { return apiFetch("/access_level"); }
 
 export function createDomaine(body) { return apiFetch("/domaine", { method: "POST", body: JSON.stringify(body) }); }
 export function updateDomaine(id, body) { return apiFetch(`/domaine/${id}`, { method: "PATCH", body: JSON.stringify(body) }); }
@@ -25,6 +27,12 @@ export function archiveCertification(id) { return apiFetch(`/certification/${id}
 export function createValidationType(body) { return apiFetch("/validation_type", { method: "POST", body: JSON.stringify(body) }); }
 export function updateValidationType(id, body) { return apiFetch(`/validation_type/${id}`, { method: "PATCH", body: JSON.stringify(body) }); }
 export function archiveValidationType(id) { return apiFetch(`/validation_type/${id}`, { method: "DELETE" }); }
+export function createRole(body) { return apiFetch("/role", { method: "POST", body: JSON.stringify(body) }); }
+export function updateRole(id, body) { return apiFetch(`/role/${id}`, { method: "PATCH", body: JSON.stringify(body) }); }
+export function archiveRole(id) { return apiFetch(`/role/${id}`, { method: "DELETE" }); }
+export function createAccessLevel(body) { return apiFetch("/access_level", { method: "POST", body: JSON.stringify(body) }); }
+export function updateAccessLevel(id, body) { return apiFetch(`/access_level/${id}`, { method: "PATCH", body: JSON.stringify(body) }); }
+export function archiveAccessLevel(id) { return apiFetch(`/access_level/${id}`, { method: "DELETE" }); }
 export function getDiplomaSkills() { return apiFetch("/diploma_skill"); }
 export function getCertificationSkills() { return apiFetch("/certification_skill"); }
 export function replaceDiplomaSkills(id, skills) { return apiFetch(`/diplomas/${id}/skills`, { method: "PUT", body: JSON.stringify({ skills }) }); }

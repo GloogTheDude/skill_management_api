@@ -10,6 +10,8 @@ from dto.role_dto import (
 )
 from services.role_service import RoleService
 from controllers.auth_controller import get_current_employee, require_hr_employee
+from errors.administrative_security_errors import LastHrAdministratorError
+from fastapi import HTTPException
 
 
 router = APIRouter(
@@ -67,7 +69,10 @@ def update_role(
     repo = RoleRepository(session)
     service = RoleService(repo)
 
-    return service.update(id_role, dto)
+    try:
+        return service.update(id_role, dto)
+    except LastHrAdministratorError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.delete("/{id_role}")
@@ -79,4 +84,7 @@ def delete_role(
     repo = RoleRepository(session)
     service = RoleService(repo)
 
-    return service.delete(id_role)
+    try:
+        return service.delete(id_role)
+    except LastHrAdministratorError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc

@@ -10,6 +10,8 @@ from dto.auth_dto import AuthEmployeeDTO
 from services.employee_authorization_service import EmployeeAuthorizationService
 from sqlalchemy.exc import NoResultFound
 from db.repositories.role_repository import RoleRepository
+from services.administrative_security_service import AdministrativeSecurityService
+from core.constants import PermissionProfile
 
 
 class EmployeeService(BaseCrudService[Employee]):
@@ -83,6 +85,8 @@ class EmployeeService(BaseCrudService[Employee]):
             role = self.role_repository.get_one(data["id_role"])
             if role.is_deleted:
                 raise NoResultFound()
+            if self.repository.get_one(id_employee).role.access_level.permission_profile == PermissionProfile.HR.value and role.access_level.permission_profile != PermissionProfile.HR.value:
+                AdministrativeSecurityService.ensure_hr_survives(self.repository._session, [id_employee])
 
         if "password" in data:
             data["hash_password"] = hash_password(data.pop("password"))
@@ -113,6 +117,9 @@ class EmployeeService(BaseCrudService[Employee]):
             current = current.manager
 
     def delete(self, id_employee: int):
+        employee = self.repository.get_one(id_employee)
+        if employee.role.access_level.permission_profile == PermissionProfile.HR.value:
+            AdministrativeSecurityService.ensure_hr_survives(self.repository._session, [id_employee])
         if self.repository.has_active_reports(id_employee):
             raise ValueError("An employee with active direct reports cannot be archived.")
         return super().delete(id_employee)

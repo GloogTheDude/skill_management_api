@@ -10,6 +10,8 @@ from dto.access_level_dto import (
 )
 from services.access_level_service import AccessLevelService
 from controllers.auth_controller import get_current_employee, require_hr_employee
+from errors.administrative_security_errors import LastHrAdministratorError
+from fastapi import HTTPException
 
 
 router = APIRouter(
@@ -67,10 +69,10 @@ def update_access_level(
     repo = AccessLevelRepository(session)
     service = AccessLevelService(repo)
 
-    return service.update(
-        id_access_level,
-        dto,
-    )
+    try:
+        return service.update(id_access_level, dto)
+    except LastHrAdministratorError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.delete("/{id_access_level}")
@@ -82,4 +84,7 @@ def delete_access_level(
     repo = AccessLevelRepository(session)
     service = AccessLevelService(repo)
 
-    return service.delete(id_access_level)
+    try:
+        return service.delete(id_access_level)
+    except LastHrAdministratorError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
