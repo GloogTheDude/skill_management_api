@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from models.skill import Skill
 from models.training import Training
 from models.training_skill import TrainingSkill
+from db.repositories.training_repository import TrainingRepository
+from errors.training_errors import TrainingLifecycleConflict
 
 
 class TrainingSupportService:
@@ -13,6 +15,10 @@ class TrainingSupportService:
         self.session = session
 
     def validate_support(self, id_diploma, id_certification, skill_ids: list[int]) -> None:
+        if id_diploma is not None and id_certification is not None:
+            raise ValueError("A training cannot have both a diploma and a certification.")
+        if (id_diploma is not None or id_certification is not None) and skill_ids:
+            raise ValueError("A training with a diploma or certification cannot have direct training skills.")
         if id_diploma is None and id_certification is None and not skill_ids:
             raise ValueError("A training must have a diploma, certification, or skill.")
 
@@ -30,8 +36,15 @@ class TrainingSupportService:
                 TrainingSkill.id_training == id_training,
                 TrainingSkill.is_deleted.is_(False),
             ))
-            skill_ids = [1] if active_count else []
+            if (id_diploma is not None or id_certification is not None) and active_count:
+                raise ValueError("A training with a diploma or certification cannot have direct training skills.")
+            if id_diploma is None and id_certification is None and not active_count:
+                raise ValueError("A training must have a diploma, certification, or skill.")
+            return
         self.validate_support(id_diploma, id_certification, skill_ids)
+
+    def is_used(self, id_training: int) -> bool:
+        return TrainingRepository(self.session).is_used(id_training)
 
     def replace_skills(
         self,
@@ -41,6 +54,8 @@ class TrainingSupportService:
         training = self.session.get(Training, id_training)
         if training is None or training.is_deleted:
             raise LookupError("Training not found")
+        if self.is_used(id_training):
+            raise TrainingLifecycleConflict("Training skills cannot be changed after the training is used.")
 
         self.validate_support(
             training.id_diploma,

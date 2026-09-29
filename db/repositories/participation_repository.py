@@ -42,7 +42,6 @@ class ParticipationRepository(BaseRepository[Participation]):
         stmt = stmt.where(
             Participation.is_deleted.is_(False),
             Employee.is_deleted.is_(False),
-            Training.is_deleted.is_(False),
         )
         return list(self._session.execute(stmt).all())
 
@@ -70,7 +69,6 @@ class ParticipationRepository(BaseRepository[Participation]):
                 )),
                 Participation.is_deleted.is_(False),
                 Employee.is_deleted.is_(False),
-                Training.is_deleted.is_(False),
                 Training.end_.is_not(None),
                 Training.end_ <= date.today(),
             )

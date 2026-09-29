@@ -81,6 +81,8 @@ class CreateTrainingDTO(BaseModel):
 
     @model_validator(mode="after")
     def reject_duplicate_skills(self):
+        if self.start_ > self.end_:
+            raise ValueError("Training start date must be before or equal to its end date.")
         ids = [item.id_skill for item in self.skills]
         if len(ids) != len(set(ids)):
             raise ValueError("A skill may only appear once in the replacement list.")

@@ -365,7 +365,7 @@ def test_complete_rejects_missing_or_deleted_participation(session):
         completion_service(session).complete(1, 2)
 
 
-def test_complete_rejects_deleted_training(session):
+def test_complete_keeps_historical_participation_working_after_training_archive(session):
     add_training_and_participation(
         session,
         training_id=1,
@@ -373,8 +373,8 @@ def test_complete_rejects_deleted_training(session):
         is_deleted=True,
     )
 
-    with pytest.raises(NoResultFound):
-        completion_service(session).complete(1, 1)
+    completed = completion_service(session).complete(1, 1)
+    assert completed.status == PARTICIPATIONSTATUS.COMPLETED.value
 
 
 @pytest.mark.parametrize(
@@ -525,11 +525,11 @@ def test_get_completable_filters_status_and_dates(session):
         ParticipationRepository(session)
     ).get_completable()
 
-    assert len(result) == 3
+    assert len(result) == 4
     assert {
         (participation.id_employee, participation.id_training)
         for participation in result
-    } == {(1, 1), (1, 2), (2, 6)}
+    } == {(1, 1), (1, 2), (1, 4), (2, 6)}
 
 
 def test_participation_document_upload_list_and_soft_delete(session, tmp_path):

@@ -227,7 +227,7 @@ def test_profile_consolidates_sources_and_uses_active_highest_level(session):
 def test_training_only_contributes_when_completed_and_without_qualification(session):
     result = profile_service(session).get_profile(1)
 
-    assert {profile.skill_id for profile in result} == {1}
+    assert {profile.skill_id for profile in result} == {1, 3}
 
 
 def test_soft_deleted_training_skill_and_skill_are_excluded(session):
@@ -235,7 +235,8 @@ def test_soft_deleted_training_skill_and_skill_are_excluded(session):
     session.get(Skill, 1).is_deleted = True
     session.commit()
 
-    assert profile_service(session).get_profile(1) == []
+    result = profile_service(session).get_profile(1)
+    assert {profile.skill_id for profile in result} == {3}
 
 
 def test_null_levels_and_soft_deleted_domain_are_preserved(session):
@@ -253,8 +254,8 @@ def test_null_levels_and_soft_deleted_domain_are_preserved(session):
     archived = next(profile for profile in result if profile.skill_id == 3)
 
     assert archived.skill_domaine == "Archived"
-    assert archived.displayed_level is None
-    assert archived.sources[0].level is None
+    diploma_source = next(source for source in archived.sources if source.source_type == "DIPLOMA")
+    assert diploma_source.level is None
 
 
 def test_deleted_employee_is_not_available(session):

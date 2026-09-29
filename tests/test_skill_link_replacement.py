@@ -17,10 +17,12 @@ from models.training_skill import TrainingSkill
 from services.skill_link_replacement_service import SkillLinkReplacementService
 from services.training_support_service import TrainingSupportService
 from services.training_service import TrainingService
+from errors.training_errors import TrainingLifecycleConflict
 from db.repositories.training_repository import TrainingRepository
 from db.repositories.domaine_repository import DomaineRepository
 from db.repositories.training_source_repository import TrainingSourceRepository
-from dto.training_dto import CreateTrainingDTO
+from dto.training_dto import CreateTrainingDTO, UpdateTrainingDTO
+from models.training_request import TrainingRequest
 from datetime import date
 from decimal import Decimal
 
@@ -144,11 +146,46 @@ def test_training_without_target_cannot_remove_last_support(session):
     assert session.query(TrainingSkill).filter_by(id_training=2).one().is_deleted is False
 
 
-def test_training_target_allows_empty_skill_replacement(session):
+def test_skill_only_training_cannot_remove_its_last_skill(session):
+    session.add(Training(id_training=2, title="Skills", id_domaine=1, id_source=1, is_deleted=False))
+    session.flush()
     service = TrainingSupportService(session)
-    service.replace_skills(1, [(1, 2)])
-    service.replace_skills(1, [])
-    assert session.query(TrainingSkill).filter_by(id_training=1).one().is_deleted is True
+    service.replace_skills(2, [(1, 2)])
+    with pytest.raises(ValueError):
+        service.replace_skills(2, [])
+    assert session.query(TrainingSkill).filter_by(id_training=2).one().is_deleted is False
+
+
+def test_support_mode_rejects_direct_skills_with_diploma_or_certification(session):
+    with pytest.raises(ValueError):
+        TrainingSupportService(session).replace_skills(1, [(1, 2)])
+
+
+def test_used_training_cannot_change_structure_or_skills(session):
+    session.add(Training(id_training=2, title="Used", id_domaine=1, id_source=1,
+                         start_=date(2030, 1, 1), end_=date(2030, 1, 2),
+                         is_deleted=False))
+    session.flush()
+    session.add(TrainingRequest(
+        id_training_request=1,
+        id_employee=999,
+        id_training=2,
+        status="PENDING",
+        requested_at=date.today(),
+        is_deleted=True,
+    ))
+    session.commit()
+    service = TrainingService(
+        TrainingRepository(session),
+        DomaineRepository(session),
+        TrainingSourceRepository(session),
+    )
+
+    service.update(2, UpdateTrainingDTO(title="Renamed", location="Room 1"))
+    with pytest.raises(TrainingLifecycleConflict):
+        service.update(2, UpdateTrainingDTO(start_=date(2031, 1, 1)))
+    with pytest.raises(TrainingLifecycleConflict):
+        TrainingSupportService(session).replace_skills(2, [(1, 3)])
 
 
 def test_training_support_query_count_is_constant_for_one_or_five_skills(session):

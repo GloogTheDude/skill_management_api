@@ -65,7 +65,6 @@ class EmployeeSkillSearchRepository:
                 Employee.is_deleted.is_(False),
                 Participation.status == PARTICIPATIONSTATUS.COMPLETED.value,
                 Participation.is_deleted.is_(False),
-                Training.is_deleted.is_(False),
                 Training.id_diploma.is_(None),
                 Training.id_certification.is_(None),
                 TrainingSkill.is_deleted.is_(False),

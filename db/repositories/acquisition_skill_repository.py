@@ -40,7 +40,6 @@ class AcquisitionSkillRepository():
                 Participation.is_deleted.is_(False),
                 Training.id_diploma.is_(None),
                 Training.id_certification.is_(None),
-                Training.is_deleted.is_(False),
             )
         )
 

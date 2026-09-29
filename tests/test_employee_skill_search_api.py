@@ -335,7 +335,7 @@ def test_result_contains_all_consolidated_skills_without_cartesian_product(sessi
 
     assert len(result) == 1
     assert result[0].id_employee == 1
-    assert {skill.skill_id for skill in result[0].skills} == {1, 2, 3, 4}
+    assert {skill.skill_id for skill in result[0].skills} == {1, 2, 3, 4, 7}
 
 
 def test_empty_requirements_are_rejected():

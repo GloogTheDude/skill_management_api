@@ -6,6 +6,7 @@ from sqlalchemy.exc import NoResultFound
 from db.repositories.domaine_repository import DomaineRepository
 from db.repositories.training_source_repository import TrainingSourceRepository
 from services.training_support_service import TrainingSupportService
+from errors.training_errors import TrainingLifecycleConflict
 
 
 class TrainingService(BaseCrudService[Training]):
@@ -48,6 +49,8 @@ class TrainingService(BaseCrudService[Training]):
         self._validate_domaine(dto.id_domaine)
         self._validate_source(dto.id_source)
         self._validate_targets(dto.id_diploma, dto.id_certification)
+        if dto.start_ > dto.end_:
+            raise ValueError("Training start date must be before or equal to its end date.")
         requested = [(item.id_skill, item.level) for item in dto.skills]
         session = getattr(self.repository, "_session", None)
         if session is None:
@@ -77,6 +80,16 @@ class TrainingService(BaseCrudService[Training]):
     def update(self,id_training: int,dto: UpdateTrainingDTO) -> ResponseTrainingDTO:
         data = dto.model_dump(exclude_unset=True)
         training = self.repository.get_one(id_training)
+        session = getattr(self.repository, "_session", None)
+        support = TrainingSupportService(session) if session is not None else None
+        if support is not None and support.is_used(id_training):
+            allowed = {"title", "location"}
+            immutable = set(data) - allowed
+            if immutable:
+                fields = ", ".join(sorted(immutable))
+                raise TrainingLifecycleConflict(
+                    f"Used training fields cannot be changed: {fields}."
+                )
         if "id_domaine" in data:
             self._validate_domaine(data["id_domaine"])
         if "id_source" in data:
@@ -87,8 +100,10 @@ class TrainingService(BaseCrudService[Training]):
         )
         final_diploma = data.get("id_diploma", training.id_diploma)
         final_certification = data.get("id_certification", training.id_certification)
-        session = getattr(self.repository, "_session", None)
-        support = TrainingSupportService(session) if session is not None else None
+        final_start = data.get("start_", training.start_)
+        final_end = data.get("end_", training.end_)
+        if final_start is not None and final_end is not None and final_start > final_end:
+            raise ValueError("Training start date must be before or equal to its end date.")
         support_changed = (
             "skills" in data
             or "id_diploma" in data

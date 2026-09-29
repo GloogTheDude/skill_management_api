@@ -12,6 +12,15 @@ from models.training_request import TrainingRequest
 class TrainingRepository(BaseRepository[Training]):
     model = Training
 
+    def is_used(self, id_training: int) -> bool:
+        request_exists = exists(select(1).where(
+            TrainingRequest.id_training == id_training,
+        ))
+        participation_exists = exists(select(1).where(
+            Participation.id_training == id_training,
+        ))
+        return bool(self._session.scalar(select(request_exists | participation_exists)))
+
     @staticmethod
     def _availability_conditions(id_employee: int):
         request_exists = exists(

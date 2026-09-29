@@ -86,8 +86,6 @@ class ParticipationCompletionService:
             raise NoResultFound()
 
         training = self.training_repository.get_one(id_training)
-        if training.is_deleted:
-            raise NoResultFound()
         if training.end_ is None or training.end_ > date.today():
             raise TrainingNotCompleted()
 

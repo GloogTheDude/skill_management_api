@@ -15,6 +15,8 @@ from controllers.auth_controller import get_current_employee, require_hr_employe
 from dto.skill_link_replacement_dto import ReplaceTrainingSkillsDTO
 from dto.training_skill_dto import ResponseTrainingSkillDTO
 from services.training_support_service import TrainingSupportService
+from errors.training_errors import TrainingLifecycleConflict
+from errors.generic_errors import EntityAlreadyDeleted
 
 
 router = APIRouter(prefix="/training", tags=["training"])
@@ -32,6 +34,8 @@ def replace_training_skills(id_training: int, dto: ReplaceTrainingSkillsDTO,
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except TrainingLifecycleConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return [ResponseTrainingSkillDTO.from_entity(link) for link in links]
 
@@ -77,6 +81,8 @@ def update_training(id_training:int,
         return service.update(id_training, dto)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except TrainingLifecycleConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -86,4 +92,7 @@ def delete_training(id_training:int,
                     _: object = Depends(require_hr_employee)):
     repo = TrainingRepository(session)
     service = TrainingService(repo)
-    return service.delete(id_training)
+    try:
+        return service.delete(id_training)
+    except EntityAlreadyDeleted as exc:
+        raise HTTPException(status_code=404, detail="Training not found") from exc
