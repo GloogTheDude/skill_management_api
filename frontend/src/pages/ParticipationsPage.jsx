@@ -43,6 +43,22 @@ export default function ParticipationsPage() {
   const [documents, setDocuments] = useState({});
   const [documentLoading, setDocumentLoading] = useState(null);
   const [documentForm, setDocumentForm] = useState({});
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+
+  useEffect(() => () => {
+    if (preview?.url) window.URL.revokeObjectURL(preview.url);
+  }, [preview]);
+
+  useEffect(() => {
+    if (!preview) return undefined;
+    function closeOnEscape(event) {
+      if (event.key === "Escape") setPreview(null);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [preview]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -106,6 +122,11 @@ export default function ParticipationsPage() {
       const result = await getParticipationDocuments(participation.id_employee, participation.id_training);
       setDocuments((current) => ({ ...current, [key]: result }));
     } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        await logout().catch(() => undefined);
+        navigate("/login", { replace: true });
+        return;
+      }
       setFeedback(requestError instanceof ApiError && requestError.status === 403
         ? "Vous n’êtes pas autorisé à consulter ces documents."
         : "Impossible de charger les documents.");
@@ -151,6 +172,30 @@ export default function ParticipationsPage() {
       setFeedback(requestError instanceof ApiError && requestError.status === 403
         ? "Vous n’êtes pas autorisé à télécharger ce document."
         : "Le téléchargement a échoué.");
+    }
+  }
+
+  async function handlePreview(document) {
+    if (preview?.url) window.URL.revokeObjectURL(preview.url);
+    setPreview(null);
+    setPreviewError("");
+    setPreviewLoading(true);
+    try {
+      const blob = await downloadParticipationDocument(document.id_participation_document);
+      setPreview({ document, url: window.URL.createObjectURL(blob) });
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        await logout().catch(() => undefined);
+        navigate("/login", { replace: true });
+        return;
+      }
+      setPreviewError(requestError instanceof ApiError && requestError.status === 403
+        ? "Vous n’êtes pas autorisé à consulter ce document."
+        : requestError instanceof ApiError && requestError.status === 404
+          ? "Ce document n’est plus disponible."
+          : "La prévisualisation a échoué.");
+    } finally {
+      setPreviewLoading(false);
     }
   }
 
@@ -225,6 +270,9 @@ export default function ParticipationsPage() {
                     {documents[key].map((document) => (
                       <p key={document.id_participation_document}>
                         {document.document_type} — {document.original_filename}{" "}
+                        {["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(document.mime_type) && (
+                          <button className="button button-secondary" type="button" onClick={() => handlePreview(document)}>Voir</button>
+                        )}{" "}
                         <button className="button button-secondary" type="button" onClick={() => handleDownload(document)}>Télécharger</button>
                         {user.access_level === 3 && <button className="button button-danger" type="button" onClick={() => handleDelete(document, participation)}>Supprimer</button>}
                       </p>
@@ -273,6 +321,20 @@ export default function ParticipationsPage() {
             </article>
             );
           })}
+        </div>
+      )}
+      {(previewLoading || previewError || preview) && (
+        <div className="document-preview-backdrop" role="presentation" onClick={() => setPreview(null)}>
+          <div className="document-preview-modal" role="dialog" aria-modal="true" aria-labelledby="document-preview-title" onClick={(event) => event.stopPropagation()}>
+            <div className="document-preview-header">
+              <h2 id="document-preview-title">{preview?.document.original_filename || "Prévisualisation"}</h2>
+              <button className="button button-secondary" type="button" onClick={() => setPreview(null)}>Fermer</button>
+            </div>
+            {previewLoading && <p className="screen-state">Chargement de la prévisualisation…</p>}
+            {previewError && <p className="form-error" role="alert">{previewError}</p>}
+            {preview?.document.mime_type === "application/pdf" && <iframe className="document-preview-frame" src={preview.url} title={preview.document.original_filename} />}
+            {preview && preview.document.mime_type.startsWith("image/") && <img className="document-preview-image" src={preview.url} alt={preview.document.original_filename} />}
+          </div>
         </div>
       )}
     </section>
