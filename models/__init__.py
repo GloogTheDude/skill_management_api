@@ -17,6 +17,7 @@ from .diploma_skill import DiplomaSkill
 from .participation import Participation
 from .training_skill import TrainingSkill
 from .access_level import AccessLevel
+from .participation_document import ParticipationDocument
 
 __all__ = [
     "AccessLevel",
@@ -38,4 +39,5 @@ __all__ = [
     "DiplomaSkill",
     "Participation",
     "TrainingSkill",
+    "ParticipationDocument",
 ]

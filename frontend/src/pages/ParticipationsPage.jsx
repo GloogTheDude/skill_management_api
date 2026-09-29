@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import {
   closeParticipation,
+  deleteParticipationDocument,
+  downloadParticipationDocument,
   getCompletableParticipations,
+  getParticipationDocuments,
   getParticipations,
+  uploadParticipationDocument,
 } from "../api/participations";
 import { useAuth } from "../auth/AuthContext";
 
@@ -36,6 +40,9 @@ export default function ParticipationsPage() {
   const [mutationKey, setMutationKey] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [results, setResults] = useState({});
+  const [documents, setDocuments] = useState({});
+  const [documentLoading, setDocumentLoading] = useState(null);
+  const [documentForm, setDocumentForm] = useState({});
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -92,6 +99,71 @@ export default function ParticipationsPage() {
     }
   }
 
+  async function loadDocuments(participation) {
+    const key = `${participation.id_employee}-${participation.id_training}`;
+    setDocumentLoading(key);
+    try {
+      const result = await getParticipationDocuments(participation.id_employee, participation.id_training);
+      setDocuments((current) => ({ ...current, [key]: result }));
+    } catch (requestError) {
+      setFeedback(requestError instanceof ApiError && requestError.status === 403
+        ? "Vous n’êtes pas autorisé à consulter ces documents."
+        : "Impossible de charger les documents.");
+    } finally {
+      setDocumentLoading(null);
+    }
+  }
+
+  async function handleUpload(participation) {
+    const key = `${participation.id_employee}-${participation.id_training}`;
+    const form = documentForm[key];
+    if (!form?.file || !form.documentType) return;
+    setDocumentLoading(key);
+    try {
+      await uploadParticipationDocument(
+        participation.id_employee,
+        participation.id_training,
+        form.documentType,
+        form.file,
+      );
+      setDocumentForm((current) => ({ ...current, [key]: { documentType: "", file: null } }));
+      await loadDocuments(participation);
+      setFeedback("Le document a été ajouté.");
+    } catch (requestError) {
+      setFeedback(requestError instanceof ApiError && requestError.detail
+        ? requestError.detail
+        : "Le document n’a pas pu être ajouté.");
+    } finally {
+      setDocumentLoading(null);
+    }
+  }
+
+  async function handleDownload(document) {
+    try {
+      const blob = await downloadParticipationDocument(document.id_participation_document);
+      const url = window.URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = document.original_filename;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setFeedback(requestError instanceof ApiError && requestError.status === 403
+        ? "Vous n’êtes pas autorisé à télécharger ce document."
+        : "Le téléchargement a échoué.");
+    }
+  }
+
+  async function handleDelete(document, participation) {
+    try {
+      await deleteParticipationDocument(document.id_participation_document);
+      await loadDocuments(participation);
+      setFeedback("Le document a été supprimé.");
+    } catch {
+      setFeedback("Le document n’a pas pu être supprimé.");
+    }
+  }
+
   if (loading) return <div className="screen-state">Chargement des participations…</div>;
   if (error) {
     const message = error instanceof ApiError && error.status === 403
@@ -142,6 +214,40 @@ export default function ParticipationsPage() {
                   : "Non renseignées"}</p>
                 <p><strong>Durée :</strong> {participation.duration_hours == null ? "Non renseignée" : `${participation.duration_hours} h`}</p>
                 <p><strong>Coût horaire :</strong> {participation.cost_hour == null ? "Non renseigné" : `${participation.cost_hour} €/h`}</p>
+              </div>
+              <div className="participation-documents">
+                <button className="button button-secondary" type="button" onClick={() => loadDocuments(participation)} disabled={documentLoading === key}>
+                  {documentLoading === key ? "Chargement…" : "Documents"}
+                </button>
+                {documents[key] && (
+                  <div>
+                    <p><strong>Documents ({documents[key].length})</strong></p>
+                    {documents[key].map((document) => (
+                      <p key={document.id_participation_document}>
+                        {document.document_type} — {document.original_filename}{" "}
+                        <button className="button button-secondary" type="button" onClick={() => handleDownload(document)}>Télécharger</button>
+                        {user.access_level === 3 && <button className="button button-danger" type="button" onClick={() => handleDelete(document, participation)}>Supprimer</button>}
+                      </p>
+                    ))}
+                    {user.access_level === 3 && (
+                      <div className="request-actions">
+                        <select
+                          className="training-select"
+                          value={documentForm[key]?.documentType || ""}
+                          onChange={(event) => setDocumentForm((current) => ({ ...current, [key]: { ...current[key], documentType: event.target.value } }))}
+                        >
+                          <option value="">Type de document</option>
+                          <option value="CERTIFICATE">Certificat</option>
+                          <option value="DIPLOMA">Diplôme</option>
+                          <option value="ATTENDANCE_CERTIFICATE">Attestation de présence</option>
+                          <option value="OTHER">Autre</option>
+                        </select>
+                        <input type="file" accept="application/pdf,image/jpeg,image/png" onChange={(event) => setDocumentForm((current) => ({ ...current, [key]: { ...current[key], file: event.target.files?.[0] || null } }))} />
+                        <button className="button button-primary" type="button" onClick={() => handleUpload(participation)} disabled={documentLoading === key}>Ajouter</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               {user.access_level === 3 && canClose && (
                 <div className="request-actions">

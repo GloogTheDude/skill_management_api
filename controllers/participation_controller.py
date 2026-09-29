@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,7 @@ from dto.participation_crud_dto import (
     ParticipationListDTO,
     ResponseParticipationDTO,
 )
+from dto.participation_document_dto import DocumentType, ResponseParticipationDocumentDTO
 from errors.participation_errors import (
     ParticipationCannotStart,
     ParticipationInvalidStatus,
@@ -28,6 +30,7 @@ from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from models.employee import Employee
 from services.employee_authorization_service import EmployeeAuthorizationService
+from services.participation_document_service import ParticipationDocumentService
 
 
 router = APIRouter(
@@ -38,6 +41,79 @@ router = APIRouter(
 
 def _participation_service(session: Session) -> ParticipationService:
     return ParticipationService(ParticipationRepository(session))
+
+
+def _document_service(session: Session) -> ParticipationDocumentService:
+    return ParticipationDocumentService(session)
+
+
+@router.get(
+    "/{id_employee}/{id_training}/documents",
+    response_model=list[ResponseParticipationDocumentDTO],
+)
+def list_participation_documents(
+    id_employee: int,
+    id_training: int,
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        return _document_service(session).list(current_employee, id_employee, id_training)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Participation not found") from exc
+
+
+@router.post(
+    "/{id_employee}/{id_training}/documents",
+    response_model=ResponseParticipationDocumentDTO,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_participation_document(
+    id_employee: int,
+    id_training: int,
+    document_type: DocumentType = Form(...),
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(require_hr_employee),
+):
+    try:
+        return await _document_service(session).upload(
+            current_employee, id_employee, id_training, document_type, file
+        )
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Participation not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/document/{id_document}/download")
+def download_participation_document(
+    id_document: int,
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        document, path = _document_service(session).get_for_download(current_employee, id_document)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except (NoResultFound, ValueError) as exc:
+        raise HTTPException(status_code=404, detail="Document not found") from exc
+    return FileResponse(path, media_type=document.mime_type, filename=document.original_filename)
+
+
+@router.delete("/document/{id_document}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_participation_document(
+    id_document: int,
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(require_hr_employee),
+):
+    try:
+        _document_service(session).delete(current_employee, id_document)
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Document not found") from exc
+    return None
 
 
 @router.get("", response_model=list[ParticipationListDTO])

@@ -20,3 +20,4 @@ class Participation(Base):
 
     employee = relationship("Employee", back_populates="participations")
     training = relationship("Training", back_populates="participations")
+    documents = relationship("ParticipationDocument", back_populates="participation")

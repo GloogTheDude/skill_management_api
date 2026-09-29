@@ -14,7 +14,7 @@ export async function apiFetch(path, options = {}) {
     ...options,
     credentials: "include",
     headers: {
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.body && !(options.body instanceof window.FormData) ? { "Content-Type": "application/json" } : {}),
       ...options.headers,
     },
   });
@@ -31,5 +31,6 @@ export async function apiFetch(path, options = {}) {
   }
 
   if (response.status === 204) return null;
+  if (options.responseType === "blob") return response.blob();
   return response.json();
 }

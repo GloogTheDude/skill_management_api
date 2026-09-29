@@ -117,6 +117,26 @@ CREATE TABLE IF NOT EXISTS public.participation
     CONSTRAINT participation_pkey PRIMARY KEY (id_employee, id_training)
 );
 
+CREATE TABLE IF NOT EXISTS public.participation_document
+(
+    id_participation_document serial NOT NULL,
+    id_employee integer NOT NULL,
+    id_training integer NOT NULL,
+    document_type character varying(40) NOT NULL,
+    original_filename character varying(255) NOT NULL,
+    storage_key character varying(255) NOT NULL UNIQUE,
+    mime_type character varying(100) NOT NULL,
+    size_bytes integer NOT NULL,
+    uploaded_at timestamp with time zone NOT NULL,
+    id_uploaded_by integer NOT NULL,
+    is_deleted boolean NOT NULL DEFAULT false,
+    CONSTRAINT participation_document_pkey PRIMARY KEY (id_participation_document),
+    CONSTRAINT participation_document_participation_fkey FOREIGN KEY (id_employee, id_training)
+        REFERENCES public.participation (id_employee, id_training),
+    CONSTRAINT participation_document_uploader_fkey FOREIGN KEY (id_uploaded_by)
+        REFERENCES public.employee (id_employee)
+);
+
 CREATE TABLE IF NOT EXISTS public.provide
 (
     id_training integer NOT NULL,

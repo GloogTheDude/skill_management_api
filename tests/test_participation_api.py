@@ -1,4 +1,6 @@
 from datetime import date, timedelta
+import asyncio
+from io import BytesIO
 
 import pytest
 from dateutil.relativedelta import relativedelta
@@ -37,6 +39,12 @@ from models.training_source import TrainingSource
 from services.participation_completion_service import ParticipationCompletionService
 from services.participation_service import ParticipationService
 from services.employee_skill_profile_service import EmployeeSkillProfileService
+from services.document_storage import LocalDocumentStorage
+from services.participation_document_service import ParticipationDocumentService
+from dto.auth_dto import AuthEmployeeDTO
+from errors.authorization_errors import AuthorizationForbidden
+from starlette.datastructures import Headers
+from starlette.datastructures import UploadFile
 
 
 @pytest.fixture
@@ -117,6 +125,18 @@ def completion_service(session):
         EmployeeDiplomaRepository(session),
         EmployeeCertificationRepository(session),
         EmployeeRepository(session),
+    )
+
+
+def document_actor(id_employee=1, access_level=3):
+    return AuthEmployeeDTO(
+        id_employee=id_employee,
+        first_name="Actor",
+        last_name="Test",
+        mail="actor@example.com",
+        role_name="HR",
+        access_level_label="HR",
+        access_level=access_level,
     )
 
 
@@ -471,3 +491,43 @@ def test_get_completable_filters_status_and_dates(session):
         (participation.id_employee, participation.id_training)
         for participation in result
     } == {(1, 1), (1, 2), (2, 6)}
+
+
+def test_participation_document_upload_list_and_soft_delete(session, tmp_path):
+    add_training_and_participation(session, training_id=1, end_=date.today())
+    service = ParticipationDocumentService(session, LocalDocumentStorage(str(tmp_path)))
+    upload = UploadFile(
+        file=BytesIO(b"pdf-content"),
+        filename="certificat.pdf",
+        headers=Headers({"content-type": "application/pdf"}),
+    )
+
+    document = asyncio.run(service.upload(document_actor(), 1, 1, "CERTIFICATE", upload))
+    assert document.original_filename == "certificat.pdf"
+    assert document.mime_type == "application/pdf"
+    assert document.size_bytes == len(b"pdf-content")
+    assert not hasattr(document, "storage_key")
+    assert (tmp_path / document.original_filename).exists() is False
+    assert len(service.list(document_actor(), 1, 1)) == 1
+
+    service.delete(document_actor(), document.id_participation_document)
+    assert service.list(document_actor(), 1, 1) == []
+
+
+def test_participation_document_scope_and_upload_policy(session, tmp_path):
+    add_training_and_participation(session, training_id=1, employee_id=1, end_=date.today())
+    add_training_and_participation(session, training_id=2, employee_id=2, end_=date.today())
+    service = ParticipationDocumentService(session, LocalDocumentStorage(str(tmp_path)))
+    upload = UploadFile(
+        file=BytesIO(b"pdf-content"),
+        filename="certificat.pdf",
+        headers=Headers({"content-type": "application/pdf"}),
+    )
+
+    with pytest.raises(AuthorizationForbidden):
+        service.list(document_actor(2, 1), 1, 1)
+    with pytest.raises(ValueError):
+        asyncio.run(service.upload(document_actor(), 1, 1, "CERTIFICATE", UploadFile(
+            file=BytesIO(b"script"), filename="script.exe",
+            headers=Headers({"content-type": "application/octet-stream"}),
+        )))
