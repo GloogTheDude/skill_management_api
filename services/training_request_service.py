@@ -33,7 +33,7 @@ class TrainingRequestService:
     def get_mine(self, current_employee: AuthEmployeeDTO) -> list[ResponseTrainingRequestDTO]:
         return [
             self._to_response(*row)
-            for row in self.repository.get_for_employee(current_employee.id_employee)
+            for row in self.repository.get_for_employee_with_details(current_employee.id_employee)
         ]
 
     def get_by_id(self, id_request: int) -> ResponseTrainingRequestDTO:
@@ -119,6 +119,12 @@ class TrainingRequestService:
         request: TrainingRequest,
         training_title: str | None,
         domaine_name: str | None,
+        source_name: str | None = None,
+        location: str | None = None,
+        start_=None,
+        end_=None,
+        duration_hours=None,
+        cost_hour=None,
     ) -> ResponseTrainingRequestDTO:
         return ResponseTrainingRequestDTO(
             id_training_request=request.id_training_request,
@@ -132,4 +138,10 @@ class TrainingRequestService:
             id_validator=request.id_validator,
             training_title=training_title,
             domaine_name=domaine_name,
+            source_name=source_name,
+            location=location,
+            start_=start_,
+            end_=end_,
+            duration_hours=duration_hours,
+            cost_hour=cost_hour,
         )

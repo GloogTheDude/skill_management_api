@@ -28,8 +28,8 @@ function App() {
             <Route path="skills" element={<MySkillsPage />} />
             <Route path="available-trainings" element={<AvailableTrainingsPage />} />
             <Route path="trainings" element={<AvailableTrainingsPage />} />
-            <Route path="training-requests" element={<PlaceholderPage title="Mes demandes de formation" />} />
-            <Route path="requests" element={<MyTrainingRequestsPage />} />
+            <Route path="training-requests" element={<MyTrainingRequestsPage />} />
+            <Route path="requests" element={<Navigate to="/app/training-requests" replace />} />
             <Route path="manage-requests" element={<ManageTrainingRequestsPage />} />
             <Route path="employee-search" element={<EmployeeSkillSearchPage />} />
             <Route path="employees/:idEmployee/skills" element={<EmployeeSkillProfilePage />} />

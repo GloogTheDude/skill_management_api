@@ -64,6 +64,10 @@ button, input { font: inherit; }
 .status-badge { flex: 0 0 auto; padding: .35rem .6rem; color: #3730a3; background: #eef2ff; border-radius: 999px; font-size: .8rem; font-weight: 700; }
 .request-date, .request-reason { margin-top: 1rem !important; font-size: .9rem; }
 .request-hint { margin-top: 1rem !important; color: #92400e !important; font-size: .9rem; }
+.request-tabs, .request-filters { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; margin-bottom: 1rem; }
+.request-filters { padding: 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 12px; }
+.request-filters label { display: grid; gap: .3rem; color: #475569; font-size: .82rem; font-weight: 600; }
+.request-filters input { min-width: 240px; padding: .6rem; border: 1px solid #cbd5e1; border-radius: 8px; }
 .reject-reason { width: 100%; margin-top: 1rem; resize: vertical; padding: .7rem; border: 1px solid #cbd5e1; border-radius: 9px; }
 .request-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: .75rem; }
 .button-danger { color: white; background: #b91c1c; }

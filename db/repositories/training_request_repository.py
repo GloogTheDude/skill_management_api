@@ -44,13 +44,29 @@ class TrainingRequestRepository():
     
     def get_for_employee(self, id_employee: int):
         stmt = (
+            select(TrainingRequest, Training.title, Domaine.nom_domaine)
+            .outerjoin(TrainingRequest.training)
+            .outerjoin(Training.domaine)
+            .where(TrainingRequest.id_employee == id_employee)
+        )
+        return self.session.execute(stmt).all()
+
+    def get_for_employee_with_details(self, id_employee: int):
+        stmt = (
             select(
                 TrainingRequest,
                 Training.title,
                 Domaine.nom_domaine,
+                TrainingSource.name_source,
+                Training.location,
+                Training.start_,
+                Training.end_,
+                Training.duration_hours,
+                Training.cost_hour,
             )
             .outerjoin(TrainingRequest.training)
             .outerjoin(Training.domaine)
+            .outerjoin(Training.source)
             .where(TrainingRequest.id_employee == id_employee)
         )
         return self.session.execute(stmt).all()
