@@ -6,7 +6,7 @@ from dto.skill_dto import SkillSourceDTO
 from db.repositories.employee_skill_search_repository import (
     EmployeeSkillSearchRepository,
 )
-from services.skill_profile_aggregation import add_skill_source
+from services.skill_profile_aggregation import add_skill_source, finalize_skill_dimensions
 from dto.auth_dto import AuthEmployeeDTO
 from services.employee_authorization_service import EmployeeAuthorizationService
 
@@ -52,6 +52,10 @@ class EmployeeSkillSearchService:
                     expires_at=row.expires_at,
                 ),
             )
+
+        for employee in employees.values():
+            for profile in employee["profiles"].values():
+                finalize_skill_dimensions(profile)
 
         return [
             EmployeeSkillSearchResultDTO(

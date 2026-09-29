@@ -1,4 +1,7 @@
+from datetime import date
+
 from dto.skill_dto import SkillProfileDTO, SkillSourceDTO
+from core.constants import SKILLSOURCETYPE
 
 
 def add_skill_source(
@@ -40,3 +43,38 @@ def should_replace_primary_source(
     if current_source.level is None:
         return True
     return new_source.level > current_source.level
+
+
+def finalize_skill_dimensions(profile: SkillProfileDTO) -> None:
+    acquired = [
+        source for source in profile.sources
+        if source.source_type != SKILLSOURCETYPE.VALIDATION.value
+        and source.is_active
+    ]
+    profile.acquired_sources = [
+        source for source in profile.sources
+        if source.source_type != SKILLSOURCETYPE.VALIDATION.value
+    ]
+    profile.acquired_level = max(
+        (source.level for source in acquired if source.level is not None),
+        default=None,
+    )
+    if acquired:
+        profile.primary_acquired_source = sorted(
+            acquired,
+            key=lambda source: (
+                source.level is not None,
+                source.level if source.level is not None else -1,
+                source.acquired_at or date.min,
+                source.source_type,
+                source.source_id,
+            ),
+            reverse=True,
+        )[0]
+    validation = next(
+        (source for source in profile.sources
+         if source.source_type == SKILLSOURCETYPE.VALIDATION.value
+         and source.is_active),
+        None,
+    )
+    profile.evaluated_level = validation.level if validation else None

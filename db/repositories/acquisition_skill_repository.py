@@ -7,6 +7,7 @@ from models.diploma import Diploma
 from models.diploma_skill import DiplomaSkill
 from models.employee_certification import EmployeeCertification
 from models.employee_diploma import EmployeeDiploma
+from models.employee import Employee
 from models.participation import Participation
 from models.skill import Skill
 from models.skill_validation import SkillValidation
@@ -100,16 +101,18 @@ class AcquisitionSkillRepository():
         return self.session.execute(stmt).all()
 
     def get_validationskill_by_id_employee(self, id_employee: int
-    ) -> list[tuple[SkillValidation, Skill, str | None]]:
+    ) -> list[tuple[SkillValidation, Skill, str | None, object]]:
         stmt = (
-            select(SkillValidation, Skill, Domaine.nom_domaine)
+            select(SkillValidation, Skill, Domaine.nom_domaine, Employee)
             .join(Skill, Skill.id_skill == SkillValidation.id_skill)
+            .join(Employee, Employee.id_employee == SkillValidation.id_validator)
             .outerjoin(Domaine, Domaine.id_domaine == Skill.id_domaine)
             .where(
                 SkillValidation.id_employee == id_employee,
                 SkillValidation.is_deleted.is_(False),
                 SkillValidation.superseded_at.is_(None),
                 Skill.is_deleted.is_(False),
+                Employee.is_deleted.is_(False),
             )
         )
         return self.session.execute(stmt).all()

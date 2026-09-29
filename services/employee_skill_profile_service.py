@@ -5,7 +5,7 @@ from sqlalchemy.exc import NoResultFound
 from core.constants import SKILLSOURCETYPE
 from db.repositories.acquisition_skill_repository import AcquisitionSkillRepository
 from db.repositories.employee_repository import EmployeeRepository
-from dto.skill_dto import SkillProfileDTO, SkillSourceDTO
+from dto.skill_dto import CurrentSkillValidationDTO, SkillProfileDTO, SkillSourceDTO
 from models.skill import Skill
 from services.skill_profile_aggregation import (
     add_skill_source,
@@ -62,6 +62,8 @@ class EmployeeSkillProfileService:
             profiles,
         )
 
+        self._finalize_profiles(profiles)
+
         return list(profiles.values())
 
     def _add_training_sources(self, rows, profiles):
@@ -112,7 +114,7 @@ class EmployeeSkillProfileService:
             )
 
     def _add_validation_sources(self, rows, profiles):
-        for skill_validation, skill, domaine in rows:
+        for skill_validation, skill, domaine, validator in rows:
             self._add_source(
                 profiles,
                 skill,
@@ -125,6 +127,47 @@ class EmployeeSkillProfileService:
                     acquired_at=skill_validation.date_,
                 ),
             )
+            profile = profiles[skill.id_skill]
+            profile.evaluated_level = skill_validation.level_skill
+            profile.current_validation = CurrentSkillValidationDTO(
+                id_skill_validation=skill_validation.id_skill_validation,
+                level=skill_validation.level_skill,
+                validated_at=skill_validation.validated_at,
+                justification=skill_validation.justification,
+                id_validator=skill_validation.id_validator,
+                validator_first_name=validator.first_name,
+                validator_last_name=validator.last_name,
+                id_validation=skill_validation.id_validation,
+            )
+
+    @staticmethod
+    def _finalize_profiles(profiles: dict[int, SkillProfileDTO]) -> None:
+        for profile in profiles.values():
+            acquired = [
+                source for source in profile.sources
+                if source.source_type != SKILLSOURCETYPE.VALIDATION.value
+                and source.is_active
+            ]
+            profile.acquired_sources = [
+                source for source in profile.sources
+                if source.source_type != SKILLSOURCETYPE.VALIDATION.value
+            ]
+            profile.acquired_level = max(
+                (source.level for source in acquired if source.level is not None),
+                default=None,
+            )
+            if acquired:
+                profile.primary_acquired_source = sorted(
+                    acquired,
+                    key=lambda source: (
+                        source.level is not None,
+                        source.level if source.level is not None else -1,
+                        source.acquired_at or date.min,
+                        source.source_type,
+                        source.source_id,
+                    ),
+                    reverse=True,
+                )[0]
 
     @classmethod
     def _add_source(

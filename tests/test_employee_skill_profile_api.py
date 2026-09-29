@@ -213,6 +213,10 @@ def test_profile_consolidates_sources_and_uses_active_highest_level(session):
 
     assert python.displayed_level == 3
     assert python.primary_source.source_type == "CERTIFICATION"
+    assert python.acquired_level == 3
+    assert python.evaluated_level == 3
+    assert python.primary_acquired_source.source_type == "CERTIFICATION"
+    assert python.current_validation.id_skill_validation == 1
     assert [source.source_type for source in python.sources] == [
         "TRAINING",
         "CERTIFICATION",
@@ -222,6 +226,36 @@ def test_profile_consolidates_sources_and_uses_active_highest_level(session):
     ]
     expired = next(source for source in python.sources if source.source_id == 2)
     assert expired.is_active is False
+
+
+def test_acquired_and_evaluated_levels_are_independent(session):
+    validation = session.get(SkillValidation, 1)
+    validation.level_skill = 2
+    session.commit()
+
+    python = next(
+        profile for profile in profile_service(session).get_profile(1)
+        if profile.skill_id == 1
+    )
+
+    assert python.acquired_level == 3
+    assert python.evaluated_level == 2
+    assert python.current_validation.level == 2
+
+
+def test_soft_deleted_current_validation_is_not_evaluated(session):
+    validation = session.get(SkillValidation, 1)
+    validation.is_deleted = True
+    session.commit()
+
+    python = next(
+        profile for profile in profile_service(session).get_profile(1)
+        if profile.skill_id == 1
+    )
+
+    assert python.acquired_level == 3
+    assert python.evaluated_level is None
+    assert python.current_validation is None
 
 
 def test_training_only_contributes_when_completed_and_without_qualification(session):

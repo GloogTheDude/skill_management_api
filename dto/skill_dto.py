@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from pydantic import BaseModel, Field
 
 from models.skill import Skill
@@ -13,13 +13,30 @@ class SkillSourceDTO(BaseModel):
     expires_at: date | None = None
 
 
+class CurrentSkillValidationDTO(BaseModel):
+    id_skill_validation: int
+    level: int | None
+    validated_at: datetime | None = None
+    justification: str | None = None
+    id_validator: int
+    validator_first_name: str | None = None
+    validator_last_name: str | None = None
+    id_validation: int
+
+
 class SkillProfileDTO(BaseModel):
     skill_id: int
     skill_name: str
     skill_domaine: str | None
-    displayed_level: int | None
-    primary_source: SkillSourceDTO | None
-    sources: list[SkillSourceDTO]
+    acquired_level: int | None = None
+    evaluated_level: int | None = None
+    primary_acquired_source: SkillSourceDTO | None = None
+    acquired_sources: list[SkillSourceDTO] = []
+    current_validation: CurrentSkillValidationDTO | None = None
+    # Transitional fields. Their legacy semantics remain unchanged.
+    displayed_level: int | None = None
+    primary_source: SkillSourceDTO | None = None
+    sources: list[SkillSourceDTO] = []
 
 class CreateSkillDTO(BaseModel):
     name_skill: str = Field(

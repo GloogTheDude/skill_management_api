@@ -178,7 +178,7 @@ export default function EmployeeSkillSearchPage() {
               {employee.skills.filter((skill) => requirements.some((requirement) => Number(requirement.id_skill) === skill.skill_id)).map((skill) => (
                 <div className="search-result-skill" key={skill.skill_id}>
                   <strong>{skill.skill_name}</strong>
-                  <span>Niveau affiché : {skill.displayed_level ?? "non renseigné"}</span>
+                  <span>Acquis : {skill.acquired_level ?? "non renseigné"} · Évalué : {skill.evaluated_level ?? "non évalué"}</span>
                   {skill.sources.length > 0 && <ul className="skill-sources">{skill.sources.map((source) => <li key={`${source.source_type}-${source.source_id}`}>{sourceLabel(source)}</li>)}</ul>}
                 </div>
               ))}

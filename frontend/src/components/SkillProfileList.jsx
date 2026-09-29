@@ -29,9 +29,11 @@ export default function SkillProfileList({ skills }) {
               <h2>{skill.skill_name}</h2>
               <p>{skill.skill_domaine || "Domaine non renseigné"}</p>
             </div>
-            {skill.displayed_level !== null && <span className="level-badge">Niveau {skill.displayed_level}</span>}
+            <span className="level-badge">Acquis : {skill.acquired_level ?? "Aucun"}</span>
           </div>
-          {skill.primary_source && <p className="primary-source">Source principale : {skill.primary_source.source_type}</p>}
+          <p className="primary-source">Évaluation terrain : {skill.evaluated_level ?? "Non évalué"}</p>
+          {skill.primary_acquired_source && <p className="primary-source">Acquis principalement via : {skill.primary_acquired_source.source_type}</p>}
+          {skill.current_validation && <p className="primary-source">Évalué par : {[skill.current_validation.validator_first_name, skill.current_validation.validator_last_name].filter(Boolean).join(" ") || "Utilisateur"}</p>}
           {skill.sources?.length > 0 && (
             <details>
               <summary>{skill.sources.length} source{skill.sources.length === 1 ? "" : "s"}</summary>
