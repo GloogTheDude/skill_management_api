@@ -7,18 +7,20 @@ from db.repositories.base_repository import BaseRepository
 from models.certification import Certification
 from models.employee import Employee
 from models.employee_certification import EmployeeCertification
+from core.constants import PermissionProfile, coerce_permission_profile
 
 
 class EmployeeCertificationRepository(BaseRepository[EmployeeCertification]):
     model = EmployeeCertification
 
-    def get_for_scope(self, employee_id: int, access_level: int) -> list[EmployeeCertification]:
+    def get_for_scope(self, employee_id: int, permission_profile) -> list[EmployeeCertification]:
+        permission_profile = coerce_permission_profile(permission_profile)
         stmt = select(EmployeeCertification)
-        if access_level != 3:
+        if permission_profile != PermissionProfile.HR:
             stmt = stmt.join(Employee, Employee.id_employee == EmployeeCertification.id_employee).where(
                 Employee.is_deleted.is_(False)
             )
-            if access_level == 1:
+            if permission_profile == PermissionProfile.EMPLOYEE:
                 stmt = stmt.where(EmployeeCertification.id_employee == employee_id)
             else:
                 stmt = stmt.where(

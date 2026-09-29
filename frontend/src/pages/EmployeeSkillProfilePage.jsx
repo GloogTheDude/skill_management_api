@@ -19,7 +19,7 @@ export default function EmployeeSkillProfilePage() {
   const [history, setHistory] = useState(null);
   const [saving, setSaving] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const canEvaluate = [2, 3].includes(Number(user?.access_level)) && Number(user?.id_employee) !== Number(idEmployee);
+  const canEvaluate = ["MANAGER", "HR"].includes(user?.permission_profile) && Number(user?.id_employee) !== Number(idEmployee);
 
   useEffect(() => {
     let cancelled = false;

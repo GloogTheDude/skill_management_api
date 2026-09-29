@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 
 from models.role import Role
+from core.constants import PermissionProfile
 
 
 class ResponseRoleDTO(BaseModel):
@@ -10,6 +11,7 @@ class ResponseRoleDTO(BaseModel):
     id_access_level: int
     access_level_label: str
     access_level: int
+    permission_profile: PermissionProfile
 
     @classmethod
     def from_entity(
@@ -22,6 +24,7 @@ class ResponseRoleDTO(BaseModel):
             id_access_level=role.id_access_level,
             access_level_label=role.access_level.label,
             access_level=role.access_level.level,
+            permission_profile=PermissionProfile(role.access_level.permission_profile),
         )
 
 

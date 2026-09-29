@@ -52,7 +52,7 @@ class FakeEmployeeRepository:
 
 
 def make_employee(*, deleted=False):
-    access_level = SimpleNamespace(label="Manager", level=2)
+    access_level = SimpleNamespace(label="Manager", level=2, permission_profile="MANAGER")
     role = SimpleNamespace(denomination_role="Manager IT", access_level=access_level)
     return SimpleNamespace(
         id_employee=1,

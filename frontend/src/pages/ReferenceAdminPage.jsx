@@ -76,7 +76,7 @@ export default function ReferenceAdminPage() {
     }
   }, [logout, navigate]);
 
-  useEffect(() => { if (user?.access_level === 3) load(); else setLoading(false); }, [load, user]);
+  useEffect(() => { if (user?.permission_profile === "HR") load(); else setLoading(false); }, [load, user]);
   useEffect(() => () => { loadGeneration.current += 1; }, []);
   useEffect(() => { if (!configs[requestedType]) setSearchParams({ type: "domains" }, { replace: true }); }, [requestedType, setSearchParams]);
 
@@ -124,7 +124,7 @@ export default function ReferenceAdminPage() {
     }
   }
 
-  if (user?.access_level !== 3) return <div className="alert page-alert" role="alert">Vous n’êtes pas autorisé à administrer les référentiels.</div>;
+  if (user?.permission_profile !== "HR") return <div className="alert page-alert" role="alert">Vous n’êtes pas autorisé à administrer les référentiels.</div>;
   if (loading) return <div className="screen-state">Chargement des référentiels…</div>;
 
   return <section>

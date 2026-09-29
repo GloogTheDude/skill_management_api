@@ -1,5 +1,17 @@
 from enum import Enum
 
+class PermissionProfile(str, Enum):
+    EMPLOYEE = "EMPLOYEE"
+    MANAGER = "MANAGER"
+    HR = "HR"
+
+def coerce_permission_profile(value):
+    if isinstance(value, PermissionProfile):
+        return value
+    if isinstance(value, int):
+        return {1: PermissionProfile.EMPLOYEE, 2: PermissionProfile.MANAGER, 3: PermissionProfile.HR}.get(value)
+    return value
+
 class TRAININGREQUESTSTATUS(Enum):
     PENDING = "PENDING"
     VALIDATED ="VALIDATED"

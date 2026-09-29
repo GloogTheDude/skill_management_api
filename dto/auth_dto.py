@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from models.employee import Employee
+from core.constants import PermissionProfile
 
 
 class LoginDTO(BaseModel):
@@ -16,6 +17,17 @@ class AuthEmployeeDTO(BaseModel):
     role_name: str | None
     access_level_label: str | None
     access_level: int | None
+    permission_profile: PermissionProfile | None = None
+
+    @model_validator(mode="after")
+    def fill_legacy_permission_profile(self):
+        if self.permission_profile is None:
+            self.permission_profile = {
+                1: PermissionProfile.EMPLOYEE,
+                2: PermissionProfile.MANAGER,
+                3: PermissionProfile.HR,
+            }.get(self.access_level)
+        return self
 
     @classmethod
     def from_entity(cls, employee: Employee) -> "AuthEmployeeDTO":
@@ -31,4 +43,8 @@ class AuthEmployeeDTO(BaseModel):
                 access_level.label if access_level is not None else None
             ),
             access_level=access_level.level if access_level is not None else None,
+            permission_profile=(
+                PermissionProfile(access_level.permission_profile)
+                if access_level is not None else None
+            ),
         )

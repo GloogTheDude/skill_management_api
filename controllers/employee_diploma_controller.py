@@ -60,7 +60,7 @@ def get_employee_diplomas(
 ) -> list[ResponseEmployeeDiplomaDTO]:
     repo = EmployeeDiplomaRepository(session)
     service = EmployeeDiplomaService(repo)
-    return service.get_all(current_employee.id_employee, current_employee.access_level)
+    return service.get_all(current_employee.id_employee, current_employee.permission_profile)
 
 
 @router.patch("/{id_employee}/{id_diploma}")

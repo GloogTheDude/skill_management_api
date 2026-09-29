@@ -61,7 +61,7 @@ def get_employee_certifications(
 ) -> list[ResponseEmployeeCertificationDTO]:
     repo = EmployeeCertificationRepository(session)
     service = EmployeeCertificationService(repo)
-    return service.get_all(current_employee.id_employee, current_employee.access_level)
+    return service.get_all(current_employee.id_employee, current_employee.permission_profile)
 
 
 @router.patch("/{id_employee_certification}")

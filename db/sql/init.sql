@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.access_level
     id_access_level serial NOT NULL,
     label character varying(50) COLLATE pg_catalog."default" NOT NULL,
     level integer NOT NULL,
+    permission_profile character varying(20) NOT NULL DEFAULT 'EMPLOYEE',
     CONSTRAINT access_level_pkey PRIMARY KEY (id_access_level)
 );
 

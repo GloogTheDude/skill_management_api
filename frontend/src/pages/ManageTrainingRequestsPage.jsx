@@ -49,7 +49,7 @@ export default function ManageTrainingRequestsPage() {
     setLoading(true);
     setError(null);
     try {
-      const loader = user.access_level === 3
+      const loader = user.permission_profile === "HR"
         ? (view === "history" ? getHrTrainingRequestHistory : getHrPendingTrainingRequests)
         : (view === "history" ? getManagerTrainingRequestHistory : getManagerPendingTrainingRequests);
       setRequests(await loader());
@@ -65,7 +65,7 @@ export default function ManageTrainingRequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user.access_level, view, logout, navigate]);
+  }, [user.permission_profile, view, logout, navigate]);
 
   useEffect(() => { loadRequests(); }, [loadRequests]);
 

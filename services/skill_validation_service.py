@@ -14,10 +14,10 @@ from models.skill import Skill
 
 class SkillValidationService(BaseCrudService[SkillValidation]):
 
-    def get_all(self, employee_id: int | None = None, access_level: int | None = None) -> list[ResponseSkillValidationDTO]:
+    def get_all(self, employee_id: int | None = None, permission_profile=None) -> list[ResponseSkillValidationDTO]:
         skill_validations = (
-            self.repository.get_for_scope(employee_id, access_level)
-            if employee_id is not None and access_level is not None
+            self.repository.get_for_scope(employee_id, permission_profile)
+            if employee_id is not None and permission_profile is not None
             else self._get_all_entities()
         )
 

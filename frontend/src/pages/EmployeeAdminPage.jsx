@@ -34,7 +34,7 @@ export default function EmployeeAdminPage() {
     } finally { setLoading(false); }
   }, [logout, navigate]);
 
-  useEffect(() => { if (user?.access_level === 3) load(); else setLoading(false); }, [load, user]);
+  useEffect(() => { if (user?.permission_profile === "HR") load(); else setLoading(false); }, [load, user]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -64,7 +64,7 @@ export default function EmployeeAdminPage() {
     catch (requestError) { setError(message(requestError, "L’Employee n’a pas pu être archivé.")); }
   }
 
-  if (user?.access_level !== 3) return <div className="alert page-alert" role="alert">Vous n’êtes pas autorisé à administrer les Employees.</div>;
+  if (user?.permission_profile !== "HR") return <div className="alert page-alert" role="alert">Vous n’êtes pas autorisé à administrer les Employees.</div>;
   if (loading) return <div className="screen-state">Chargement des Employees…</div>;
   return <section>
     <div className="page-heading"><div><p className="eyebrow">Administration HR</p><h1>Employees</h1></div><button className="button button-primary" type="button" onClick={openCreate}>Nouvel Employee</button></div>

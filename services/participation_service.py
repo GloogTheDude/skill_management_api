@@ -20,8 +20,8 @@ class ParticipationService(BaseCrudService[Participation]):
             raise NoResultFound()
         return participation
 
-    def get_all(self, employee_id: int | None = None, access_level: int | None = None):
-        if employee_id is not None and access_level is not None:
+    def get_all(self, employee_id: int | None = None, permission_profile=None):
+        if employee_id is not None and permission_profile is not None:
             return [
                 ParticipationListDTO(
                     id_employee=participation.id_employee,
@@ -41,7 +41,7 @@ class ParticipationService(BaseCrudService[Participation]):
                 for (
                     participation, first_name, last_name, title, domaine_name,
                     source_name, location, start_, end_, duration_hours, cost_hour,
-                ) in self.repository.get_for_scope(employee_id, access_level)
+                ) in self.repository.get_for_scope(employee_id, permission_profile)
             ]
         participations = self._get_all_entities()
         return [

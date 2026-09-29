@@ -34,6 +34,7 @@ class AccessLevelService(BaseCrudService[AccessLevel]):
         access_level = AccessLevel(
             label=dto.label,
             level=dto.level,
+            permission_profile=dto.permission_profile.value,
         )
 
         created = self.repository.add(access_level)

@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
-function navigationFor(accessLevel) {
+function navigationFor(permissionProfile) {
   const employee = [
     ["/app", "Accueil"],
     ["/app/skills", "Mes compétences"],
@@ -9,8 +9,8 @@ function navigationFor(accessLevel) {
     ["/app/training-requests", "Mes demandes"],
     ["/app/participations", "Participations"],
   ];
-  if (accessLevel === 1) return employee;
-  if (accessLevel === 2) {
+  if (permissionProfile === "EMPLOYEE") return employee;
+  if (permissionProfile === "MANAGER") {
     return [...employee, ["/app/manage-requests", "Demandes à traiter"], ["/app/employee-search", "Recherche employés"]];
   }
   return [
@@ -27,7 +27,7 @@ function navigationFor(accessLevel) {
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const links = navigationFor(user.access_level);
+  const links = navigationFor(user.permission_profile);
 
   async function handleLogout() {
     await logout();

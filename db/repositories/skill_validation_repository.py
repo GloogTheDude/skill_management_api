@@ -3,18 +3,20 @@ from models.skill_validation import SkillValidation
 from models.employee import Employee
 from sqlalchemy import select
 from models.skill import Skill
+from core.constants import PermissionProfile, coerce_permission_profile
 
 
 class SkillValidationRepository(BaseRepository[SkillValidation]):
     model = SkillValidation
 
-    def get_for_scope(self, employee_id: int, access_level: int) -> list[SkillValidation]:
+    def get_for_scope(self, employee_id: int, permission_profile) -> list[SkillValidation]:
+        permission_profile = coerce_permission_profile(permission_profile)
         stmt = select(SkillValidation)
-        if access_level != 3:
+        if permission_profile != PermissionProfile.HR:
             stmt = stmt.join(Employee, Employee.id_employee == SkillValidation.id_employee).where(
                 Employee.is_deleted.is_(False)
             )
-            if access_level == 1:
+            if permission_profile == PermissionProfile.EMPLOYEE:
                 stmt = stmt.where(SkillValidation.id_employee == employee_id)
             else:
                 stmt = stmt.where(

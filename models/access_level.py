@@ -18,6 +18,10 @@ class AccessLevel(Base):
         nullable=False,
     )
 
+    permission_profile: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="EMPLOYEE", server_default="EMPLOYEE"
+    )
+
     is_deleted: Mapped[bool] = mapped_column(
         Boolean,
         default=False,

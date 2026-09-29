@@ -5,6 +5,7 @@ import pytest
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from services.employee_authorization_service import EmployeeAuthorizationService
+from core.constants import PermissionProfile
 
 
 def actor(employee_id, level):
@@ -57,3 +58,37 @@ def test_employee_crud_requires_hr(level):
     with pytest.raises(AuthorizationForbidden):
         EmployeeAuthorizationService.require_hr(actor(1, level))
     EmployeeAuthorizationService.require_hr(actor(3, 3))
+
+
+def test_rank_does_not_grant_manager_or_hr_permissions():
+    executive = actor(1, 99)
+    executive.permission_profile = PermissionProfile.EMPLOYEE
+
+    with pytest.raises(AuthorizationForbidden):
+        EmployeeAuthorizationService.require_manager_or_hr(executive)
+    with pytest.raises(AuthorizationForbidden):
+        EmployeeAuthorizationService.require_hr(executive)
+
+
+def test_arbitrary_rank_keeps_explicit_manager_and_hr_permissions():
+    manager = actor(1, 47)
+    manager.permission_profile = PermissionProfile.MANAGER
+    hr = actor(2, 6)
+    hr.permission_profile = PermissionProfile.HR
+
+    EmployeeAuthorizationService.require_manager_or_hr(manager)
+    with pytest.raises(AuthorizationForbidden):
+        EmployeeAuthorizationService.require_hr(manager)
+    EmployeeAuthorizationService.require_manager_or_hr(hr)
+    EmployeeAuthorizationService.require_hr(hr)
+
+
+def test_same_rank_different_profiles_have_different_permissions():
+    employee = actor(1, 4)
+    employee.permission_profile = PermissionProfile.EMPLOYEE
+    manager = actor(2, 4)
+    manager.permission_profile = PermissionProfile.MANAGER
+
+    with pytest.raises(AuthorizationForbidden):
+        EmployeeAuthorizationService.require_manager_or_hr(employee)
+    EmployeeAuthorizationService.require_manager_or_hr(manager)

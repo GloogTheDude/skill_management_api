@@ -122,7 +122,7 @@ def get_participations(
     session: Session = Depends(get_session),
     current_employee: AuthEmployeeDTO = Depends(get_current_employee),
 ) -> list[ParticipationListDTO]:
-    return _participation_service(session).get_all(current_employee.id_employee, current_employee.access_level)
+    return _participation_service(session).get_all(current_employee.id_employee, current_employee.permission_profile)
 
 
 @router.get("/completable", response_model=list[CompletableParticipationDTO])

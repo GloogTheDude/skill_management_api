@@ -9,12 +9,14 @@ from models.participation import Participation
 from models.training import Training
 from models.domaine import Domaine
 from models.training_source import TrainingSource
+from core.constants import PermissionProfile, coerce_permission_profile
 
 
 class ParticipationRepository(BaseRepository[Participation]):
     model = Participation
 
-    def get_for_scope(self, employee_id: int, access_level: int):
+    def get_for_scope(self, employee_id: int, permission_profile):
+        permission_profile = coerce_permission_profile(permission_profile)
         stmt = select(
             Participation,
             Employee.first_name,
@@ -31,8 +33,8 @@ class ParticipationRepository(BaseRepository[Participation]):
         stmt = stmt.join(Training, Training.id_training == Participation.id_training)
         stmt = stmt.outerjoin(Domaine, Domaine.id_domaine == Training.id_domaine)
         stmt = stmt.outerjoin(TrainingSource, TrainingSource.id_source == Training.id_source)
-        if access_level != 3:
-            if access_level == 1:
+        if permission_profile != PermissionProfile.HR:
+            if permission_profile == PermissionProfile.EMPLOYEE:
                 stmt = stmt.where(Participation.id_employee == employee_id)
             else:
                 stmt = stmt.where(

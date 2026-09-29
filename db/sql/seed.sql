@@ -25,10 +25,10 @@ TRUNCATE TABLE
 RESTART IDENTITY CASCADE;
 
 -- Reference tables
-INSERT INTO public.access_level (id_access_level, label, level) VALUES
-(1, 'Employee', 1),
-(2, 'Manager', 2),
-(3, 'HR', 3);
+INSERT INTO public.access_level (id_access_level, label, level, permission_profile) VALUES
+(1, 'Employee', 1, 'EMPLOYEE'),
+(2, 'Manager', 2, 'MANAGER'),
+(3, 'HR', 3, 'HR');
 
 INSERT INTO public.role (id_role, denomination_role, is_deleted, id_access_level) VALUES
 (1, 'Admin RH', false, 3),

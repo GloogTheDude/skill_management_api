@@ -23,7 +23,8 @@ class EmployeeSkillSearchService:
         manager_id = None
         if current_employee is not None:
             EmployeeAuthorizationService.require_manager_or_hr(current_employee)
-            if current_employee.access_level == 2:
+            from core.constants import PermissionProfile
+            if current_employee.permission_profile == PermissionProfile.MANAGER:
                 manager_id = current_employee.id_employee
         rows = self.repository.search(dto.requirements, manager_id=manager_id)
         employees = {}

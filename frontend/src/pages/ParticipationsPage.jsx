@@ -62,7 +62,7 @@ export default function ParticipationsPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const requestedView = searchParams.get("view");
-  const allowedViews = useMemo(() => user.access_level === 3 ? ["current", "to-close", "history"] : ["current", "history"], [user.access_level]);
+  const allowedViews = useMemo(() => user.permission_profile === "HR" ? ["current", "to-close", "history"] : ["current", "history"], [user.permission_profile]);
   const view = allowedViews.includes(requestedView) ? requestedView : "current";
   const query = searchParams.get("q") || "";
   const dateFrom = searchParams.get("from") || "";
@@ -88,7 +88,7 @@ export default function ParticipationsPage() {
     try {
       const participationResult = await getParticipations();
       let completableResult = [];
-      if (user.access_level === 3) {
+      if (user.permission_profile === "HR") {
         completableResult = await getCompletableParticipations();
       }
       setParticipations(participationResult);
@@ -103,7 +103,7 @@ export default function ParticipationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [logout, navigate, user.access_level]);
+  }, [logout, navigate, user.permission_profile]);
 
   useEffect(() => {
     loadData();
@@ -134,7 +134,7 @@ export default function ParticipationsPage() {
     const isHistory = terminalStatuses.has(participation.status);
     if (view === "to-close" && !isToClose) return false;
     if (view === "history" && !isHistory) return false;
-    if (view === "current" && (isHistory || (user.access_level === 3 && state === "past"))) return false;
+    if (view === "current" && (isHistory || (user.permission_profile === "HR" && state === "past"))) return false;
     const searchable = `${participation.employee_first_name || ""} ${participation.employee_last_name || ""}`.toLocaleLowerCase("fr");
     if (query && !searchable.includes(query.toLocaleLowerCase("fr"))) return false;
     if (dateFrom && participation.end_ && participation.end_ < dateFrom) return false;
@@ -306,11 +306,11 @@ export default function ParticipationsPage() {
       {feedback && <p className="form-feedback" role="status">{feedback}</p>}
       <div className="participation-tabs" role="tablist" aria-label="Vues des participations">
         <button className={`button ${view === "current" ? "button-primary" : "button-secondary"}`} onClick={() => selectView("current")} role="tab" aria-selected={view === "current"}>Actuelles</button>
-        {user.access_level === 3 && <button className={`button ${view === "to-close" ? "button-primary" : "button-secondary"}`} onClick={() => selectView("to-close")} role="tab" aria-selected={view === "to-close"}>À clôturer ({completable.size})</button>}
+        {user.permission_profile === "HR" && <button className={`button ${view === "to-close" ? "button-primary" : "button-secondary"}`} onClick={() => selectView("to-close")} role="tab" aria-selected={view === "to-close"}>À clôturer ({completable.size})</button>}
         <button className={`button ${view === "history" ? "button-primary" : "button-secondary"}`} onClick={() => selectView("history")} role="tab" aria-selected={view === "history"}>Historique</button>
       </div>
       <div className="participation-filters">
-        {(user.access_level !== 1 || view === "history") && <label>Recherche nom / prénom<input value={query} onChange={(event) => updateFilters({ q: event.target.value })} placeholder="Ex. Dupont" /></label>}
+        {(user.permission_profile !== "EMPLOYEE" || view === "history") && <label>Recherche nom / prénom<input value={query} onChange={(event) => updateFilters({ q: event.target.value })} placeholder="Ex. Dupont" /></label>}
         <label>Du<input type="date" value={dateFrom} onChange={(event) => updateFilters({ from: event.target.value })} /></label>
         <label>Au<input type="date" value={dateTo} onChange={(event) => updateFilters({ to: event.target.value })} /></label>
         {view === "history" && <label>Résultat<select value={resultFilter} onChange={(event) => updateFilters({ result: event.target.value })}><option value="">Tous</option><option value="COMPLETED">Réussite</option><option value="FAILED">Échec</option><option value="ABSENT">Absent</option><option value="CANCELLED">Annulée</option></select></label>}
@@ -342,7 +342,7 @@ export default function ParticipationsPage() {
                 <div>
                   <p className="eyebrow">Participation</p>
                   <h2>{displayValue(participation.training_title)}</h2>
-                  {user.access_level !== 1 && (
+                  {user.permission_profile !== "EMPLOYEE" && (
                     <p>{displayValue(participation.employee_first_name)} {displayValue(participation.employee_last_name)}</p>
                   )}
                 </div>
@@ -372,10 +372,10 @@ export default function ParticipationsPage() {
                           <button className="button button-secondary" type="button" onClick={() => handlePreview(document)}>Voir</button>
                         )}{" "}
                         <button className="button button-secondary" type="button" onClick={() => handleDownload(document)}>Télécharger</button>
-                        {user.access_level === 3 && <button className="button button-danger" type="button" onClick={() => handleDelete(document, participation)}>Supprimer</button>}
+                        {user.permission_profile === "HR" && <button className="button button-danger" type="button" onClick={() => handleDelete(document, participation)}>Supprimer</button>}
                       </p>
                     ))}
-                    {user.access_level === 3 && (
+                    {user.permission_profile === "HR" && (
                       <div className="request-actions">
                         <select
                           className="training-select"
@@ -395,7 +395,7 @@ export default function ParticipationsPage() {
                   </div>
                 )}
               </div>
-              {user.access_level === 3 && canClose && (
+              {user.permission_profile === "HR" && canClose && (
                 <div className="request-actions">
                   <select
                     className="training-select"
@@ -413,7 +413,7 @@ export default function ParticipationsPage() {
                   </button>
                 </div>
               )}
-              {user.access_level === 3
+              {user.permission_profile === "HR"
                 && ["REGISTERED", "IN_PROGRESS"].includes(participation.status)
                 && (!participation.end_ || new Date(`${participation.end_}T00:00:00`) > new Date()) && (
                 <div className="request-actions">
@@ -422,7 +422,7 @@ export default function ParticipationsPage() {
                   </button>
                 </div>
               )}
-              {user.access_level === 3 && participation.status === "REGISTERED" && !canClose && participation.end_ && new Date(`${participation.end_}T00:00:00`) < new Date() && (
+              {user.permission_profile === "HR" && participation.status === "REGISTERED" && !canClose && participation.end_ && new Date(`${participation.end_}T00:00:00`) < new Date() && (
                 <p className="request-hint">Formation terminée, en attente de clôture.</p>
               )}
             </article>
