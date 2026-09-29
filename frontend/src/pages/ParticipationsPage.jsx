@@ -2,10 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import {
-  completeParticipation,
+  closeParticipation,
   getCompletableParticipations,
   getParticipations,
-  startParticipation,
 } from "../api/participations";
 import { useAuth } from "../auth/AuthContext";
 
@@ -36,6 +35,7 @@ export default function ParticipationsPage() {
   const [completable, setCompletable] = useState(new Set());
   const [mutationKey, setMutationKey] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [results, setResults] = useState({});
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -64,19 +64,17 @@ export default function ParticipationsPage() {
     loadData();
   }, [loadData]);
 
-  async function handleTransition(participation, transition) {
+  async function handleClose(participation) {
     const key = `${participation.id_employee}-${participation.id_training}`;
+    const result = results[key];
     if (mutationKey !== null) return;
+    if (!result) return;
     setMutationKey(key);
     setFeedback("");
     try {
-      if (transition === "start") {
-        await startParticipation(participation.id_employee, participation.id_training);
-        setFeedback("La participation a été démarrée.");
-      } else {
-        await completeParticipation(participation.id_employee, participation.id_training);
-        setFeedback("La participation a été terminée.");
-      }
+      await closeParticipation(participation.id_employee, participation.id_training, result);
+      setFeedback("La participation a été clôturée.");
+      setResults((current) => ({ ...current, [key]: "" }));
       await loadData();
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
@@ -116,7 +114,13 @@ export default function ParticipationsPage() {
           {participations.map((participation) => {
             const key = `${participation.id_employee}-${participation.id_training}`;
             const busy = mutationKey === key;
-            const canComplete = completable.has(key);
+            const canClose = completable.has(key);
+            const visualStatus = participation.status === "REGISTERED"
+              && participation.start_
+              && new Date(`${participation.start_}T00:00:00`) <= new Date()
+              && (!participation.end_ || new Date(`${participation.end_}T00:00:00`) >= new Date())
+              ? "En cours"
+              : statusLabels[participation.status] || participation.status;
             return (
             <article className="request-card" key={`${participation.id_employee}-${participation.id_training}`}>
               <div className="request-card-header">
@@ -127,7 +131,7 @@ export default function ParticipationsPage() {
                     <p>{displayValue(participation.employee_first_name)} {displayValue(participation.employee_last_name)}</p>
                   )}
                 </div>
-                <span className="status-badge">{statusLabels[participation.status] || participation.status}</span>
+                <span className="status-badge">{visualStatus}</span>
               </div>
               <div className="participation-details">
                 <p><strong>Organisme :</strong> {displayValue(participation.source_name)}</p>
@@ -139,22 +143,26 @@ export default function ParticipationsPage() {
                 <p><strong>Durée :</strong> {participation.duration_hours == null ? "Non renseignée" : `${participation.duration_hours} h`}</p>
                 <p><strong>Coût horaire :</strong> {participation.cost_hour == null ? "Non renseigné" : `${participation.cost_hour} €/h`}</p>
               </div>
-              {user.access_level === 3 && participation.status === "REGISTERED" && (
+              {user.access_level === 3 && canClose && (
                 <div className="request-actions">
-                  <button className="button button-primary" type="button" onClick={() => handleTransition(participation, "start")} disabled={mutationKey !== null}>
-                    {busy ? "Démarrage…" : "Démarrer"}
+                  <select
+                    className="training-select"
+                    value={results[key] || ""}
+                    onChange={(event) => setResults((current) => ({ ...current, [key]: event.target.value }))}
+                    disabled={mutationKey !== null}
+                  >
+                    <option value="">Résultat de la formation</option>
+                    <option value="COMPLETED">Réussite</option>
+                    <option value="FAILED">Échec</option>
+                    <option value="ABSENT">Absent</option>
+                  </select>
+                  <button className="button button-primary" type="button" onClick={() => handleClose(participation)} disabled={mutationKey !== null || !results[key]}>
+                    {busy ? "Clôture…" : "Clôturer"}
                   </button>
                 </div>
               )}
-              {user.access_level === 3 && participation.status === "IN_PROGRESS" && canComplete && (
-                <div className="request-actions">
-                  <button className="button button-primary" type="button" onClick={() => handleTransition(participation, "complete")} disabled={mutationKey !== null}>
-                    {busy ? "Finalisation…" : "Terminer"}
-                  </button>
-                </div>
-              )}
-              {user.access_level === 3 && participation.status === "IN_PROGRESS" && !canComplete && (
-                <p className="request-hint">Formation non terminée.</p>
+              {user.access_level === 3 && participation.status === "REGISTERED" && !canClose && participation.end_ && new Date(`${participation.end_}T00:00:00`) < new Date() && (
+                <p className="request-hint">Formation terminée, en attente de clôture.</p>
               )}
             </article>
             );

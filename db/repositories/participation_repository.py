@@ -64,7 +64,10 @@ class ParticipationRepository(BaseRepository[Participation]):
             .join(Employee, Employee.id_employee == Participation.id_employee)
             .join(Training, Training.id_training == Participation.id_training)
             .where(
-                Participation.status == PARTICIPATIONSTATUS.IN_PROGRESS.value,
+                Participation.status.in_((
+                    PARTICIPATIONSTATUS.REGISTERED.value,
+                    PARTICIPATIONSTATUS.IN_PROGRESS.value,
+                )),
                 Participation.is_deleted.is_(False),
                 Employee.is_deleted.is_(False),
                 Training.is_deleted.is_(False),

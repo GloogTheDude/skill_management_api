@@ -8,14 +8,9 @@ export function getCompletableParticipations() {
   return apiFetch("/participations/completable");
 }
 
-export function startParticipation(idEmployee, idTraining) {
-  return apiFetch(`/participations/${idEmployee}/${idTraining}/start`, {
+export function closeParticipation(idEmployee, idTraining, result) {
+  return apiFetch(`/participations/${idEmployee}/${idTraining}/close`, {
     method: "POST",
-  });
-}
-
-export function completeParticipation(idEmployee, idTraining) {
-  return apiFetch(`/participations/${idEmployee}/${idTraining}/complete`, {
-    method: "POST",
+    body: JSON.stringify({ result }),
   });
 }

@@ -116,6 +116,7 @@ def completion_service(session):
         TrainingRepository(session),
         EmployeeDiplomaRepository(session),
         EmployeeCertificationRepository(session),
+        EmployeeRepository(session),
     )
 
 
@@ -218,9 +219,10 @@ def test_manager_and_hr_receive_enriched_participations_without_scope_leak(sessi
 @pytest.mark.parametrize(
     "status",
     [
-        PARTICIPATIONSTATUS.REGISTERED.value,
         PARTICIPATIONSTATUS.COMPLETED.value,
         PARTICIPATIONSTATUS.FAILED.value,
+        PARTICIPATIONSTATUS.ABSENT.value,
+        PARTICIPATIONSTATUS.CANCELLED.value,
     ],
 )
 def test_complete_rejects_status_other_than_in_progress(session, status):
@@ -276,8 +278,7 @@ def test_full_cycle_completion_exposes_training_skill_in_profile(session):
     session.add(TrainingSkill(id_training=1, id_skill=1, granted_level=4, is_deleted=False))
     session.commit()
 
-    completion_service(session).start(1, 1)
-    completed = completion_service(session).complete(1, 1)
+    completed = completion_service(session).close(1, 1, PARTICIPATIONSTATUS.COMPLETED.value)
     profile = EmployeeSkillProfileService(
         EmployeeRepository(session),
         AcquisitionSkillRepository(session),
@@ -381,6 +382,24 @@ def test_complete_skill_training_creates_no_secondary_qualification(session):
     assert session.query(EmployeeCertification).count() == 0
 
 
+@pytest.mark.parametrize("result", [
+    PARTICIPATIONSTATUS.FAILED.value,
+    PARTICIPATIONSTATUS.ABSENT.value,
+])
+def test_failed_or_absent_training_creates_no_acquisition(session, result):
+    add_training_and_participation(session, training_id=1, end_=date.today())
+    session.add(Skill(id_skill=1, name_skill="Python", id_domaine=1, is_deleted=False))
+    session.add(TrainingSkill(id_training=1, id_skill=1, granted_level=4, is_deleted=False))
+    session.commit()
+
+    closed = completion_service(session).close(1, 1, result)
+    session.commit()
+
+    assert closed.status == result
+    assert session.query(EmployeeDiploma).count() == 0
+    assert session.query(EmployeeCertification).count() == 0
+
+
 def test_complete_rolls_back_secondary_creation_when_status_update_fails(session):
     add_training_and_participation(
         session,
@@ -398,6 +417,7 @@ def test_complete_rolls_back_secondary_creation_when_status_update_fails(session
         TrainingRepository(session),
         EmployeeDiplomaRepository(session),
         EmployeeCertificationRepository(session),
+        EmployeeRepository(session),
     )
 
     with pytest.raises(RuntimeError):
@@ -446,8 +466,8 @@ def test_get_completable_filters_status_and_dates(session):
         ParticipationRepository(session)
     ).get_completable()
 
-    assert len(result) == 2
+    assert len(result) == 3
     assert {
         (participation.id_employee, participation.id_training)
         for participation in result
-    } == {(1, 1), (2, 6)}
+    } == {(1, 1), (1, 2), (2, 6)}

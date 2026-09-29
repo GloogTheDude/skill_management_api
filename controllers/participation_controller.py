@@ -9,7 +9,9 @@ from db.repositories.employee_certification_repository import (
 from db.repositories.employee_diploma_repository import EmployeeDiplomaRepository
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
+from db.repositories.employee_repository import EmployeeRepository
 from dto.participation_crud_dto import (
+    CloseParticipationDTO,
     CompletableParticipationDTO,
     ParticipationListDTO,
     ResponseParticipationDTO,
@@ -110,6 +112,7 @@ def start_participation(
         TrainingRepository(session),
         EmployeeDiplomaRepository(session),
         EmployeeCertificationRepository(session),
+        EmployeeRepository(session),
     )
     try:
         participation = service.start(id_employee, id_training)
@@ -135,6 +138,7 @@ def complete_participation(
         TrainingRepository(session),
         EmployeeDiplomaRepository(session),
         EmployeeCertificationRepository(session),
+        EmployeeRepository(session),
     )
 
     try:
@@ -152,4 +156,33 @@ def complete_participation(
             detail=str(exc),
         ) from exc
 
+    return ResponseParticipationDTO.from_entity(participation)
+
+
+@router.post(
+    "/{id_employee}/{id_training}/close",
+    response_model=ResponseParticipationDTO,
+)
+def close_participation(
+    id_employee: int,
+    id_training: int,
+    dto: CloseParticipationDTO,
+    session: Session = Depends(get_session),
+    _: AuthEmployeeDTO = Depends(require_hr_employee),
+) -> ResponseParticipationDTO:
+    service = ParticipationCompletionService(
+        ParticipationRepository(session),
+        TrainingRepository(session),
+        EmployeeDiplomaRepository(session),
+        EmployeeCertificationRepository(session),
+        EmployeeRepository(session),
+    )
+    try:
+        participation = service.close(id_employee, id_training, dto.result)
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Participation, Employee or Training not found.") from exc
+    except ParticipationInvalidStatus as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except TrainingNotCompleted as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return ResponseParticipationDTO.from_entity(participation)

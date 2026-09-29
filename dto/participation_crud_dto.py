@@ -1,6 +1,8 @@
 from datetime import date
 from decimal import Decimal
 
+from typing import Literal
+
 from pydantic import BaseModel
 
 from models.participation import Participation
@@ -18,6 +20,10 @@ class ResponseParticipationDTO(BaseModel):
             id_training=participation.id_training,
             status=participation.status,
         )
+
+
+class CloseParticipationDTO(BaseModel):
+    result: Literal["COMPLETED", "FAILED", "ABSENT"]
 
 
 class ParticipationListDTO(BaseModel):

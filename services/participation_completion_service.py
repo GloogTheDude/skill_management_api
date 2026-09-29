@@ -7,6 +7,7 @@ from core.constants import PARTICIPATIONSTATUS
 from db.repositories.employee_certification_repository import (
     EmployeeCertificationRepository,
 )
+from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.employee_diploma_repository import EmployeeDiplomaRepository
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
@@ -27,11 +28,13 @@ class ParticipationCompletionService:
         training_repository: TrainingRepository,
         employee_diploma_repository: EmployeeDiplomaRepository,
         employee_certification_repository: EmployeeCertificationRepository,
+        employee_repository: EmployeeRepository,
     ):
         self.participation_repository = participation_repository
         self.training_repository = training_repository
         self.employee_diploma_repository = employee_diploma_repository
         self.employee_certification_repository = employee_certification_repository
+        self.employee_repository = employee_repository
 
     def start(self, id_employee: int, id_training: int) -> Participation:
         participation = self.participation_repository.get_one(
@@ -57,21 +60,42 @@ class ParticipationCompletionService:
         id_employee: int,
         id_training: int,
     ) -> Participation:
-        participation = self.participation_repository.get_one(
-            (id_employee, id_training)
-        )
+        return self.close(id_employee, id_training, PARTICIPATIONSTATUS.COMPLETED.value)
+
+    def close(self, id_employee: int, id_training: int, result: str) -> Participation:
+        participation = self.participation_repository.get_one((id_employee, id_training))
         if participation.is_deleted:
             raise NoResultFound()
 
-        if participation.status != PARTICIPATIONSTATUS.IN_PROGRESS.value:
+        if participation.status not in (
+            PARTICIPATIONSTATUS.REGISTERED.value,
+            PARTICIPATIONSTATUS.IN_PROGRESS.value,
+        ):
             raise ParticipationInvalidStatus(participation.status)
+
+        if result not in (
+            PARTICIPATIONSTATUS.COMPLETED.value,
+            PARTICIPATIONSTATUS.FAILED.value,
+            PARTICIPATIONSTATUS.ABSENT.value,
+        ):
+            raise ParticipationInvalidStatus(result)
+
+        employee = self.employee_repository.get_one(id_employee)
+        if employee.is_deleted:
+            raise NoResultFound()
 
         training = self.training_repository.get_one(id_training)
         if training.is_deleted:
             raise NoResultFound()
-
         if training.end_ is None or training.end_ > date.today():
             raise TrainingNotCompleted()
+
+        if result != PARTICIPATIONSTATUS.COMPLETED.value:
+            return self.participation_repository.update_status(
+                id_employee,
+                id_training,
+                result,
+            )
 
         source_name = (
             training.source.name_source
