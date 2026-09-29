@@ -84,6 +84,8 @@ button, input { font: inherit; }
 .admin-section-heading h3 { margin: 0; }
 .training-skill-editor { display: grid; gap: .7rem; padding: 1rem; background: #f8fafc; border-radius: 10px; }
 .training-skill-row { display: grid; grid-template-columns: 1fr 120px auto; gap: .6rem; align-items: end; }
+.training-tabs { display: flex; flex-wrap: wrap; gap: .7rem; margin-bottom: 1rem; }
+.temporal-badge { display: inline-block; margin: 0; padding: .3rem .55rem; color: #3730a3; background: #eef2ff; border-radius: 999px; font-size: .78rem; font-weight: 700; }
 @media (max-width: 720px) { .app-shell { display: block; } .sidebar { width: 100%; } .sidebar nav { display: flex; overflow-x: auto; } .topbar, .page-content { padding: 1rem; } }
 .document-preview-backdrop {
   position: fixed;

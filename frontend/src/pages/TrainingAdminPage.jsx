@@ -21,6 +21,18 @@ function dateLabel(value) {
 
 function valueLabel(value) { return value === null || value === undefined || value === "" ? "Non renseigné" : value; }
 
+function todayKey() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+}
+
+function temporalStatus(training, today = todayKey()) {
+  if (training.end_ && training.end_ < today) return { key: "past", label: "Terminée" };
+  if (training.start_ && training.start_ > today) return { key: "upcoming", label: "À venir" };
+  if (training.start_ && training.end_ && training.start_ <= today && training.end_ >= today) return { key: "current", label: "En cours" };
+  return { key: "unknown", label: "Dates à préciser" };
+}
+
 export default function TrainingAdminPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -32,6 +44,7 @@ export default function TrainingAdminPage() {
   const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [view, setView] = useState("active");
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -48,6 +61,15 @@ export default function TrainingAdminPage() {
   }, [logout, navigate]);
 
   useEffect(() => { load(); }, [load]);
+
+  const groupedTrainings = trainings.reduce((groups, training) => {
+    const status = temporalStatus(training);
+    groups[status.key] = [...(groups[status.key] || []), { training, status }];
+    return groups;
+  }, {});
+  const sortByStart = (left, right) => (left.training.start_ || "9999-99-99").localeCompare(right.training.start_ || "9999-99-99");
+  const activeTrainings = [...(groupedTrainings.current || []), ...(groupedTrainings.upcoming || []).sort(sortByStart), ...(groupedTrainings.unknown || [])];
+  const historicalTrainings = (groupedTrainings.past || []).sort(sortByStart);
 
   function openCreate() { setFeedback(""); setError(""); setForm({ ...blank, skills: [] }); }
 
@@ -109,6 +131,11 @@ export default function TrainingAdminPage() {
       {form.mode === "skills" && <div className="training-skill-editor"><div className="admin-section-heading"><h3>Compétences accordées</h3><button type="button" className="button button-secondary" onClick={addSkill} disabled={Boolean(form.original?.is_used)}>Ajouter</button></div>{form.skills.map((item, index) => <div className="training-skill-row" key={`${index}-${item.id_skill}`}><select value={item.id_skill} onChange={(event) => updateSkill(index, "id_skill", event.target.value)} disabled={Boolean(form.original?.is_used)}><option value="">Compétence</option>{refs.skills.map((skill) => <option key={skill.id_skill} value={skill.id_skill}>{skill.name_skill}</option>)}</select><input type="number" min="1" step="1" value={item.level} onChange={(event) => updateSkill(index, "level", event.target.value)} disabled={Boolean(form.original?.is_used)} /><button type="button" className="button button-secondary" onClick={() => removeSkill(index)} disabled={Boolean(form.original?.is_used)}>Supprimer</button></div>)}</div>}
       <button className="button button-primary" disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</button>
     </form>}
-    {!form && (trainings.length === 0 ? <div className="empty-state"><h2>Aucune formation active</h2><p>Créez la première occurrence de formation.</p></div> : <div className="training-grid">{trainings.map((training) => <article className="training-card" key={training.id_training}><div className="skill-card-header"><div><p className="eyebrow">{training.is_used ? "Utilisée" : "Disponible à modifier"}</p><h2>{valueLabel(training.title)}</h2></div></div><p>{valueLabel(training.domaine_name)} · {valueLabel(training.source_name)}</p><p>{valueLabel(training.location)}</p><p>{dateLabel(training.start_)} → {dateLabel(training.end_)}</p><p>{valueLabel(training.duration_hours)} h · {valueLabel(training.cost_hour)} €/h</p><p><strong>{training.diploma_name ? `Diplôme : ${training.diploma_name}` : training.certification_name ? `Certification : ${training.certification_name}` : "Compétences"}</strong></p><div className="request-actions"><button className="button button-secondary" onClick={() => openEdit(training)}>Modifier</button><button className="button button-danger" onClick={() => archive(training)} disabled={deleting === training.id_training}>{deleting === training.id_training ? "Archivage…" : "Archiver"}</button></div></article>)}</div>)}
+    {!form && <>
+      <div className="training-tabs" role="tablist" aria-label="Vues des formations"><button className={`button ${view === "active" ? "button-primary" : "button-secondary"}`} onClick={() => setView("active")} role="tab" aria-selected={view === "active"}>Formations actives ({activeTrainings.length})</button><button className={`button ${view === "history" ? "button-primary" : "button-secondary"}`} onClick={() => setView("history")} role="tab" aria-selected={view === "history"}>Anciennes formations ({historicalTrainings.length})</button></div>
+      {view === "active" && activeTrainings.length === 0 && <div className="empty-state"><h2>Aucune formation active</h2><p>Créez une occurrence ou consultez les anciennes formations.</p></div>}
+      {view === "history" && historicalTrainings.length === 0 && <div className="empty-state"><h2>Aucune ancienne formation</h2><p>Les formations terminées apparaîtront ici.</p></div>}
+      {(view === "active" ? activeTrainings : historicalTrainings).length > 0 && <div className="training-grid">{(view === "active" ? activeTrainings : historicalTrainings).map(({ training, status }) => <article className="training-card" key={training.id_training}><div className="skill-card-header"><div><p className="temporal-badge">{status.label}</p><h2>{valueLabel(training.title)}</h2></div></div><p>{valueLabel(training.domaine_name)} · {valueLabel(training.source_name)}</p><p>{valueLabel(training.location)}</p><p>{dateLabel(training.start_)} → {dateLabel(training.end_)}</p><p>{valueLabel(training.duration_hours)} h · {valueLabel(training.cost_hour)} €/h</p><p><strong>{training.diploma_name ? `Diplôme : ${training.diploma_name}` : training.certification_name ? `Certification : ${training.certification_name}` : "Compétences"}</strong></p>{training.is_used && <p className="muted">Occurrence utilisée</p>}{view === "active" && <div className="request-actions"><button className="button button-secondary" onClick={() => openEdit(training)}>Modifier</button><button className="button button-danger" onClick={() => archive(training)} disabled={deleting === training.id_training}>{deleting === training.id_training ? "Archivage…" : "Archiver"}</button></div>}</article>)}</div>}
+    </>}
   </section>;
 }
