@@ -17,6 +17,9 @@ class ResponseSkillValidationDTO(BaseModel):
     id_employee: int
     id_validator: int
     id_skill: int
+    validator_first_name: str | None = None
+    validator_last_name: str | None = None
+    validation_type_name: str | None = None
 
     @classmethod
     def from_entity(
@@ -34,6 +37,9 @@ class ResponseSkillValidationDTO(BaseModel):
             id_employee=skill_validation.id_employee,
             id_validator=skill_validation.id_validator,
             id_skill=skill_validation.id_skill,
+            validator_first_name=skill_validation.validator.first_name if skill_validation.validator else None,
+            validator_last_name=skill_validation.validator.last_name if skill_validation.validator else None,
+            validation_type_name=skill_validation.validation_type.denomination_validation if skill_validation.validation_type else None,
         )
 
 

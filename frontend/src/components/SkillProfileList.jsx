@@ -19,7 +19,7 @@ function SourceList({ sources }) {
   );
 }
 
-export default function SkillProfileList({ skills }) {
+export default function SkillProfileList({ skills, canEvaluate = false, onEvaluate, onHistory }) {
   return (
     <div className="skills-grid">
       {skills.map((skill) => (
@@ -34,6 +34,17 @@ export default function SkillProfileList({ skills }) {
           <p className="primary-source">Évaluation terrain : {skill.evaluated_level ?? "Non évalué"}</p>
           {skill.primary_acquired_source && <p className="primary-source">Acquis principalement via : {skill.primary_acquired_source.source_type}</p>}
           {skill.current_validation && <p className="primary-source">Évalué par : {[skill.current_validation.validator_first_name, skill.current_validation.validator_last_name].filter(Boolean).join(" ") || "Utilisateur"}</p>}
+          {skill.current_validation?.justification && <p className="primary-source">« {skill.current_validation.justification} »</p>}
+          {canEvaluate && (
+            <div className="card-actions">
+              <button className="button button-secondary" type="button" onClick={() => onEvaluate(skill)}>
+                {skill.current_validation ? "Réévaluer" : "Évaluer"}
+              </button>
+              <button className="button button-secondary" type="button" onClick={() => onHistory(skill)}>
+                Historique
+              </button>
+            </div>
+          )}
           {skill.sources?.length > 0 && (
             <details>
               <summary>{skill.sources.length} source{skill.sources.length === 1 ? "" : "s"}</summary>
