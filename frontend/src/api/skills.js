@@ -22,3 +22,5 @@ export function createSkillValidation(payload) {
 export function getSkillValidationHistory(idEmployee, idSkill) {
   return apiFetch(`/skill_validation/employees/${idEmployee}/skills/${idSkill}/history`);
 }
+export function getPendingSkillEvaluations() { return apiFetch("/skill_validation/work-queue/pending"); }
+export function getSkillEvaluationWorkHistory() { return apiFetch("/skill_validation/work-queue/history"); }

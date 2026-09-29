@@ -50,6 +50,34 @@ def create_skill_validation(
     return service.create(dto, current_employee.id_employee)
 
 
+@router.get("/work-queue/pending")
+def get_pending_evaluation_queue(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        EmployeeAuthorizationService.require_manager_or_hr(current_employee)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return SkillValidationService(SkillValidationRepository(session)).get_pending_evaluations(
+        current_employee.id_employee, current_employee.permission_profile
+    )
+
+
+@router.get("/work-queue/history")
+def get_evaluation_history_queue(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        EmployeeAuthorizationService.require_manager_or_hr(current_employee)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return SkillValidationService(SkillValidationRepository(session)).get_evaluation_history(
+        current_employee.id_employee, current_employee.permission_profile
+    )
+
+
 @router.get("/{id_skill_validation}")
 def get_skill_validation_by_id(
     id_skill_validation: int,

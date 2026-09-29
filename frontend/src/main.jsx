@@ -17,6 +17,7 @@ import ParticipationsPage from "./pages/ParticipationsPage";
 import TrainingAdminPage from "./pages/TrainingAdminPage";
 import ReferenceAdminPage from "./pages/ReferenceAdminPage";
 import EmployeeAdminPage from "./pages/EmployeeAdminPage";
+import ManageEvaluationsPage from "./pages/ManageEvaluationsPage";
 import EmployeeAcquisitionsPage from "./pages/EmployeeAcquisitionsPage";
 import "./styles.css";
 
@@ -34,6 +35,7 @@ function App() {
             <Route path="training-requests" element={<MyTrainingRequestsPage />} />
             <Route path="requests" element={<Navigate to="/app/training-requests" replace />} />
             <Route path="manage-requests" element={<ManageTrainingRequestsPage />} />
+            <Route path="manage-evaluations" element={<ManageEvaluationsPage />} />
             <Route path="employee-search" element={<EmployeeSkillSearchPage />} />
             <Route path="employees/:idEmployee/skills" element={<EmployeeSkillProfilePage />} />
             <Route path="employees/:idEmployee/acquisitions" element={<EmployeeAcquisitionsPage />} />
