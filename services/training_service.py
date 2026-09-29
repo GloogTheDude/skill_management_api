@@ -35,6 +35,11 @@ class TrainingService(BaseCrudService[Training]):
         if id_diploma is not None and id_certification is not None:
             raise ValueError("A training cannot have both a diploma and a certification.")
     def get_all(self)->list[ResponseTrainingDTO]:
+        if hasattr(self.repository, "get_all_with_usage"):
+            return [
+                ResponseTrainingDTO.from_entity(training, is_used)
+                for training, is_used in self.repository.get_all_with_usage()
+            ]
         trainings = self._get_all_entities()
         return[
             ResponseTrainingDTO.from_entity(training)

@@ -8,3 +8,19 @@ export function getAvailableTrainings(idEmployee, idDomaine) {
 export function getTrainings() {
   return apiFetch("/training");
 }
+
+export function createTraining(payload) {
+  return apiFetch("/training", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateTraining(idTraining, payload) {
+  return apiFetch(`/training/${idTraining}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function archiveTraining(idTraining) {
+  return apiFetch(`/training/${idTraining}`, { method: "DELETE" });
+}
+
+export function getTrainingSkills() {
+  return apiFetch("/training_skill");
+}

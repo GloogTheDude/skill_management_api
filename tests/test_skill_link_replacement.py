@@ -23,6 +23,7 @@ from db.repositories.domaine_repository import DomaineRepository
 from db.repositories.training_source_repository import TrainingSourceRepository
 from dto.training_dto import CreateTrainingDTO, UpdateTrainingDTO
 from models.training_request import TrainingRequest
+from models.participation import Participation
 from datetime import date
 from decimal import Decimal
 
@@ -186,6 +187,20 @@ def test_used_training_cannot_change_structure_or_skills(session):
         service.update(2, UpdateTrainingDTO(start_=date(2031, 1, 1)))
     with pytest.raises(TrainingLifecycleConflict):
         TrainingSupportService(session).replace_skills(2, [(1, 3)])
+
+
+def test_training_usage_is_detected_from_requests_or_participations(session):
+    repository = TrainingRepository(session)
+    session.add(Training(id_training=2, title="Tracked", id_domaine=1, id_source=1, is_deleted=False))
+    session.flush()
+    assert repository.is_used(2) is False
+    session.add(TrainingRequest(id_training_request=2, id_employee=999, id_training=2,
+                                status="PENDING", requested_at=date.today(), is_deleted=True))
+    session.commit()
+    assert repository.is_used(2) is True
+    session.add(Participation(id_employee=999, id_training=1, status="COMPLETED", is_deleted=True))
+    session.commit()
+    assert repository.is_used(1) is True
 
 
 def test_training_support_query_count_is_constant_for_one_or_five_skills(session):

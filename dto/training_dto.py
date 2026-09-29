@@ -9,6 +9,10 @@ from models.training import Training
 
 class ResponseTrainingDTO(BaseModel):
     id_training: int
+    id_domaine: int | None = None
+    id_source: int | None = None
+    id_diploma: int | None = None
+    id_certification: int | None = None
     title: str | None 
     domaine_name: str | None
     source_name: str | None
@@ -19,10 +23,15 @@ class ResponseTrainingDTO(BaseModel):
     end_: date | None
     cost_hour: Decimal | None
     duration_hours: Decimal | None
+    is_used: bool = False
     @classmethod
-    def from_entity(cls:type[ResponseTrainingDTO], training:Training):
+    def from_entity(cls:type[ResponseTrainingDTO], training:Training, is_used: bool = False):
         return cls(
             id_training=training.id_training,
+            id_domaine=training.id_domaine,
+            id_source=training.id_source,
+            id_diploma=training.id_diploma,
+            id_certification=training.id_certification,
             title=training.title,
             domaine_name=training.domaine.nom_domaine,
             source_name=training.source.name_source,
@@ -41,6 +50,7 @@ class ResponseTrainingDTO(BaseModel):
             end_=training.end_,
             cost_hour=training.cost_hour,
             duration_hours=training.duration_hours
+            ,is_used=is_used
         )
 
 

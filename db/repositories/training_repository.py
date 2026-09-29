@@ -21,6 +21,19 @@ class TrainingRepository(BaseRepository[Training]):
         ))
         return bool(self._session.scalar(select(request_exists | participation_exists)))
 
+    def get_all_with_usage(self) -> list[tuple[Training, bool]]:
+        request_exists = exists(select(1).where(
+            TrainingRequest.id_training == Training.id_training,
+        ))
+        participation_exists = exists(select(1).where(
+            Participation.id_training == Training.id_training,
+        ))
+        stmt = select(
+            Training,
+            (request_exists | participation_exists).label("is_used"),
+        ).where(Training.is_deleted.is_(False))
+        return list(self._session.execute(stmt).all())
+
     @staticmethod
     def _availability_conditions(id_employee: int):
         request_exists = exists(
