@@ -65,6 +65,7 @@ class EmployeeSkillSearchRepository:
                 Employee.is_deleted.is_(False),
                 Participation.status == PARTICIPATIONSTATUS.COMPLETED.value,
                 Participation.is_deleted.is_(False),
+                Training.is_deleted.is_(False),
                 Training.id_diploma.is_(None),
                 Training.id_certification.is_(None),
                 TrainingSkill.is_deleted.is_(False),
@@ -177,24 +178,29 @@ class EmployeeSkillSearchRepository:
     def _matching_employee_ids(self, sources, requirements):
         requirement_matches = []
         for requirement in requirements:
+            comparison = (
+                sources.c.level >= requirement.level
+                if requirement.operator == "gte"
+                else sources.c.level <= requirement.level
+            )
             base_conditions = [
                 sources.c.id_skill == requirement.id_skill,
                 sources.c.is_active.is_(True),
+                sources.c.level.is_not(None),
             ]
-            if requirement.min_acquired_level is not None:
-                requirement_matches.append(select(sources.c.id_employee).where(and_(*base_conditions,
-                    sources.c.source_type != SKILLSOURCETYPE.VALIDATION.value,
-                    sources.c.level.is_not(None),
-                    sources.c.level >= requirement.min_acquired_level,
-                )).distinct())
-            if requirement.min_evaluated_level is not None:
-                requirement_matches.append(select(sources.c.id_employee).where(and_(*base_conditions,
-                    sources.c.source_type == SKILLSOURCETYPE.VALIDATION.value,
-                    sources.c.level.is_not(None),
-                    sources.c.level >= requirement.min_evaluated_level,
-                )).distinct())
-            if requirement.min_acquired_level is None and requirement.min_evaluated_level is None:
-                requirement_matches.append(select(sources.c.id_employee).where(and_(*base_conditions)).distinct())
+            acquired_match = and_(
+                sources.c.source_type != SKILLSOURCETYPE.VALIDATION.value,
+                comparison,
+            )
+            evaluated_match = and_(
+                sources.c.source_type == SKILLSOURCETYPE.VALIDATION.value,
+                comparison,
+            )
+            requirement_matches.append(
+                select(sources.c.id_employee)
+                .where(and_(*base_conditions, or_(acquired_match, evaluated_match)))
+                .distinct()
+            )
 
         if not requirement_matches:
             return select(sources.c.id_employee).where(False)

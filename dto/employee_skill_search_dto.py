@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from dto.skill_dto import SkillProfileDTO
@@ -5,8 +7,8 @@ from dto.skill_dto import SkillProfileDTO
 
 class SkillSearchRequirementDTO(BaseModel):
     id_skill: int = Field(gt=0)
-    min_acquired_level: int | None = Field(default=None, ge=1, le=5)
-    min_evaluated_level: int | None = Field(default=None, ge=1, le=5)
+    operator: Literal["gte", "lte"]
+    level: int = Field(ge=1, le=5)
 
 
 class EmployeeSkillSearchRequestDTO(BaseModel):
