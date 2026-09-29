@@ -15,6 +15,10 @@ export function closeParticipation(idEmployee, idTraining, result) {
   });
 }
 
+export function cancelParticipation(idEmployee, idTraining) {
+  return apiFetch(`/participations/${idEmployee}/${idTraining}/cancel`, { method: "POST" });
+}
+
 export function getParticipationDocuments(idEmployee, idTraining) {
   return apiFetch(`/participations/${idEmployee}/${idTraining}/documents`);
 }

@@ -18,6 +18,7 @@ from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
 from errors.participation_errors import (
+    ParticipationCannotCancel,
     ParticipationCannotStart,
     ParticipationInvalidStatus,
     TrainingNotCompleted,
@@ -268,6 +269,44 @@ def test_start_moves_registered_to_in_progress(session):
     started = completion_service(session).start(1, 1)
 
     assert started.status == PARTICIPATIONSTATUS.IN_PROGRESS.value
+
+
+def test_hr_can_cancel_registered_participation_before_training_end(session):
+    add_training_and_participation(
+        session,
+        training_id=1,
+        status=PARTICIPATIONSTATUS.REGISTERED.value,
+        end_=date.today() + timedelta(days=1),
+    )
+
+    cancelled = completion_service(session).cancel(1, 1)
+
+    assert cancelled.status == PARTICIPATIONSTATUS.CANCELLED.value
+
+
+@pytest.mark.parametrize("status", [
+    PARTICIPATIONSTATUS.COMPLETED.value,
+    PARTICIPATIONSTATUS.FAILED.value,
+    PARTICIPATIONSTATUS.ABSENT.value,
+    PARTICIPATIONSTATUS.CANCELLED.value,
+])
+def test_terminal_participation_cannot_be_cancelled(session, status):
+    add_training_and_participation(session, training_id=1, status=status, end_=date.today())
+
+    with pytest.raises(ParticipationCannotCancel):
+        completion_service(session).cancel(1, 1)
+
+
+def test_participation_cannot_be_cancelled_after_training_end(session):
+    add_training_and_participation(
+        session,
+        training_id=1,
+        status=PARTICIPATIONSTATUS.REGISTERED.value,
+        end_=date.today(),
+    )
+
+    with pytest.raises(ParticipationCannotCancel):
+        completion_service(session).cancel(1, 1)
 
 
 @pytest.mark.parametrize(

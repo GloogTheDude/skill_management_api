@@ -19,6 +19,7 @@ from dto.participation_crud_dto import (
 )
 from dto.participation_document_dto import DocumentType, ResponseParticipationDocumentDTO
 from errors.participation_errors import (
+    ParticipationCannotCancel,
     ParticipationCannotStart,
     ParticipationInvalidStatus,
     TrainingNotCompleted,
@@ -260,5 +261,31 @@ def close_participation(
     except ParticipationInvalidStatus as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except TrainingNotCompleted as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return ResponseParticipationDTO.from_entity(participation)
+
+
+@router.post(
+    "/{id_employee}/{id_training}/cancel",
+    response_model=ResponseParticipationDTO,
+)
+def cancel_participation(
+    id_employee: int,
+    id_training: int,
+    session: Session = Depends(get_session),
+    _: AuthEmployeeDTO = Depends(require_hr_employee),
+) -> ResponseParticipationDTO:
+    service = ParticipationCompletionService(
+        ParticipationRepository(session),
+        TrainingRepository(session),
+        EmployeeDiplomaRepository(session),
+        EmployeeCertificationRepository(session),
+        EmployeeRepository(session),
+    )
+    try:
+        participation = service.cancel(id_employee, id_training)
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Participation, Employee or Training not found.") from exc
+    except ParticipationCannotCancel as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return ResponseParticipationDTO.from_entity(participation)

@@ -13,6 +13,7 @@ from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
 from errors.participation_errors import (
     ParticipationCannotStart,
+    ParticipationCannotCancel,
     ParticipationInvalidStatus,
     TrainingNotCompleted,
 )
@@ -140,4 +141,27 @@ class ParticipationCompletionService:
             id_employee,
             id_training,
             PARTICIPATIONSTATUS.COMPLETED.value,
+        )
+
+    def cancel(self, id_employee: int, id_training: int) -> Participation:
+        participation = self.participation_repository.get_one((id_employee, id_training))
+        if participation.is_deleted:
+            raise NoResultFound()
+        if participation.status not in (
+            PARTICIPATIONSTATUS.REGISTERED.value,
+            PARTICIPATIONSTATUS.IN_PROGRESS.value,
+        ):
+            raise ParticipationCannotCancel("Participation is already closed.")
+        employee = self.employee_repository.get_one(id_employee)
+        if employee.is_deleted:
+            raise NoResultFound()
+        training = self.training_repository.get_one(id_training)
+        if training.is_deleted:
+            raise NoResultFound()
+        if training.end_ is not None and training.end_ <= date.today():
+            raise ParticipationCannotCancel()
+        return self.participation_repository.update_status(
+            id_employee,
+            id_training,
+            PARTICIPATIONSTATUS.CANCELLED.value,
         )

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import {
   closeParticipation,
+  cancelParticipation,
   deleteParticipationDocument,
   downloadParticipationDocument,
   getCompletableParticipations,
@@ -110,6 +111,30 @@ export default function ParticipationsPage() {
       if (requestError instanceof ApiError && [404, 409].includes(requestError.status)) {
         await loadData();
       }
+    } finally {
+      setMutationKey(null);
+    }
+  }
+
+  async function handleCancel(participation) {
+    const key = `${participation.id_employee}-${participation.id_training}`;
+    if (mutationKey !== null) return;
+    setMutationKey(key);
+    setFeedback("");
+    try {
+      await cancelParticipation(participation.id_employee, participation.id_training);
+      setFeedback("La participation a été annulée.");
+      await loadData();
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        await logout().catch(() => undefined);
+        navigate("/login", { replace: true });
+        return;
+      }
+      setFeedback(requestError instanceof ApiError && requestError.detail
+        ? requestError.detail
+        : "La participation n’a pas pu être annulée.");
+      if (requestError instanceof ApiError && [404, 409].includes(requestError.status)) await loadData();
     } finally {
       setMutationKey(null);
     }
@@ -312,6 +337,15 @@ export default function ParticipationsPage() {
                   </select>
                   <button className="button button-primary" type="button" onClick={() => handleClose(participation)} disabled={mutationKey !== null || !results[key]}>
                     {busy ? "Clôture…" : "Clôturer"}
+                  </button>
+                </div>
+              )}
+              {user.access_level === 3
+                && ["REGISTERED", "IN_PROGRESS"].includes(participation.status)
+                && (!participation.end_ || new Date(`${participation.end_}T00:00:00`) > new Date()) && (
+                <div className="request-actions">
+                  <button className="button button-danger" type="button" onClick={() => handleCancel(participation)} disabled={mutationKey !== null}>
+                    {busy ? "Annulation…" : "Annuler"}
                   </button>
                 </div>
               )}

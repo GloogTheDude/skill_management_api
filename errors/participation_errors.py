@@ -12,6 +12,11 @@ class ParticipationCannotStart(Exception):
         )
 
 
+class ParticipationCannotCancel(Exception):
+    def __init__(self, message="Participation cannot be cancelled after the training has ended."):
+        super().__init__(message)
+
+
 class TrainingNotCompleted(Exception):
     def __init__(self):
         super().__init__(
