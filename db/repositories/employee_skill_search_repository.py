@@ -165,6 +165,7 @@ class EmployeeSkillSearchRepository:
             .where(
                 Employee.is_deleted.is_(False),
                 SkillValidation.is_deleted.is_(False),
+                SkillValidation.superseded_at.is_(None),
                 Skill.is_deleted.is_(False),
             )
         )

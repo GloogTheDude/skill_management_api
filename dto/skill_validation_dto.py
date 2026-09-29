@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, model_validator
@@ -9,6 +9,9 @@ from models.skill_validation import SkillValidation
 class ResponseSkillValidationDTO(BaseModel):
     id_skill_validation: int
     date_: date | None
+    validated_at: datetime | None = None
+    superseded_at: datetime | None = None
+    justification: str | None = None
     level_skill: int | None
     id_validation: int
     id_employee: int
@@ -23,6 +26,9 @@ class ResponseSkillValidationDTO(BaseModel):
         return cls(
             id_skill_validation=skill_validation.id_skill_validation,
             date_=skill_validation.date_,
+            validated_at=skill_validation.validated_at,
+            superseded_at=skill_validation.superseded_at,
+            justification=skill_validation.justification,
             level_skill=skill_validation.level_skill,
             id_validation=skill_validation.id_validation,
             id_employee=skill_validation.id_employee,
@@ -37,6 +43,7 @@ class CreateSkillValidationDTO(BaseModel):
     id_validation: int = Field(gt=0)
     id_employee: int = Field(gt=0)
     id_skill: int = Field(gt=0)
+    justification: str | None = Field(default=None, max_length=1000)
 
 
 class UpdateSkillValidationDTO(BaseModel):

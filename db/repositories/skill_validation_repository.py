@@ -2,6 +2,7 @@ from db.repositories.base_repository import BaseRepository
 from models.skill_validation import SkillValidation
 from models.employee import Employee
 from sqlalchemy import select
+from models.skill import Skill
 
 
 class SkillValidationRepository(BaseRepository[SkillValidation]):
@@ -21,4 +22,19 @@ class SkillValidationRepository(BaseRepository[SkillValidation]):
                     | (Employee.id_manager == employee_id)
                 )
         stmt = stmt.where(SkillValidation.is_deleted.is_(False))
+        return list(self._session.scalars(stmt).all())
+
+    def get_history(self, id_employee: int, id_skill: int) -> list[SkillValidation]:
+        stmt = (
+            select(SkillValidation)
+            .where(
+                SkillValidation.id_employee == id_employee,
+                SkillValidation.id_skill == id_skill,
+                SkillValidation.is_deleted.is_(False),
+            )
+            .order_by(
+                SkillValidation.validated_at.desc().nullslast(),
+                SkillValidation.id_skill_validation.desc(),
+            )
+        )
         return list(self._session.scalars(stmt).all())

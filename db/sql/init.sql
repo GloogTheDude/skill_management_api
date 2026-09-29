@@ -169,6 +169,9 @@ CREATE TABLE IF NOT EXISTS public.skill_validation
 (
     id_skill_validation serial NOT NULL,
     date_ date,
+    validated_at timestamp with time zone,
+    superseded_at timestamp with time zone,
+    justification character varying(1000),
     level_skill integer,
     id_validation integer NOT NULL,
     id_employee integer NOT NULL,

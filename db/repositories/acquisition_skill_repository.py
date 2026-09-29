@@ -108,6 +108,7 @@ class AcquisitionSkillRepository():
             .where(
                 SkillValidation.id_employee == id_employee,
                 SkillValidation.is_deleted.is_(False),
+                SkillValidation.superseded_at.is_(None),
                 Skill.is_deleted.is_(False),
             )
         )

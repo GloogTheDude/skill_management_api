@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, Boolean
+from sqlalchemy import Date, DateTime, ForeignKey, Boolean, String, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -8,9 +8,22 @@ from .base import Base
 
 class SkillValidation(Base):
     __tablename__ = "skill_validation"
+    __table_args__ = (
+        Index(
+            "uq_skill_validation_current_employee_skill",
+            "id_employee",
+            "id_skill",
+            unique=True,
+            postgresql_where=text("superseded_at IS NULL AND is_deleted = false"),
+            sqlite_where=text("superseded_at IS NULL AND is_deleted = 0"),
+        ),
+    )
 
     id_skill_validation: Mapped[int] = mapped_column(primary_key=True)
     date_: Mapped[date | None] = mapped_column(Date)
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    justification: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     level_skill: Mapped[int | None]
 
     id_validation: Mapped[int] = mapped_column(ForeignKey("validation_type.id_validation"))

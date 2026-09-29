@@ -107,14 +107,13 @@ def test_skill_validation_crud_and_partial_update():
     assert created.id_employee == 2
     assert created.id_validator == 3
     assert created.id_skill == 4
-    assert service.get_all()[0].date_ == date(2026, 9, 25)
+    assert service.get_all()[0].date_ == date.today()
 
-    updated = service.update(
-        1,
-        UpdateSkillValidationDTO(id_skill=5),
-    )
+    with pytest.raises(ValueError):
+        service.update(1, UpdateSkillValidationDTO(id_skill=5))
 
-    assert updated.id_skill == 5
+    updated = service.update(1, UpdateSkillValidationDTO(level_skill=4))
+    assert updated.level_skill == 4
     assert updated.id_employee == 2
     assert updated.id_validator == 3
 
@@ -123,7 +122,7 @@ def test_skill_validation_crud_and_partial_update():
         UpdateSkillValidationDTO(),
     )
 
-    assert unchanged.id_skill == 5
+    assert unchanged.id_skill == 4
     assert unchanged.id_employee == 2
     assert unchanged.id_validator == 3
 

@@ -13,6 +13,8 @@ from controllers.auth_controller import get_current_employee, require_hr_employe
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from models.employee import Employee
+from models.skill import Skill
+from models.validation_type import ValidationType
 from services.employee_authorization_service import EmployeeAuthorizationService
 
 
@@ -33,7 +35,15 @@ def create_skill_validation(
     target = session.get(Employee, dto.id_employee)
     if target is None or target.is_deleted:
         raise HTTPException(status_code=404, detail="Employee not found")
+    skill = session.get(Skill, dto.id_skill)
+    if skill is None or skill.is_deleted:
+        raise HTTPException(status_code=404, detail="Skill not found")
+    validation_type = session.get(ValidationType, dto.id_validation)
+    if validation_type is None or validation_type.is_deleted:
+        raise HTTPException(status_code=404, detail="Validation type not found")
     try:
+        if current_employee.id_employee == dto.id_employee:
+            raise AuthorizationForbidden("Employees cannot validate themselves.")
         EmployeeAuthorizationService.authorize_action(current_employee, target)
     except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -79,6 +89,23 @@ def update_skill_validation(
     repo = SkillValidationRepository(session)
     service = SkillValidationService(repo)
     return service.update(id_skill_validation, dto)
+
+
+@router.get("/employees/{id_employee}/skills/{id_skill}/history")
+def get_skill_validation_history(
+    id_employee: int,
+    id_skill: int,
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    target = session.get(Employee, id_employee)
+    if target is None or target.is_deleted:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    try:
+        EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(current_employee, target)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return SkillValidationService(SkillValidationRepository(session)).get_history(id_employee, id_skill)
 
 
 @router.delete("/{id_skill_validation}")
