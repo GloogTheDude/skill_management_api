@@ -239,8 +239,12 @@ def search_service(session):
     return EmployeeSkillSearchService(EmployeeSkillSearchRepository(session))
 
 
-def requirement(id_skill, operator="gte", level=1):
-    return {"id_skill": id_skill, "operator": operator, "level": level}
+def requirement(id_skill, min_acquired_level=None, min_evaluated_level=None):
+    return {
+        "id_skill": id_skill,
+        "min_acquired_level": min_acquired_level,
+        "min_evaluated_level": min_evaluated_level,
+    }
 
 
 def search(session, *requirements):
@@ -262,7 +266,7 @@ def actor(id_employee, access_level):
 
 
 def test_simple_requirement_returns_matching_employee(session):
-    result = search(session, requirement(1, "gte", 3))
+    result = search(session, requirement(1, min_acquired_level=3))
 
     assert [employee.id_employee for employee in result] == [1]
 
@@ -270,52 +274,78 @@ def test_simple_requirement_returns_matching_employee(session):
 def test_multiple_requirements_use_and_logic(session):
     result = search(
         session,
-        requirement(1, "gte", 3),
-        requirement(2, "gte", 4),
+        requirement(1, min_acquired_level=3),
+        requirement(2, min_acquired_level=4),
     )
 
     assert [employee.id_employee for employee in result] == [1]
 
 
-@pytest.mark.parametrize(
-    ("operator", "level", "expected"),
-    [("gt", 3, [1]), ("gte", 4, [1]), ("eq", 4, [1]), ("eq", 3, [1])],
-)
-def test_supported_level_operators(session, operator, level, expected):
-    result = search(session, requirement(1, operator, level))
+def test_acquired_and_evaluated_filters_are_independent(session):
+    assert [employee.id_employee for employee in search(
+        session, requirement(1, min_acquired_level=3)
+    )] == [1]
+    assert [employee.id_employee for employee in search(
+        session, requirement(1, min_evaluated_level=4)
+    )] == [1]
+    assert search(session, requirement(1, min_acquired_level=4, min_evaluated_level=5)) == []
 
-    assert [employee.id_employee for employee in result] == expected
+
+def test_evaluated_filter_ignores_superseded_and_acquired_filter_ignores_validation(session):
+    validation = session.get(SkillValidation, 1)
+    validation.level_skill = 2
+    validation.superseded_at = date.today()
+    session.add(SkillValidation(
+        id_skill_validation=3,
+        date_=date.today(),
+        level_skill=1,
+        id_validation=1,
+        id_employee=1,
+        id_validator=1,
+        id_skill=1,
+        is_deleted=False,
+    ))
+    session.commit()
+
+    assert search(session, requirement(1, min_evaluated_level=2)) == []
+    assert [employee.id_employee for employee in search(
+        session, requirement(1, min_acquired_level=3)
+    )] == [1]
+
+
+def test_requirement_without_threshold_means_any_active_source(session):
+    assert [employee.id_employee for employee in search(session, requirement(3))] == [1]
 
 
 def test_none_level_does_not_match_numeric_requirement(session):
-    assert search(session, requirement(3, "gte", 1)) == []
+    assert search(session, requirement(3, min_acquired_level=1)) == []
 
 
 def test_active_sources_use_highest_relevant_level(session):
-    result = search(session, requirement(1, "eq", 4))
+    result = search(session, requirement(1, min_acquired_level=3))
 
     skill = next(skill for skill in result[0].skills if skill.skill_id == 1)
     assert skill.displayed_level == 4
 
 
 def test_expired_only_source_does_not_match(session):
-    assert search(session, requirement(4, "gte", 1)) == []
+    assert search(session, requirement(4, min_acquired_level=1)) == []
 
 
 def test_expired_source_does_not_raise_active_matching_level(session):
-    assert search(session, requirement(1, "gte", 5)) == []
-    assert [employee.id_employee for employee in search(session, requirement(1, "gte", 3))] == [1]
+    assert search(session, requirement(1, min_acquired_level=5)) == []
+    assert [employee.id_employee for employee in search(session, requirement(1, min_acquired_level=3))] == [1]
 
 
 def test_non_completed_training_does_not_match(session):
     session.add(TrainingSkill(id_training=2, id_skill=5, granted_level=5, is_deleted=False))
     session.commit()
 
-    assert search(session, requirement(5, "gte", 1)) == []
+    assert search(session, requirement(5, min_acquired_level=1)) == []
 
 
 def test_qualification_training_does_not_add_training_source(session):
-    result = search(session, requirement(6, "gte", 1))
+    result = search(session, requirement(6, min_acquired_level=1))
     assert result == []
 
 
@@ -324,14 +354,14 @@ def test_soft_deleted_sources_and_deleted_employees_are_excluded(session):
     session.get(Employee, 2).is_deleted = True
     session.commit()
 
-    result = search(session, requirement(1, "gte", 1))
+    result = search(session, requirement(1, min_acquired_level=1))
 
     assert [employee.id_employee for employee in result] == [1]
     assert all(employee.id_employee != 2 for employee in result)
 
 
 def test_result_contains_all_consolidated_skills_without_cartesian_product(session):
-    result = search(session, requirement(1, "gte", 3))
+    result = search(session, requirement(1, min_acquired_level=3))
 
     assert len(result) == 1
     assert result[0].id_employee == 1
@@ -343,12 +373,19 @@ def test_empty_requirements_are_rejected():
         EmployeeSkillSearchRequestDTO(requirements=[])
 
 
+@pytest.mark.parametrize("field", ["min_acquired_level", "min_evaluated_level"])
+@pytest.mark.parametrize("value", [0, 6])
+def test_search_level_bounds_are_rejected(field, value):
+    with pytest.raises(ValidationError):
+        EmployeeSkillSearchRequestDTO(requirements=[requirement(1, **{field: value})])
+
+
 def test_employee_cannot_search_and_manager_scope_is_sql_filtered(session):
     employee = session.get(Employee, 2)
     employee.id_manager = 1
     session.commit()
     service = search_service(session)
-    dto = EmployeeSkillSearchRequestDTO(requirements=[requirement(1, "gte", 1)])
+    dto = EmployeeSkillSearchRequestDTO(requirements=[requirement(1, min_acquired_level=1)])
 
     with pytest.raises(AuthorizationForbidden):
         service.search(dto, actor(2, 1))
@@ -361,7 +398,7 @@ def test_manager_search_excludes_non_direct_reports(session):
     employee = session.get(Employee, 2)
     employee.id_manager = 2
     session.commit()
-    dto = EmployeeSkillSearchRequestDTO(requirements=[requirement(1, "gte", 1)])
+    dto = EmployeeSkillSearchRequestDTO(requirements=[requirement(1, min_acquired_level=1)])
 
     result = search_service(session).search(dto, actor(1, 2))
     assert result == []

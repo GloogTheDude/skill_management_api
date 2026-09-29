@@ -6,7 +6,7 @@ import { getAllSkills } from "../api/skills";
 import { useAuth } from "../auth/AuthContext";
 
 function emptyRequirement() {
-  return { id_skill: "", operator: "gte", level: "1" };
+  return { id_skill: "", min_acquired_level: "", min_evaluated_level: "" };
 }
 
 function sourceLabel(source) {
@@ -15,16 +15,16 @@ function sourceLabel(source) {
 
 function parseCriteria(params, skills) {
   const skillIds = params.getAll("skill");
-  const operators = params.getAll("operator");
-  const levels = params.getAll("level");
-  if (!skillIds.length || skillIds.length !== operators.length || skillIds.length !== levels.length) return null;
+  const acquired = params.getAll("acquired");
+  const evaluated = params.getAll("evaluated");
+  if (!skillIds.length || skillIds.length !== acquired.length || skillIds.length !== evaluated.length) return null;
   const knownSkills = new Set(skills.map((skill) => skill.id_skill));
-  const parsed = skillIds.map((skillId, index) => ({ id_skill: skillId, operator: operators[index], level: levels[index] }));
+  const parsed = skillIds.map((skillId, index) => ({ id_skill: skillId, min_acquired_level: acquired[index], min_evaluated_level: evaluated[index] }));
   if (parsed.some((criterion) => (
     !/^\d+$/.test(criterion.id_skill)
     || !knownSkills.has(Number(criterion.id_skill))
-    || !["gt", "gte", "eq"].includes(criterion.operator)
-    || !/^[1-5]$/.test(criterion.level)
+    || (criterion.min_acquired_level && !/^[1-5]$/.test(criterion.min_acquired_level))
+    || (criterion.min_evaluated_level && !/^[1-5]$/.test(criterion.min_evaluated_level))
   ))) return null;
   return parsed;
 }
@@ -74,8 +74,8 @@ export default function EmployeeSkillSearchPage() {
     setError(null);
     searchEmployeesBySkills(parsed.map((criterion) => ({
       id_skill: Number(criterion.id_skill),
-      operator: criterion.operator,
-      level: Number(criterion.level),
+      min_acquired_level: criterion.min_acquired_level ? Number(criterion.min_acquired_level) : null,
+      min_evaluated_level: criterion.min_evaluated_level ? Number(criterion.min_evaluated_level) : null,
     }))).then((response) => {
       if (!cancelled) setResults(response);
     }).catch(async (requestError) => {
@@ -118,8 +118,8 @@ export default function EmployeeSkillSearchPage() {
     const params = new window.URLSearchParams();
     requirements.forEach((requirement) => {
       params.append("skill", requirement.id_skill);
-      params.append("operator", requirement.operator);
-      params.append("level", requirement.level);
+      params.append("acquired", requirement.min_acquired_level);
+      params.append("evaluated", requirement.min_evaluated_level);
     });
     setSearchParams(params);
   }
@@ -147,16 +147,18 @@ export default function EmployeeSkillSearchPage() {
               </select>
             </label>
             <label>
-              Niveau
-              <select value={requirement.operator} onChange={(event) => updateRequirement(index, "operator", event.target.value)}>
-                <option value="gte">Au moins</option>
-                <option value="gt">Supérieur à</option>
-                <option value="eq">Égal à</option>
+              Niveau acquis minimum
+              <select value={requirement.min_acquired_level} onChange={(event) => updateRequirement(index, "min_acquired_level", event.target.value)}>
+                <option value="">Aucun</option>
+                {[1, 2, 3, 4, 5].map((level) => <option key={level} value={level}>{level}</option>)}
               </select>
             </label>
             <label>
-              Valeur (1–5)
-              <input type="number" min="1" max="5" value={requirement.level} onChange={(event) => updateRequirement(index, "level", event.target.value)} />
+              Évaluation terrain minimum
+              <select value={requirement.min_evaluated_level} onChange={(event) => updateRequirement(index, "min_evaluated_level", event.target.value)}>
+                <option value="">Aucune</option>
+                {[1, 2, 3, 4, 5].map((level) => <option key={level} value={level}>{level}</option>)}
+              </select>
             </label>
             {requirements.length > 1 && <button className="button button-secondary" type="button" onClick={() => removeRequirement(index)}>Retirer</button>}
           </div>
