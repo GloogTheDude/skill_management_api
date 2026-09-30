@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import AppLayout from "./components/AppLayout";
-import PlaceholderPage from "./components/PlaceholderPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
@@ -39,12 +38,10 @@ function App() {
             <Route path="employee-search" element={<EmployeeSkillSearchPage />} />
             <Route path="employees/:idEmployee/skills" element={<EmployeeSkillProfilePage />} />
             <Route path="employees/:idEmployee/acquisitions" element={<EmployeeAcquisitionsPage />} />
-            <Route path="approvals" element={<PlaceholderPage title="Validations" />} />
             <Route path="employees" element={<EmployeeAdminPage />} />
             <Route path="training-admin" element={<TrainingAdminPage />} />
             <Route path="references" element={<ReferenceAdminPage />} />
             <Route path="participations" element={<ParticipationsPage />} />
-            <Route path="skill-validations" element={<PlaceholderPage title="Skill validations" />} />
           </Route>
         </Route>
         <Route path="/" element={<Navigate to="/app" replace />} />

@@ -37,11 +37,20 @@ from models.training import Training
 from models.skill import Skill
 from models.training_skill import TrainingSkill
 from models.training_source import TrainingSource
+from models.training_request import TrainingRequest
+from models.validation_type import ValidationType
+from models.skill_validation import SkillValidation
 from services.participation_completion_service import ParticipationCompletionService
 from services.participation_service import ParticipationService
 from services.employee_skill_profile_service import EmployeeSkillProfileService
 from services.document_storage import LocalDocumentStorage
 from services.participation_document_service import ParticipationDocumentService
+from services.training_request_workflow_service import TrainingRequestWorkflowService
+from services.skill_validation_service import SkillValidationService
+from db.repositories.training_request_repository import TrainingRequestRepository
+from db.repositories.skill_validation_repository import SkillValidationRepository
+from dto.training_request_api_dto import ApproveTrainingRequestDTO
+from dto.skill_validation_dto import CreateSkillValidationDTO
 from dto.auth_dto import AuthEmployeeDTO
 from errors.authorization_errors import AuthorizationForbidden
 from starlette.datastructures import Headers
@@ -345,6 +354,73 @@ def test_full_cycle_completion_exposes_training_skill_in_profile(session):
 
     assert completed.status == PARTICIPATIONSTATUS.COMPLETED.value
     python = next(skill for skill in profile if skill.skill_id == 1)
+
+
+def test_training_request_to_evaluation_keeps_acquired_and_evaluated_separate(session):
+    session.add_all([
+        Skill(id_skill=1, name_skill="Python", id_domaine=1, is_deleted=False),
+        Training(
+            id_training=1,
+            title="Training 1",
+            id_domaine=1,
+            id_source=1,
+            start_=date.today() - timedelta(days=10),
+            end_=date.today(),
+            is_deleted=False,
+        ),
+        TrainingSkill(id_training=1, id_skill=1, granted_level=3, is_deleted=False),
+        TrainingRequest(
+            id_training_request=1,
+            id_employee=1,
+            id_training=1,
+            status="PENDING",
+            requested_at=date.today(),
+            is_deleted=False,
+        ),
+        ValidationType(
+            id_validation=1,
+            denomination_validation="Observation",
+            is_deleted=False,
+        ),
+    ])
+    session.commit()
+
+    actor = document_actor(id_employee=2)
+    workflow = TrainingRequestWorkflowService(
+        TrainingRequestRepository(session),
+        EmployeeRepository(session),
+        TrainingRepository(session),
+        ParticipationRepository(session),
+    )
+    workflow.approve(1, ApproveTrainingRequestDTO(), actor)
+    completion_service(session).complete(1, 1)
+    session.commit()
+
+    profile = EmployeeSkillProfileService(
+        EmployeeRepository(session),
+        AcquisitionSkillRepository(session),
+    ).get_profile(1)
+    python = next(skill for skill in profile if skill.skill_id == 1)
+    assert python.acquired_level == 3
+    assert python.evaluated_level is None
+
+    SkillValidationService(SkillValidationRepository(session)).create(
+        CreateSkillValidationDTO(
+            id_employee=1,
+            id_skill=1,
+            id_validation=1,
+            level_skill=5,
+        ),
+        validator_id=2,
+    )
+    session.commit()
+    profile = EmployeeSkillProfileService(
+        EmployeeRepository(session),
+        AcquisitionSkillRepository(session),
+    ).get_profile(1)
+    python = next(skill for skill in profile if skill.skill_id == 1)
+    assert python.acquired_level == 3
+    assert python.evaluated_level == 5
 
 
 def test_complete_rejects_missing_or_deleted_participation(session):

@@ -17,11 +17,10 @@ function navigationFor(permissionProfile) {
     ...employee,
     ["/app/employee-search", "Recherche employés"],
     ["/app/manage-requests", "Demandes à traiter"],
-    ["/app/manage-evaluations", "Évaluations terrain"],
+    ["/app/manage-evaluations", "Évaluations de compétences"],
     ["/app/employees", "Employees"],
     ["/app/training-admin", "Trainings"],
     ["/app/references", "Référentiels"],
-    ["/app/skill-validations", "Skill validations"],
   ];
 }
 
