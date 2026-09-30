@@ -36,6 +36,7 @@ from controllers import (
     employee_skill_profile_controller,
     employee_skill_search_controller,
     auth_controller,
+    dashboard_controller,
 )
 
 from errors.handlers import (
@@ -118,6 +119,7 @@ app.include_router(training_request_controller.router)
 app.include_router(employee_skill_profile_controller.router)
 app.include_router(employee_skill_search_controller.router)
 app.include_router(auth_controller.router)
+app.include_router(dashboard_controller.router)
 
 
 

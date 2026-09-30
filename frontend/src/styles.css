@@ -35,6 +35,12 @@ button, input { font: inherit; }
 .skill-card h2 { margin: 0; font-size: 1.15rem; }
 .skill-card-header p { margin: .35rem 0 0; color: #64748b; }
 .level-badge { flex: 0 0 auto; padding: .35rem .55rem; color: #3730a3; background: #eef2ff; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.dashboard-card { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; padding: 1.25rem; border: 1px solid #dbe3ef; border-radius: .8rem; background: white; color: #172033; text-align: left; cursor: pointer; }
+.dashboard-card:hover { border-color: #6366f1; box-shadow: 0 4px 14px rgba(30, 41, 59, .08); }
+.dashboard-card span { color: #64748b; font-size: .9rem; }
+.dashboard-card strong { font-size: 2rem; }
+.dashboard-note { margin-top: 1rem; color: #475569; }
 .primary-source { margin: 1rem 0; color: #475569; font-size: .9rem; }
 .skill-card details { border-top: 1px solid #e2e8f0; padding-top: .75rem; }
 .skill-card summary { cursor: pointer; color: #4f46e5; font-size: .9rem; font-weight: 600; }
