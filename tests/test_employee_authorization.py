@@ -47,6 +47,23 @@ def test_employee_and_manager_out_of_scope_are_forbidden():
         )
 
 
+def test_manager_may_read_direct_report_acquisitions_but_not_other_employee():
+    EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(
+        actor(2, 2), target(4, 2)
+    )
+    with pytest.raises(AuthorizationForbidden):
+        EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(
+            actor(2, 2), target(5, 99)
+        )
+
+
+def test_acquisition_mutations_remain_hr_only():
+    for level in (1, 2):
+        with pytest.raises(AuthorizationForbidden):
+            EmployeeAuthorizationService.require_hr(actor(1, level))
+    EmployeeAuthorizationService.require_hr(actor(3, 3))
+
+
 def test_available_training_scope_is_self_only():
     EmployeeAuthorizationService.require_self(actor(1, 1), 1)
     with pytest.raises(AuthorizationForbidden):
