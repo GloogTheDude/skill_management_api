@@ -190,7 +190,7 @@ export default function EmployeeSkillSearchPage() {
                   state: { returnTo: `/app/employee-search?${searchParams.toString()}` },
                 })}
               >Voir le profil</button>
-              { ["MANAGER", "HR"].includes(user?.permission_profile) && <button className="button button-primary" type="button" onClick={() => navigate(`/app/manage-evaluations/${employee.id_employee}`)}>Évaluer</button> }
+              { ["MANAGER", "HR"].includes(user?.permission_profile) && Number(user.id_employee) !== Number(employee.id_employee) && <button className="button button-primary" type="button" onClick={() => navigate(`/app/manage-evaluations/${employee.id_employee}`)}>Évaluer</button> }
             </article>
           ))}
         </div>
