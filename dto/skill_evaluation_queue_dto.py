@@ -30,3 +30,25 @@ class SkillEvaluationHistoryDTO(BaseModel):
     validator_last_name: str | None
     validation_type_name: str | None
     justification: str | None
+
+
+class EmployeeEvaluationQueueDTO(BaseModel):
+    id_employee: int
+    employee_first_name: str | None
+    employee_last_name: str | None
+    role_name: str | None
+    acquired_skills_count: int
+    evaluated_skills_count: int
+    pending_skills_count: int
+
+
+class BatchSkillEvaluationItemDTO(BaseModel):
+    id_skill: int
+    level_skill: int
+
+
+class BatchSkillEvaluationDTO(BaseModel):
+    id_employee: int
+    id_validation: int
+    justification: str | None = None
+    evaluations: list[BatchSkillEvaluationItemDTO]

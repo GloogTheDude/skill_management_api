@@ -16,6 +16,7 @@ from models.employee import Employee
 from models.skill import Skill
 from models.validation_type import ValidationType
 from services.employee_authorization_service import EmployeeAuthorizationService
+from dto.skill_evaluation_queue_dto import BatchSkillEvaluationDTO, EmployeeEvaluationQueueDTO
 
 
 router = APIRouter(
@@ -62,6 +63,42 @@ def get_pending_evaluation_queue(
     return SkillValidationService(SkillValidationRepository(session)).get_pending_evaluations(
         current_employee.id_employee, current_employee.permission_profile
     )
+
+
+@router.get("/work-queue/employees", response_model=list[EmployeeEvaluationQueueDTO])
+def get_employee_evaluation_queue(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    try:
+        EmployeeAuthorizationService.require_manager_or_hr(current_employee)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return SkillValidationService(SkillValidationRepository(session)).get_employee_evaluation_queue(
+        current_employee.id_employee, current_employee.permission_profile
+    )
+
+
+@router.post("/batch", status_code=status.HTTP_201_CREATED)
+def create_skill_validation_batch(
+    dto: BatchSkillEvaluationDTO,
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+):
+    target = session.get(Employee, dto.id_employee)
+    if target is None or target.is_deleted:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    try:
+        if current_employee.id_employee == dto.id_employee:
+            raise AuthorizationForbidden("Employees cannot validate themselves.")
+        EmployeeAuthorizationService.authorize_action(current_employee, target)
+        return SkillValidationService(SkillValidationRepository(session)).create_batch(
+            dto, current_employee.id_employee
+        )
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except NoResultFound as exc:
+        raise HTTPException(status_code=404, detail="Validation reference not found") from exc
 
 
 @router.get("/work-queue/history")

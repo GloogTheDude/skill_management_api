@@ -10,7 +10,14 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from models.employee import Employee
 from models.skill import Skill
-from dto.skill_evaluation_queue_dto import PendingSkillEvaluationDTO, SkillEvaluationHistoryDTO
+from dto.skill_evaluation_queue_dto import (
+    BatchSkillEvaluationDTO,
+    EmployeeEvaluationQueueDTO,
+    PendingSkillEvaluationDTO,
+    SkillEvaluationHistoryDTO,
+)
+from models.role import Role
+from models.validation_type import ValidationType
 
 
 class SkillValidationService(BaseCrudService[SkillValidation]):
@@ -129,3 +136,40 @@ class SkillValidationService(BaseCrudService[SkillValidation]):
                 justification=item.justification,
             ) for item in self.repository.get_evaluation_history_for_scope(employee_id, permission_profile)
         ]
+
+    def get_employee_evaluation_queue(self, employee_id: int, permission_profile):
+        rows = self.repository.get_employee_evaluation_queue(employee_id, permission_profile)
+        roles = {
+            role.id_role: role.denomination_role
+            for role in self.repository._session.scalars(select(Role)).all()
+        }
+        return [EmployeeEvaluationQueueDTO(
+            id_employee=row.id_employee,
+            employee_first_name=row.first_name,
+            employee_last_name=row.last_name,
+            role_name=roles.get(row.id_role),
+            acquired_skills_count=row.acquired_skills_count,
+            evaluated_skills_count=row.evaluated_skills_count,
+            pending_skills_count=row.acquired_skills_count - row.evaluated_skills_count,
+        ) for row in rows]
+
+    def create_batch(self, dto: BatchSkillEvaluationDTO, validator_id: int):
+        session = self.repository._session
+        target = session.get(Employee, dto.id_employee)
+        if target is None or target.is_deleted:
+            raise NoResultFound()
+        validation_type = session.get(ValidationType, dto.id_validation)
+        if validation_type is None or validation_type.is_deleted:
+            raise NoResultFound()
+        for item in dto.evaluations:
+            self.create(
+                CreateSkillValidationDTO(
+                    id_employee=dto.id_employee,
+                    id_skill=item.id_skill,
+                    level_skill=item.level_skill,
+                    id_validation=dto.id_validation,
+                    justification=dto.justification,
+                ),
+                validator_id,
+            )
+        return self.get_all(dto.id_employee, None)

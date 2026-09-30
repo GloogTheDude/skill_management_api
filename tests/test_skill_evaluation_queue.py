@@ -1,10 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+import pytest
 
 from core.constants import PermissionProfile, PARTICIPATIONSTATUS
 from db.repositories.skill_validation_repository import SkillValidationRepository
 from dto.skill_validation_dto import CreateSkillValidationDTO
-from models import Base, AccessLevel, Domaine, Employee, Participation, Role, Skill, Training, TrainingSkill, ValidationType
+from dto.skill_evaluation_queue_dto import BatchSkillEvaluationDTO, BatchSkillEvaluationItemDTO
+from models import Base, AccessLevel, Domaine, Employee, Participation, Role, Skill, SkillValidation, Training, TrainingSkill, ValidationType
 from services.skill_validation_service import SkillValidationService
 
 
@@ -25,6 +27,7 @@ def make_session():
         Skill(id_skill=2, name_skill="SQL", id_domaine=1, is_deleted=False),
         Training(id_training=1, title="Python course", id_domaine=1, is_deleted=False),
         TrainingSkill(id_training=1, id_skill=1, granted_level=4, is_deleted=False),
+        TrainingSkill(id_training=1, id_skill=2, granted_level=2, is_deleted=False),
         Participation(id_employee=2, id_training=1, status=PARTICIPATIONSTATUS.COMPLETED.value, is_deleted=False),
         ValidationType(id_validation=1, source="internal", denomination_validation="Review", is_deleted=False),
     ])
@@ -37,10 +40,10 @@ def test_pending_queue_is_batch_scoped_and_current_validation_removes_item():
     service = SkillValidationService(SkillValidationRepository(session))
 
     pending = service.get_pending_evaluations(1, PermissionProfile.MANAGER)
-    assert [(item.id_employee, item.id_skill, item.acquired_level) for item in pending] == [(2, 1, 4)]
+    assert [(item.id_employee, item.id_skill, item.acquired_level) for item in pending] == [(2, 1, 4), (2, 2, 2)]
 
     service.create(CreateSkillValidationDTO(id_employee=2, id_skill=1, id_validation=1, level_skill=3), 1)
-    assert service.get_pending_evaluations(1, PermissionProfile.MANAGER) == []
+    assert [(item.id_employee, item.id_skill) for item in service.get_pending_evaluations(1, PermissionProfile.MANAGER)] == [(2, 2)]
     assert service.get_pending_evaluations(1, PermissionProfile.EMPLOYEE) == []
 
     session.close()
@@ -57,5 +60,52 @@ def test_history_queue_contains_current_validation_and_excludes_other_scope():
     assert history[0].employee_first_name == "Direct"
     assert history[0].skill_name == "Python"
 
+    session.close()
+    engine.dispose()
+
+
+def test_employee_queue_groups_acquired_skills_and_batch_keeps_scope_and_partial_state():
+    engine, session = make_session()
+    service = SkillValidationService(SkillValidationRepository(session))
+
+    queue = service.get_employee_evaluation_queue(1, PermissionProfile.MANAGER)
+    assert len(queue) == 1
+    assert queue[0].id_employee == 2
+    assert queue[0].acquired_skills_count == 2
+    assert queue[0].evaluated_skills_count == 0
+    assert queue[0].pending_skills_count == 2
+
+    service.create_batch(BatchSkillEvaluationDTO(
+        id_employee=2,
+        id_validation=1,
+        justification="Annual review",
+        evaluations=[
+            BatchSkillEvaluationItemDTO(id_skill=1, level_skill=3),
+            BatchSkillEvaluationItemDTO(id_skill=2, level_skill=4),
+        ],
+    ), validator_id=1)
+    session.commit()
+    queue = service.get_employee_evaluation_queue(1, PermissionProfile.MANAGER)
+    assert queue[0].evaluated_skills_count == 2
+    assert queue[0].pending_skills_count == 0
+
+    session.close()
+    engine.dispose()
+
+
+def test_batch_evaluation_is_atomic_when_one_skill_is_invalid():
+    engine, session = make_session()
+    service = SkillValidationService(SkillValidationRepository(session))
+    with pytest.raises(Exception):
+        service.create_batch(BatchSkillEvaluationDTO(
+            id_employee=2,
+            id_validation=1,
+            evaluations=[
+                BatchSkillEvaluationItemDTO(id_skill=1, level_skill=3),
+                BatchSkillEvaluationItemDTO(id_skill=999, level_skill=4),
+            ],
+        ), validator_id=1)
+    session.rollback()
+    assert session.query(SkillValidation).count() == 0
     session.close()
     engine.dispose()

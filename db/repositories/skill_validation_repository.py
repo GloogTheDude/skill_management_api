@@ -104,6 +104,32 @@ class SkillValidationRepository(BaseRepository[SkillValidation]):
             sources.c.id_skill, sources.c.skill_name, sources.c.skill_domaine,
         )).all())
 
+    def get_employee_evaluation_queue(self, employee_id: int, permission_profile):
+        sources = self._acquired_sources_cte()
+        current = SkillValidation.__table__.alias("current_validation")
+        statement = select(
+            sources.c.id_employee,
+            sources.c.first_name,
+            sources.c.last_name,
+            Employee.id_role,
+            func.count(func.distinct(sources.c.id_skill)).label("acquired_skills_count"),
+            func.count(func.distinct(current.c.id_skill)).label("evaluated_skills_count"),
+        ).join(Employee, Employee.id_employee == sources.c.id_employee).outerjoin(
+            current,
+            (current.c.id_employee == sources.c.id_employee)
+            & (current.c.id_skill == sources.c.id_skill)
+            & current.c.is_deleted.is_(False)
+            & current.c.superseded_at.is_(None),
+        ).where(Employee.is_deleted.is_(False))
+        permission_profile = coerce_permission_profile(permission_profile)
+        if permission_profile == PermissionProfile.MANAGER:
+            statement = statement.where(Employee.id_manager == employee_id)
+        elif permission_profile == PermissionProfile.EMPLOYEE:
+            statement = statement.where(Employee.id_employee == employee_id)
+        return list(self._session.execute(statement.group_by(
+            sources.c.id_employee, sources.c.first_name, sources.c.last_name, Employee.id_role,
+        )).all())
+
     def _acquired_sources_cte(self):
         training = select(
             Employee.id_employee.label("id_employee"), Employee.first_name.label("first_name"),
