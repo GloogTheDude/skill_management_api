@@ -178,6 +178,13 @@ button, input { font: inherit; }
 .reference-card { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 12px; }
 .reference-card p { margin: .15rem 0; color: #64748b; }
 .reference-card .reference-primary { color: #0f172a; font-weight: 700; }
+.skill-card-header { align-items: flex-start; }
+.skill-levels { display: grid; gap: .45rem; flex: 0 1 13rem; min-width: 11rem; }
+.level-badge { white-space: normal; }
+.level-badge-secondary { background: #f1f5f9; color: #334155; }
+.skill-card details { margin-top: .9rem; padding-top: .75rem; border-top: 1px solid #e2e8f0; }
+.skill-card details h3 { margin: .9rem 0 .35rem; color: #475569; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 720px) { .skill-card-header { display: block; } .skill-levels { margin-top: .8rem; min-width: 0; } }
 .relation-editor { display: grid; gap: .7rem; padding: 1rem; background: #f8fafc; border-radius: 10px; }
 .relation-editor h3 { margin: 0; font-size: 1rem; }
 .relation-row { display: grid; grid-template-columns: 1fr 130px auto; gap: .6rem; align-items: end; }

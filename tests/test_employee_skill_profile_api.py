@@ -215,6 +215,13 @@ def test_profile_consolidates_sources_and_uses_active_highest_level(session):
     assert python.evaluated_level == 3
     assert python.primary_acquired_source.source_type == "CERTIFICATION"
     assert python.current_validation.id_skill_validation == 1
+    assert [source.source_type for source in python.acquired_sources] == [
+        "TRAINING",
+        "CERTIFICATION",
+        "CERTIFICATION",
+        "DIPLOMA",
+    ]
+    assert all(source.source_type != "VALIDATION" for source in python.acquired_sources)
     assert [source.source_type for source in python.sources] == [
         "TRAINING",
         "CERTIFICATION",
