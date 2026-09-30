@@ -4,11 +4,12 @@ function formatDate(value) {
 }
 
 function SourceList({ sources }) {
+  const sourceLabels = { TRAINING: "Formation", DIPLOMA: "Diplôme", CERTIFICATION: "Certification", VALIDATION: "Évaluation" };
   return (
     <ul className="skill-sources">
       {sources.map((source) => (
         <li key={`${source.source_type}-${source.source_id}`}>
-          <span>{source.source_type}</span>
+          <span>{sourceLabels[source.source_type] || source.source_type}</span>
           {source.level !== null && <span>Niveau {source.level}</span>}
           {!source.is_active && <span className="source-inactive">Inactive</span>}
           {source.acquired_at && <span>Acquise le {formatDate(source.acquired_at)}</span>}
@@ -29,12 +30,12 @@ export default function SkillProfileList({ skills, canEvaluate = false, onEvalua
               <h2>{skill.skill_name}</h2>
               <p>{skill.skill_domaine || "Domaine non renseigné"}</p>
             </div>
-            <span className="level-badge">Acquis : {skill.acquired_level ?? "Aucun"}</span>
+            <div className="skill-levels">
+              <span className="level-badge">Niveau acquis : {skill.acquired_level ?? "Aucun"} / 5</span>
+              <span className="level-badge level-badge-secondary">Niveau évalué : {skill.evaluated_level ?? "Non évalué"}{skill.evaluated_level !== null && skill.evaluated_level !== undefined ? " / 5" : ""}</span>
+            </div>
           </div>
-          <p className="primary-source">Évaluation terrain : {skill.evaluated_level ?? "Non évalué"}</p>
-          {skill.primary_acquired_source && <p className="primary-source">Acquis principalement via : {skill.primary_acquired_source.source_type}</p>}
-          {skill.current_validation && <p className="primary-source">Évalué par : {[skill.current_validation.validator_first_name, skill.current_validation.validator_last_name].filter(Boolean).join(" ") || "Utilisateur"}</p>}
-          {skill.current_validation?.justification && <p className="primary-source">« {skill.current_validation.justification} »</p>}
+          {skill.primary_acquired_source && <p className="primary-source">Acquis principalement via : {{ TRAINING: "Formation", DIPLOMA: "Diplôme", CERTIFICATION: "Certification" }[skill.primary_acquired_source.source_type] || skill.primary_acquired_source.source_type}</p>}
           {canEvaluate && (
             <div className="card-actions">
               <button className="button button-secondary" type="button" onClick={() => onEvaluate(skill)}>
@@ -45,12 +46,11 @@ export default function SkillProfileList({ skills, canEvaluate = false, onEvalua
               </button>
             </div>
           )}
-          {skill.sources?.length > 0 && (
-            <details>
-              <summary>{skill.sources.length} source{skill.sources.length === 1 ? "" : "s"}</summary>
-              <SourceList sources={skill.sources} />
-            </details>
-          )}
+          <details>
+            <summary>Voir les détails</summary>
+            {skill.sources?.length > 0 && <><h3>Sources d’acquisition</h3><SourceList sources={skill.sources} /></>}
+            {skill.current_validation && <><h3>Dernière évaluation</h3><p>Niveau : {skill.current_validation.level}</p><p>Évalué par : {[skill.current_validation.validator_first_name, skill.current_validation.validator_last_name].filter(Boolean).join(" ") || "Utilisateur"}</p>{skill.current_validation.justification && <p>Justification : « {skill.current_validation.justification} »</p>}</>}
+          </details>
         </article>
       ))}
     </div>

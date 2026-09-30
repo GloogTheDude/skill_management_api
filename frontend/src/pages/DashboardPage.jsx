@@ -18,12 +18,28 @@ export default function DashboardPage() {
   }, []);
   if (!data && !error) return <div className="screen-state">Chargement du Dashboard…</div>;
   if (error) return <div className="alert page-alert" role="alert">{error}</div>;
-  const cards = [
-    ["Demandes à traiter", data.pending_training_requests, "/app/manage-requests?view=pending"],
-    ["Évaluations à effectuer", data.pending_skill_evaluations, "/app/manage-evaluations?view=pending"],
-    ["Participations actives", data.active_participations, "/app/participations?view=current"],
-    ["Certifications dans les 30 jours", data.expiring_certifications, "/app/participations"],
-  ];
+  const cardsByProfile = {
+    EMPLOYEE: [
+      ["Compétences acquises", data.acquired_skills, "/app/skills"],
+      ["Compétences évaluées", data.evaluated_skills, "/app/skills"],
+      ["Demandes en attente", data.pending_training_requests, "/app/training-requests"],
+      ["Participations actives", data.active_participations, "/app/participations?view=current"],
+    ],
+    MANAGER: [
+      ["Employees dans votre périmètre", data.active_employees, "/app/employee-search"],
+      ["Demandes à traiter", data.pending_training_requests, "/app/manage-requests?view=pending"],
+      ["Évaluations à effectuer", data.pending_skill_evaluations, "/app/manage-evaluations?view=pending"],
+      ["Participations actives", data.active_participations, "/app/participations?view=current"],
+    ],
+    HR: [
+      ["Employees actifs", data.active_employees, "/app/employees"],
+      ["Demandes à traiter", data.pending_training_requests, "/app/manage-requests?view=pending"],
+      ["Évaluations à effectuer", data.pending_skill_evaluations, "/app/manage-evaluations?view=pending"],
+      ["Participations actives", data.active_participations, "/app/participations?view=current"],
+      ["Certifications dans les 30 jours", data.expiring_certifications, "/app/participations"],
+    ],
+  };
+  const cards = cardsByProfile[user.permission_profile] || [];
   return (
     <section>
       <p className="eyebrow">Accueil</p>
@@ -35,8 +51,6 @@ export default function DashboardPage() {
           </button>
         ))}
       </div>
-      {data.active_employees !== null && data.active_employees !== undefined && <p className="dashboard-note">Employees actifs dans votre périmètre : {data.active_employees}</p>}
-      {data.acquired_skills !== null && data.acquired_skills !== undefined && <p className="dashboard-note">Vos compétences acquises : {data.acquired_skills} · évaluées : {data.evaluated_skills}</p>}
     </section>
   );
 }
