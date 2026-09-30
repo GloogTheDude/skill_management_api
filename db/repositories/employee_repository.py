@@ -41,6 +41,21 @@ class EmployeeRepository(BaseRepository[Employee]):
         )
         return list(self._session.scalars(statement).unique().all())
 
+    def get_direct_reports_with_details(self, manager_id: int) -> list[Employee]:
+        statement = (
+            select(Employee)
+            .options(
+                joinedload(Employee.role).joinedload(Role.access_level),
+                joinedload(Employee.manager),
+            )
+            .where(
+                Employee.id_manager == manager_id,
+                Employee.is_deleted.is_(False),
+            )
+            .order_by(Employee.last_name, Employee.first_name)
+        )
+        return list(self._session.scalars(statement).unique().all())
+
     def get_active_manager_targets(self, excluded_id: int) -> list[Employee]:
         statement = select(Employee).where(Employee.is_deleted.is_(False), Employee.id_employee != excluded_id).order_by(Employee.last_name, Employee.first_name)
         return list(self._session.scalars(statement).all())

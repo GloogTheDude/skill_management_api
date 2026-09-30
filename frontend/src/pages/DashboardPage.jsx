@@ -26,7 +26,7 @@ export default function DashboardPage() {
       ["Participations actives", data.active_participations, "/app/participations?view=current"],
     ],
     MANAGER: [
-      ["Employees dans votre périmètre", data.active_employees, "/app/employee-search"],
+      ["Employees dans votre périmètre", data.active_employees, "/app/team"],
       ["Demandes à traiter", data.pending_training_requests, "/app/manage-requests?view=pending"],
       ["Participations actives", data.active_participations, "/app/participations?view=current"],
     ],

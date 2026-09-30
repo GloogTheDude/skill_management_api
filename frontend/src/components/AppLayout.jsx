@@ -11,7 +11,7 @@ function navigationFor(permissionProfile) {
   ];
   if (permissionProfile === "EMPLOYEE") return employee;
   if (permissionProfile === "MANAGER") {
-    return [...employee, ["/app/manage-requests", "Demandes à traiter"], ["/app/employee-search", "Recherche employés"]];
+    return [...employee, ["/app/team", "Mon équipe"], ["/app/manage-requests", "Demandes à traiter"], ["/app/employee-search", "Recherche employés"]];
   }
   return [
     ...employee,

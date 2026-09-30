@@ -16,6 +16,7 @@ from errors.authorization_errors import AuthorizationForbidden
 from services.employee_authorization_service import EmployeeAuthorizationService
 from sqlalchemy.exc import NoResultFound
 from errors.administrative_security_errors import LastHrAdministratorError
+from core.constants import PermissionProfile
 
 
 router = APIRouter(
@@ -37,6 +38,24 @@ def create_employee(
     try:
         EmployeeAuthorizationService.require_hr(current_employee)
         return service.create(dto)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.get("/team")
+def get_my_team(
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+) -> list[ResponseEmployeeDTO]:
+    try:
+        if current_employee.permission_profile not in (
+            PermissionProfile.MANAGER,
+            PermissionProfile.HR,
+        ):
+            raise AuthorizationForbidden("Only managers and HR may access a team list.")
+        if current_employee.permission_profile == PermissionProfile.HR:
+            return EmployeeService(EmployeeRepository(session)).get_all()
+        return EmployeeService(EmployeeRepository(session)).get_direct_reports(current_employee.id_employee)
     except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 

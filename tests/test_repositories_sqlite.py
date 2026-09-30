@@ -43,6 +43,7 @@ class RepositorySQLiteTestCase(unittest.TestCase):
             Employee(id_employee=1, first_name="Manager", last_name="One", hash_password="hash", mail="manager@company.be", id_role=2, id_manager=None, is_deleted=False),
             Employee(id_employee=4, first_name="David", last_name="Henrichmann", hash_password="hash", mail="david@company.be", id_role=1, id_manager=1, is_deleted=False),
             Employee(id_employee=5, first_name="Nora", last_name="Simon", hash_password="hash", mail="nora@company.be", id_role=1, id_manager=1, is_deleted=False),
+            Employee(id_employee=6, first_name="Archived", last_name="Report", hash_password="hash", mail="archived@company.be", id_role=1, id_manager=1, is_deleted=True),
             Training(id_training=1, title="Already requested", id_domaine=1, start_=date(2099, 1, 1), end_=date(2099, 1, 2), is_deleted=False),
             Training(id_training=2, title="Available future", id_domaine=2, start_=date(2099, 2, 1), end_=date(2099, 2, 2), is_deleted=False),
             Training(id_training=3, title="Past training", id_domaine=1, start_=date(2000, 1, 1), end_=date(2000, 1, 2), is_deleted=False),
@@ -73,6 +74,13 @@ class RepositorySQLiteTestCase(unittest.TestCase):
 
         repo.delete(employee.id_employee)
         self.assertIsNone(repo.get_active_by_mail("test@company.be"))
+
+    def test_employee_repository_direct_reports_are_scoped_and_active(self):
+        reports = EmployeeRepository(self.session).get_direct_reports_with_details(1)
+
+        self.assertEqual({employee.id_employee for employee in reports}, {4, 5})
+        self.assertNotIn(1, {employee.id_employee for employee in reports})
+        self.assertNotIn(6, {employee.id_employee for employee in reports})
 
     def test_training_repository_excludes_requested_past_deleted_and_deleted_domaines(self):
         repo = TrainingRepository(self.session)

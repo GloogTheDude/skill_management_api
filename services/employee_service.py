@@ -27,6 +27,12 @@ class EmployeeService(BaseCrudService[Employee]):
             for employee in employees
         ]
 
+    def get_direct_reports(self, manager_id: int) -> list[ResponseEmployeeDTO]:
+        return [
+            ResponseEmployeeDTO.from_entity(employee)
+            for employee in self.repository.get_direct_reports_with_details(manager_id)
+        ]
+
     def get_by_id(
         self,
         id_employee: int,
