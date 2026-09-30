@@ -30,7 +30,7 @@ function parseCriteria(params, skills) {
 }
 
 export default function EmployeeSkillSearchPage() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [skills, setSkills] = useState([]);
@@ -190,6 +190,7 @@ export default function EmployeeSkillSearchPage() {
                   state: { returnTo: `/app/employee-search?${searchParams.toString()}` },
                 })}
               >Voir le profil</button>
+              { ["MANAGER", "HR"].includes(user?.permission_profile) && <button className="button button-primary" type="button" onClick={() => navigate(`/app/manage-evaluations/${employee.id_employee}`)}>Évaluer</button> }
             </article>
           ))}
         </div>
