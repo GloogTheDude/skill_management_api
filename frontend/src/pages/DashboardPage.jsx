@@ -28,13 +28,11 @@ export default function DashboardPage() {
     MANAGER: [
       ["Employees dans votre périmètre", data.active_employees, "/app/employee-search"],
       ["Demandes à traiter", data.pending_training_requests, "/app/manage-requests?view=pending"],
-      ["Évaluations à effectuer", data.pending_skill_evaluations, "/app/employee-search"],
       ["Participations actives", data.active_participations, "/app/participations?view=current"],
     ],
     HR: [
       ["Employees actifs", data.active_employees, "/app/employees"],
       ["Demandes à traiter", data.pending_training_requests, "/app/manage-requests?view=pending"],
-      ["Évaluations à effectuer", data.pending_skill_evaluations, "/app/employees"],
       ["Participations actives", data.active_participations, "/app/participations?view=current"],
       ["Certifications dans les 30 jours", data.expiring_certifications, "/app/participations"],
     ],

@@ -3,17 +3,6 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 
-class PendingSkillEvaluationDTO(BaseModel):
-    id_employee: int
-    employee_first_name: str | None
-    employee_last_name: str | None
-    id_skill: int
-    skill_name: str
-    skill_domaine: str | None
-    acquired_level: int
-    primary_acquired_source: str | None = None
-
-
 class SkillEvaluationHistoryDTO(BaseModel):
     id_skill_validation: int
     id_employee: int
@@ -30,16 +19,6 @@ class SkillEvaluationHistoryDTO(BaseModel):
     validator_last_name: str | None
     validation_type_name: str | None
     justification: str | None
-
-
-class EmployeeEvaluationQueueDTO(BaseModel):
-    id_employee: int
-    employee_first_name: str | None
-    employee_last_name: str | None
-    role_name: str | None
-    acquired_skills_count: int
-    evaluated_skills_count: int
-    pending_skills_count: int
 
 
 class BatchSkillEvaluationItemDTO(BaseModel):

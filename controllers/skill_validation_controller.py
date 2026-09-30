@@ -16,7 +16,7 @@ from models.employee import Employee
 from models.skill import Skill
 from models.validation_type import ValidationType
 from services.employee_authorization_service import EmployeeAuthorizationService
-from dto.skill_evaluation_queue_dto import BatchSkillEvaluationDTO, EmployeeEvaluationQueueDTO
+from dto.skill_evaluation_queue_dto import BatchSkillEvaluationDTO
 
 
 router = APIRouter(
@@ -49,34 +49,6 @@ def create_skill_validation(
     except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return service.create(dto, current_employee.id_employee)
-
-
-@router.get("/work-queue/pending")
-def get_pending_evaluation_queue(
-    session: Session = Depends(get_session),
-    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
-):
-    try:
-        EmployeeAuthorizationService.require_manager_or_hr(current_employee)
-    except AuthorizationForbidden as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
-    return SkillValidationService(SkillValidationRepository(session)).get_pending_evaluations(
-        current_employee.id_employee, current_employee.permission_profile
-    )
-
-
-@router.get("/work-queue/employees", response_model=list[EmployeeEvaluationQueueDTO])
-def get_employee_evaluation_queue(
-    session: Session = Depends(get_session),
-    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
-):
-    try:
-        EmployeeAuthorizationService.require_manager_or_hr(current_employee)
-    except AuthorizationForbidden as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
-    return SkillValidationService(SkillValidationRepository(session)).get_employee_evaluation_queue(
-        current_employee.id_employee, current_employee.permission_profile
-    )
 
 
 @router.post("/batch", status_code=status.HTTP_201_CREATED)

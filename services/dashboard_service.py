@@ -69,15 +69,8 @@ class DashboardService:
                 scope_filter,
             )
         ) or 0
-        pending_evaluations = len(
-            SkillValidationRepository(self.session).get_pending_evaluations_for_scope(
-                current.id_employee, current.permission_profile
-            )
-        )
-
         result = DashboardDTO(
             pending_training_requests=pending_requests,
-            pending_skill_evaluations=pending_evaluations,
             active_participations=active_participations,
             expiring_certifications=expiring_certifications,
         )

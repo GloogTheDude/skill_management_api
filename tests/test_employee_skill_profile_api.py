@@ -248,6 +248,28 @@ def test_acquired_and_evaluated_levels_are_independent(session):
     assert python.current_validation.level == 2
 
 
+def test_validation_only_skill_is_included_without_formal_acquisition(session):
+    session.add(Skill(id_skill=99, name_skill="Docker", id_domaine=1, is_deleted=False))
+    session.add(SkillValidation(
+        id_skill_validation=99,
+        date_=date.today(),
+        level_skill=5,
+        id_validation=1,
+        id_employee=1,
+        id_validator=1,
+        id_skill=99,
+        is_deleted=False,
+    ))
+    session.commit()
+
+    docker = next(profile for profile in profile_service(session).get_profile(1) if profile.skill_id == 99)
+    assert docker.acquired_level is None
+    assert docker.acquired_sources == []
+    assert docker.primary_acquired_source is None
+    assert docker.evaluated_level == 5
+    assert docker.current_validation.id_skill_validation == 99
+
+
 def test_soft_deleted_current_validation_is_not_evaluated(session):
     validation = session.get(SkillValidation, 1)
     validation.is_deleted = True

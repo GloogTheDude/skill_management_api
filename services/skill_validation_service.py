@@ -12,11 +12,8 @@ from models.employee import Employee
 from models.skill import Skill
 from dto.skill_evaluation_queue_dto import (
     BatchSkillEvaluationDTO,
-    EmployeeEvaluationQueueDTO,
-    PendingSkillEvaluationDTO,
     SkillEvaluationHistoryDTO,
 )
-from models.role import Role
 from models.validation_type import ValidationType
 
 
@@ -102,20 +99,6 @@ class SkillValidationService(BaseCrudService[SkillValidation]):
     def get_history(self, id_employee: int, id_skill: int):
         return [ResponseSkillValidationDTO.from_entity(item) for item in self.repository.get_history(id_employee, id_skill)]
 
-    def get_pending_evaluations(self, employee_id: int, permission_profile):
-        return [
-            PendingSkillEvaluationDTO(
-                id_employee=row.id_employee,
-                employee_first_name=row.first_name,
-                employee_last_name=row.last_name,
-                id_skill=row.id_skill,
-                skill_name=row.skill_name,
-                skill_domaine=row.skill_domaine,
-                acquired_level=row.acquired_level,
-                primary_acquired_source=row.primary_acquired_source,
-            ) for row in self.repository.get_pending_evaluations_for_scope(employee_id, permission_profile)
-        ]
-
     def get_evaluation_history(self, employee_id: int, permission_profile):
         return [
             SkillEvaluationHistoryDTO(
@@ -136,22 +119,6 @@ class SkillValidationService(BaseCrudService[SkillValidation]):
                 justification=item.justification,
             ) for item in self.repository.get_evaluation_history_for_scope(employee_id, permission_profile)
         ]
-
-    def get_employee_evaluation_queue(self, employee_id: int, permission_profile):
-        rows = self.repository.get_employee_evaluation_queue(employee_id, permission_profile)
-        roles = {
-            role.id_role: role.denomination_role
-            for role in self.repository._session.scalars(select(Role)).all()
-        }
-        return [EmployeeEvaluationQueueDTO(
-            id_employee=row.id_employee,
-            employee_first_name=row.first_name,
-            employee_last_name=row.last_name,
-            role_name=roles.get(row.id_role),
-            acquired_skills_count=row.acquired_skills_count,
-            evaluated_skills_count=row.evaluated_skills_count,
-            pending_skills_count=row.acquired_skills_count - row.evaluated_skills_count,
-        ) for row in rows]
 
     def create_batch(self, dto: BatchSkillEvaluationDTO, validator_id: int):
         session = self.repository._session

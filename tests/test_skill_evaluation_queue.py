@@ -35,21 +35,6 @@ def make_session():
     return engine, session
 
 
-def test_pending_queue_is_batch_scoped_and_current_validation_removes_item():
-    engine, session = make_session()
-    service = SkillValidationService(SkillValidationRepository(session))
-
-    pending = service.get_pending_evaluations(1, PermissionProfile.MANAGER)
-    assert [(item.id_employee, item.id_skill, item.acquired_level) for item in pending] == [(2, 1, 4), (2, 2, 2)]
-
-    service.create(CreateSkillValidationDTO(id_employee=2, id_skill=1, id_validation=1, level_skill=3), 1)
-    assert [(item.id_employee, item.id_skill) for item in service.get_pending_evaluations(1, PermissionProfile.MANAGER)] == [(2, 2)]
-    assert service.get_pending_evaluations(1, PermissionProfile.EMPLOYEE) == []
-
-    session.close()
-    engine.dispose()
-
-
 def test_history_queue_contains_current_validation_and_excludes_other_scope():
     engine, session = make_session()
     service = SkillValidationService(SkillValidationRepository(session))
@@ -64,17 +49,9 @@ def test_history_queue_contains_current_validation_and_excludes_other_scope():
     engine.dispose()
 
 
-def test_employee_queue_groups_acquired_skills_and_batch_keeps_scope_and_partial_state():
+def test_batch_evaluation_keeps_partial_selection():
     engine, session = make_session()
     service = SkillValidationService(SkillValidationRepository(session))
-
-    queue = service.get_employee_evaluation_queue(1, PermissionProfile.MANAGER)
-    assert len(queue) == 1
-    assert queue[0].id_employee == 2
-    assert queue[0].acquired_skills_count == 2
-    assert queue[0].evaluated_skills_count == 0
-    assert queue[0].pending_skills_count == 2
-
     service.create_batch(BatchSkillEvaluationDTO(
         id_employee=2,
         id_validation=1,
@@ -85,9 +62,7 @@ def test_employee_queue_groups_acquired_skills_and_batch_keeps_scope_and_partial
         ],
     ), validator_id=1)
     session.commit()
-    queue = service.get_employee_evaluation_queue(1, PermissionProfile.MANAGER)
-    assert queue[0].evaluated_skills_count == 2
-    assert queue[0].pending_skills_count == 0
+    assert session.query(SkillValidation).filter_by(id_employee=2).count() == 2
 
     session.close()
     engine.dispose()
