@@ -184,6 +184,15 @@ button, input { font: inherit; }
 .level-badge-secondary { background: #f1f5f9; color: #334155; }
 .skill-card details { margin-top: .9rem; padding-top: .75rem; border-top: 1px solid #e2e8f0; }
 .skill-card details h3 { margin: .9rem 0 .35rem; color: #475569; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; }
+.evaluation-page { width: min(900px, 100%); }
+.evaluation-skills { margin-top: 1rem; }
+.evaluation-skill-card { align-items: flex-start; }
+.evaluation-skill-card > div { flex: 1 1 auto; }
+.evaluation-skill-card label, .evaluation-form label { display: grid; gap: .35rem; margin-top: .6rem; color: #475569; font-weight: 600; }
+.evaluation-skill-card select, .evaluation-form select, .evaluation-form textarea { max-width: 28rem; padding: .65rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
+.evaluation-form { display: grid; gap: .8rem; margin-top: 1rem; padding: 1.25rem; background: white; border: 1px solid #e2e8f0; border-radius: 12px; }
+.evaluation-form textarea { min-height: 100px; resize: vertical; }
+.added-evaluation-skill { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .7rem 0; border-top: 1px solid #e2e8f0; }
 @media (max-width: 720px) { .skill-card-header { display: block; } .skill-levels { margin-top: .8rem; min-width: 0; } }
 .relation-editor { display: grid; gap: .7rem; padding: 1rem; background: #f8fafc; border-radius: 10px; }
 .relation-editor h3 { margin: 0; font-size: 1rem; }
