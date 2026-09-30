@@ -33,26 +33,6 @@ def create_employee_diploma(
     return service.create(dto)
 
 
-@router.get("/{id_employee}/{id_diploma}")
-def get_employee_diploma_by_ids(
-    id_employee: int,
-    id_diploma: int,
-    session: Session = Depends(get_session),
-    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
-) -> ResponseEmployeeDiplomaDTO:
-    repo = EmployeeDiplomaRepository(session)
-    service = EmployeeDiplomaService(repo)
-    result = service.get_by_id(id_employee, id_diploma)
-    target = session.get(Employee, result.id_employee)
-    if target is None or target.is_deleted:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    try:
-        EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(current_employee, target)
-    except AuthorizationForbidden as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
-    return result
-
-
 @router.get("")
 def get_employee_diplomas(
     session: Session = Depends(get_session),
@@ -77,6 +57,26 @@ def get_diplomas_for_employee(
     except AuthorizationForbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return EmployeeDiplomaService(EmployeeDiplomaRepository(session)).get_for_employee(id_employee)
+
+
+@router.get("/{id_employee}/{id_diploma}")
+def get_employee_diploma_by_ids(
+    id_employee: int,
+    id_diploma: int,
+    session: Session = Depends(get_session),
+    current_employee: AuthEmployeeDTO = Depends(get_current_employee),
+) -> ResponseEmployeeDiplomaDTO:
+    repo = EmployeeDiplomaRepository(session)
+    service = EmployeeDiplomaService(repo)
+    result = service.get_by_id(id_employee, id_diploma)
+    target = session.get(Employee, result.id_employee)
+    if target is None or target.is_deleted:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    try:
+        EmployeeAuthorizationService.require_self_or_direct_manager_or_hr(current_employee, target)
+    except AuthorizationForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return result
 
 
 @router.patch("/{id_employee}/{id_diploma}")

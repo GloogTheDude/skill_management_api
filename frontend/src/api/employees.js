@@ -1,6 +1,7 @@
 import { apiFetch } from "./client";
 
 export function getEmployees() { return apiFetch("/employee"); }
+export function getEmployee(id) { return apiFetch(`/employee/${id}`); }
 export function getRoles() { return apiFetch("/role"); }
 export function getAccessLevels() { return apiFetch("/access_level"); }
 export function createEmployee(body) { return apiFetch("/employee", { method: "POST", body: JSON.stringify(body) }); }
