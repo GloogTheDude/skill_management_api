@@ -54,6 +54,7 @@ class ParticipationService(BaseCrudService[Participation]):
         id_employee: int,
         id_training: int,
     ) -> ResponseParticipationDTO:
+        self.repository.synchronize_started(id_employee, None)
         participation = self._get_active((id_employee, id_training))
         return ResponseParticipationDTO.from_entity(participation)
 

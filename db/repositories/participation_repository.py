@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import exists, select, update
 
 from core.constants import PARTICIPATIONSTATUS
 from db.repositories.base_repository import BaseRepository
@@ -15,7 +15,36 @@ from core.constants import PermissionProfile, coerce_permission_profile
 class ParticipationRepository(BaseRepository[Participation]):
     model = Participation
 
+    def synchronize_started(self, employee_id=None, permission_profile=None) -> None:
+        training_started = exists(
+            select(1).where(
+                Training.id_training == Participation.id_training,
+                Training.start_.is_not(None),
+                Training.start_ <= date.today(),
+                Training.is_deleted.is_(False),
+            )
+        )
+        stmt = update(Participation).where(
+            Participation.status == PARTICIPATIONSTATUS.REGISTERED.value,
+            Participation.is_deleted.is_(False),
+            training_started,
+        )
+        if employee_id is not None and permission_profile is not None:
+            permission_profile = coerce_permission_profile(permission_profile)
+            if permission_profile == PermissionProfile.EMPLOYEE:
+                stmt = stmt.where(Participation.id_employee == employee_id)
+            elif permission_profile == PermissionProfile.MANAGER:
+                stmt = stmt.where(
+                    exists(select(1).where(
+                        Employee.id_employee == Participation.id_employee,
+                        (Employee.id_employee == employee_id) | (Employee.id_manager == employee_id),
+                    ))
+                )
+        self._session.execute(stmt.values(status=PARTICIPATIONSTATUS.IN_PROGRESS.value))
+        self._session.flush()
+
     def get_for_scope(self, employee_id: int, permission_profile):
+        self.synchronize_started(employee_id, permission_profile)
         permission_profile = coerce_permission_profile(permission_profile)
         stmt = select(
             Participation,
@@ -60,6 +89,7 @@ class ParticipationRepository(BaseRepository[Participation]):
     def get_completable(
         self,
     ) -> list[tuple[Participation, Employee, Training]]:
+        self.synchronize_started()
         stmt = (
             select(Participation, Employee, Training)
             .join(Employee, Employee.id_employee == Participation.id_employee)

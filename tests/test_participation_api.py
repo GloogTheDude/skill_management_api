@@ -19,7 +19,6 @@ from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
 from errors.participation_errors import (
     ParticipationCannotCancel,
-    ParticipationCannotStart,
     ParticipationInvalidStatus,
     TrainingNotCompleted,
 )
@@ -268,16 +267,51 @@ def test_complete_rejects_status_other_than_in_progress(session, status):
         completion_service(session).complete(1, 1)
 
 
-def test_start_moves_registered_to_in_progress(session):
+def test_registered_future_training_stays_registered(session):
     add_training_and_participation(
         session,
         training_id=1,
         status=PARTICIPATIONSTATUS.REGISTERED.value,
+        end_=date.today() + timedelta(days=2),
     )
+    session.get(Training, 1).start_ = date.today() + timedelta(days=1)
+    ParticipationRepository(session).synchronize_started()
+    assert session.get(Participation, (1, 1)).status == PARTICIPATIONSTATUS.REGISTERED.value
 
-    started = completion_service(session).start(1, 1)
 
-    assert started.status == PARTICIPATIONSTATUS.IN_PROGRESS.value
+@pytest.mark.parametrize("start_", [date.today(), date.today() - timedelta(days=1)])
+def test_registered_started_training_is_synchronized_to_in_progress(session, start_):
+    add_training_and_participation(
+        session,
+        training_id=1,
+        status=PARTICIPATIONSTATUS.REGISTERED.value,
+        end_=date.today() + timedelta(days=2),
+    )
+    session.get(Training, 1).start_ = start_
+    ParticipationRepository(session).synchronize_started()
+    assert session.get(Participation, (1, 1)).status == PARTICIPATIONSTATUS.IN_PROGRESS.value
+
+
+def test_cancelled_started_training_stays_cancelled(session):
+    add_training_and_participation(
+        session,
+        training_id=1,
+        status=PARTICIPATIONSTATUS.CANCELLED.value,
+        end_=date.today(),
+    )
+    ParticipationRepository(session).synchronize_started()
+    assert session.get(Participation, (1, 1)).status == PARTICIPATIONSTATUS.CANCELLED.value
+
+
+def test_training_end_does_not_automatically_complete_participation(session):
+    add_training_and_participation(
+        session,
+        training_id=1,
+        status=PARTICIPATIONSTATUS.REGISTERED.value,
+        end_=date.today(),
+    )
+    ParticipationRepository(session).synchronize_started()
+    assert session.get(Participation, (1, 1)).status == PARTICIPATIONSTATUS.IN_PROGRESS.value
 
 
 def test_hr_can_cancel_registered_participation_before_training_end(session):
@@ -316,23 +350,6 @@ def test_participation_cannot_be_cancelled_after_training_end(session):
 
     with pytest.raises(ParticipationCannotCancel):
         completion_service(session).cancel(1, 1)
-
-
-@pytest.mark.parametrize(
-    "status",
-    [
-        PARTICIPATIONSTATUS.IN_PROGRESS.value,
-        PARTICIPATIONSTATUS.COMPLETED.value,
-        PARTICIPATIONSTATUS.FAILED.value,
-        PARTICIPATIONSTATUS.ABSENT.value,
-        PARTICIPATIONSTATUS.CANCELLED.value,
-    ],
-)
-def test_start_rejects_non_registered_status(session, status):
-    add_training_and_participation(session, training_id=1, status=status)
-
-    with pytest.raises(ParticipationCannotStart):
-        completion_service(session).start(1, 1)
 
 
 def test_full_cycle_completion_exposes_training_skill_in_profile(session):

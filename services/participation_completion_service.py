@@ -12,7 +12,6 @@ from db.repositories.employee_diploma_repository import EmployeeDiplomaRepositor
 from db.repositories.participation_repository import ParticipationRepository
 from db.repositories.training_repository import TrainingRepository
 from errors.participation_errors import (
-    ParticipationCannotStart,
     ParticipationCannotCancel,
     ParticipationInvalidStatus,
     TrainingNotCompleted,
@@ -37,25 +36,6 @@ class ParticipationCompletionService:
         self.employee_certification_repository = employee_certification_repository
         self.employee_repository = employee_repository
 
-    def start(self, id_employee: int, id_training: int) -> Participation:
-        participation = self.participation_repository.get_one(
-            (id_employee, id_training)
-        )
-        if participation.is_deleted:
-            raise NoResultFound()
-        if participation.status != PARTICIPATIONSTATUS.REGISTERED.value:
-            raise ParticipationCannotStart(participation.status)
-
-        training = self.training_repository.get_one(id_training)
-        if training.is_deleted:
-            raise NoResultFound()
-
-        return self.participation_repository.update_status(
-            id_employee,
-            id_training,
-            PARTICIPATIONSTATUS.IN_PROGRESS.value,
-        )
-
     def complete(
         self,
         id_employee: int,
@@ -64,6 +44,7 @@ class ParticipationCompletionService:
         return self.close(id_employee, id_training, PARTICIPATIONSTATUS.COMPLETED.value)
 
     def close(self, id_employee: int, id_training: int, result: str) -> Participation:
+        self.participation_repository.synchronize_started(id_employee, None)
         participation = self.participation_repository.get_one((id_employee, id_training))
         if participation.is_deleted:
             raise NoResultFound()

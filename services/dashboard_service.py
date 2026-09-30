@@ -7,6 +7,7 @@ from core.constants import PARTICIPATIONSTATUS, PermissionProfile
 from db.repositories.acquisition_skill_repository import AcquisitionSkillRepository
 from db.repositories.employee_repository import EmployeeRepository
 from db.repositories.skill_validation_repository import SkillValidationRepository
+from db.repositories.participation_repository import ParticipationRepository
 from models.certification import Certification
 from models.employee import Employee
 from models.employee_certification import EmployeeCertification
@@ -25,6 +26,7 @@ class DashboardService:
         self.session = session
 
     def get_dashboard(self, current: AuthEmployeeDTO) -> DashboardDTO:
+        ParticipationRepository(self.session).synchronize_started()
         employee_scope = self._scope(current)
         scope_filter = Employee.id_employee.in_(employee_scope)
 

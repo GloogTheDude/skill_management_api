@@ -9,7 +9,6 @@ import {
   getCompletableParticipations,
   getParticipationDocuments,
   getParticipations,
-  startParticipation,
   uploadParticipationDocument,
 } from "../api/participations";
 import { useAuth } from "../auth/AuthContext";
@@ -190,30 +189,6 @@ export default function ParticipationsPage() {
       setFeedback(requestError instanceof ApiError && requestError.detail
         ? requestError.detail
         : "La participation n’a pas pu être annulée.");
-      if (requestError instanceof ApiError && [404, 409].includes(requestError.status)) await loadData();
-    } finally {
-      setMutationKey(null);
-    }
-  }
-
-  async function handleStart(participation) {
-    const key = `${participation.id_employee}-${participation.id_training}`;
-    if (mutationKey !== null) return;
-    setMutationKey(key);
-    setFeedback("");
-    try {
-      await startParticipation(participation.id_employee, participation.id_training);
-      setFeedback("La participation a démarré.");
-      await loadData();
-    } catch (requestError) {
-      if (requestError instanceof ApiError && requestError.status === 401) {
-        await logout().catch(() => undefined);
-        navigate("/login", { replace: true });
-        return;
-      }
-      setFeedback(requestError instanceof ApiError && requestError.detail
-        ? requestError.detail
-        : "La participation n’a pas pu démarrer.");
       if (requestError instanceof ApiError && [404, 409].includes(requestError.status)) await loadData();
     } finally {
       setMutationKey(null);
@@ -444,13 +419,6 @@ export default function ParticipationsPage() {
                 <div className="request-actions">
                   <button className="button button-danger" type="button" onClick={() => handleCancel(participation)} disabled={mutationKey !== null}>
                     {busy ? "Annulation…" : "Annuler"}
-                  </button>
-                </div>
-              )}
-              {user.permission_profile === "HR" && participation.status === "REGISTERED" && (
-                <div className="request-actions">
-                  <button className="button button-secondary" type="button" onClick={() => handleStart(participation)} disabled={mutationKey !== null}>
-                    {busy ? "Démarrage…" : "Démarrer"}
                   </button>
                 </div>
               )}

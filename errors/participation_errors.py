@@ -5,13 +5,6 @@ class ParticipationInvalidStatus(Exception):
         )
 
 
-class ParticipationCannotStart(Exception):
-    def __init__(self, status: str):
-        super().__init__(
-            f"Participation cannot be started from status {status}."
-        )
-
-
 class ParticipationCannotCancel(Exception):
     def __init__(self, message="Participation cannot be cancelled after the training has ended."):
         super().__init__(message)
