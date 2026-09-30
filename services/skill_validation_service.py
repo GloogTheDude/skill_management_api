@@ -125,8 +125,11 @@ class SkillValidationService(BaseCrudService[SkillValidation]):
         target = session.get(Employee, dto.id_employee)
         if target is None or target.is_deleted:
             raise NoResultFound()
-        validation_type = session.get(ValidationType, dto.id_validation)
-        if validation_type is None or validation_type.is_deleted:
+        validation_type = session.scalar(select(ValidationType).where(
+            ValidationType.source == "manual",
+            ValidationType.is_deleted.is_(False),
+        ).order_by(ValidationType.id_validation))
+        if validation_type is None:
             raise NoResultFound()
         for item in dto.evaluations:
             self.create(
@@ -134,7 +137,7 @@ class SkillValidationService(BaseCrudService[SkillValidation]):
                     id_employee=dto.id_employee,
                     id_skill=item.id_skill,
                     level_skill=item.level_skill,
-                    id_validation=dto.id_validation,
+                    id_validation=validation_type.id_validation,
                     justification=dto.justification,
                 ),
                 validator_id,

@@ -28,6 +28,6 @@ class BatchSkillEvaluationItemDTO(BaseModel):
 
 class BatchSkillEvaluationDTO(BaseModel):
     id_employee: int
-    id_validation: int
+    id_validation: int | None = None
     justification: str | None = None
     evaluations: list[BatchSkillEvaluationItemDTO]

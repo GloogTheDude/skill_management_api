@@ -29,7 +29,8 @@ def make_session():
         TrainingSkill(id_training=1, id_skill=1, granted_level=4, is_deleted=False),
         TrainingSkill(id_training=1, id_skill=2, granted_level=2, is_deleted=False),
         Participation(id_employee=2, id_training=1, status=PARTICIPATIONSTATUS.COMPLETED.value, is_deleted=False),
-        ValidationType(id_validation=1, source="internal", denomination_validation="Review", is_deleted=False),
+        ValidationType(id_validation=1, source="manual", denomination_validation="Manager validation", is_deleted=False),
+        ValidationType(id_validation=2, source="training", denomination_validation="Training completion", is_deleted=False),
     ])
     session.commit()
     return engine, session
@@ -63,6 +64,24 @@ def test_batch_evaluation_keeps_partial_selection():
     ), validator_id=1)
     session.commit()
     assert session.query(SkillValidation).filter_by(id_employee=2).count() == 2
+
+    session.close()
+    engine.dispose()
+
+
+def test_batch_evaluation_uses_canonical_manual_type_not_client_type():
+    engine, session = make_session()
+    service = SkillValidationService(SkillValidationRepository(session))
+
+    service.create_batch(BatchSkillEvaluationDTO(
+        id_employee=2,
+        id_validation=2,
+        evaluations=[BatchSkillEvaluationItemDTO(id_skill=1, level_skill=4)],
+    ), validator_id=1)
+    session.commit()
+
+    validation = session.query(SkillValidation).filter_by(id_employee=2).one()
+    assert validation.id_validation == 1
 
     session.close()
     engine.dispose()
