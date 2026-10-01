@@ -88,10 +88,15 @@ class EmployeeService(BaseCrudService[Employee]):
         if "id_manager" in data:
             self._validate_manager(data["id_manager"], id_employee)
         if "id_role" in data and self.role_repository is not None:
+            current_employee = self.repository.get_one(id_employee)
             role = self.role_repository.get_one(data["id_role"])
             if role.is_deleted:
                 raise NoResultFound()
-            if self.repository.get_one(id_employee).role.access_level.permission_profile == PermissionProfile.HR.value and role.access_level.permission_profile != PermissionProfile.HR.value:
+            current_profile = current_employee.role.access_level.permission_profile
+            new_profile = role.access_level.permission_profile
+            if current_profile in (PermissionProfile.MANAGER.value, PermissionProfile.HR.value) and new_profile not in (PermissionProfile.MANAGER.value, PermissionProfile.HR.value) and self.repository.has_active_reports(id_employee):
+                raise ValueError("Cannot change this Employee's profile while they have active direct reports.")
+            if current_profile == PermissionProfile.HR.value and new_profile != PermissionProfile.HR.value:
                 AdministrativeSecurityService.ensure_hr_survives(self.repository._session, [id_employee])
 
         if "password" in data:
@@ -112,6 +117,8 @@ class EmployeeService(BaseCrudService[Employee]):
         manager = self.repository.get_active_by_id(manager_id)
         if manager is None:
             raise NoResultFound()
+        if manager.role is None or manager.role.access_level is None or manager.role.access_level.permission_profile not in (PermissionProfile.MANAGER.value, PermissionProfile.HR.value):
+            raise ValueError("Only Employees with MANAGER or HR permission profile can manage direct reports.")
         if employee_id is None:
             return
         seen = {employee_id}

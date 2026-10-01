@@ -14,6 +14,7 @@ class ResponseEmployeeDTO(BaseModel):
     id_access_level: int | None = None
     access_level_label: str | None = None
     access_level: int | None = None
+    permission_profile: str | None = None
 
     id_manager: int | None
     manager_name: str | None
@@ -33,6 +34,7 @@ class ResponseEmployeeDTO(BaseModel):
             id_access_level=employee.role.id_access_level,
             access_level_label=employee.role.access_level.label if employee.role.access_level else None,
             access_level=employee.role.access_level.level if employee.role.access_level else None,
+            permission_profile=(employee.role.access_level.permission_profile if employee.role.access_level else None),
             id_manager=employee.id_manager,
             manager_name=(
                 f"{employee.manager.first_name} "
