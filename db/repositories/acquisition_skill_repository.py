@@ -14,6 +14,7 @@ from models.skill_validation import SkillValidation
 from models.training import Training
 from models.training_skill import TrainingSkill
 from models.domaine import Domaine
+from models.employee_declared_skill import EmployeeDeclaredSkill
 
 from datetime import date
 
@@ -113,6 +114,19 @@ class AcquisitionSkillRepository():
                 SkillValidation.superseded_at.is_(None),
                 Skill.is_deleted.is_(False),
                 Employee.is_deleted.is_(False),
+            )
+        )
+        return self.session.execute(stmt).all()
+
+    def get_declaredskills_by_id_employee(self, id_employee: int):
+        stmt = (
+            select(EmployeeDeclaredSkill, Skill, Domaine.nom_domaine)
+            .join(Skill, Skill.id_skill == EmployeeDeclaredSkill.id_skill)
+            .outerjoin(Domaine, Domaine.id_domaine == Skill.id_domaine)
+            .where(
+                EmployeeDeclaredSkill.id_employee == id_employee,
+                EmployeeDeclaredSkill.is_deleted.is_(False),
+                Skill.is_deleted.is_(False),
             )
         )
         return self.session.execute(stmt).all()

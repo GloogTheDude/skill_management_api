@@ -23,4 +23,5 @@ class Skill(Base):
     certification_links = relationship("CertificationSkill", back_populates="skill")
     diploma_links = relationship("DiplomaSkill", back_populates="skill")
     training_links = relationship("TrainingSkill", back_populates="skill")
+    declared_acquisitions = relationship("EmployeeDeclaredSkill", back_populates="skill")
     domaine = relationship("Domaine", back_populates="skills")

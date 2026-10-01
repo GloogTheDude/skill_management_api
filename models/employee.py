@@ -62,6 +62,7 @@ class Employee(Base):
 
     diplomas = relationship("EmployeeDiploma", back_populates="employee")
     certifications = relationship("EmployeeCertification", back_populates="employee")
+    declared_skills = relationship("EmployeeDeclaredSkill", back_populates="employee")
     participations = relationship("Participation", back_populates="employee")
 
 

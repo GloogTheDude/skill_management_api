@@ -54,6 +54,10 @@ class EmployeeSkillProfileService:
             ),
             profiles,
         )
+        self._add_declared_sources(
+            self.acquisition_repository.get_declaredskills_by_id_employee(id_employee),
+            profiles,
+        )
         self._add_validation_sources(
             self.acquisition_repository.get_validationskill_by_id_employee(
                 id_employee
@@ -109,6 +113,21 @@ class EmployeeSkillProfileService:
                     level=diploma_skill.min_level,
                     is_active=True,
                     acquired_at=employee_diploma.end_,
+                ),
+            )
+
+    def _add_declared_sources(self, rows, profiles):
+        for declared, skill, domaine in rows:
+            self._add_source(
+                profiles,
+                skill,
+                domaine,
+                SkillSourceDTO(
+                    source_type=SKILLSOURCETYPE.DECLARED.value,
+                    source_id=declared.id_employee_declared_skill,
+                    level=declared.level,
+                    is_active=True,
+                    acquired_at=declared.acquired_at,
                 ),
             )
 

@@ -18,6 +18,7 @@ from .participation import Participation
 from .training_skill import TrainingSkill
 from .access_level import AccessLevel
 from .participation_document import ParticipationDocument
+from .employee_declared_skill import EmployeeDeclaredSkill
 
 __all__ = [
     "AccessLevel",
@@ -40,4 +41,5 @@ __all__ = [
     "Participation",
     "TrainingSkill",
     "ParticipationDocument",
+    "EmployeeDeclaredSkill",
 ]
