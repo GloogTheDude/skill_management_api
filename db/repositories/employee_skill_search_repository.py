@@ -11,6 +11,7 @@ from models.diploma_skill import DiplomaSkill
 from models.employee import Employee
 from models.employee_certification import EmployeeCertification
 from models.employee_diploma import EmployeeDiploma
+from models.employee_declared_skill import EmployeeDeclaredSkill
 from models.participation import Participation
 from models.skill import Skill
 from models.skill_validation import SkillValidation
@@ -145,6 +146,31 @@ class EmployeeSkillSearchRepository:
             )
         )
 
+        declared = (
+            select(
+                Employee.id_employee.label("id_employee"),
+                Employee.first_name.label("first_name"),
+                Employee.last_name.label("last_name"),
+                Skill.id_skill.label("id_skill"),
+                Skill.name_skill.label("skill_name"),
+                Domaine.nom_domaine.label("skill_domaine"),
+                literal(SKILLSOURCETYPE.DECLARED.value).label("source_type"),
+                EmployeeDeclaredSkill.id_employee_declared_skill.label("source_id"),
+                EmployeeDeclaredSkill.level.label("level"),
+                literal(True, type_=Boolean).label("is_active"),
+                EmployeeDeclaredSkill.acquired_at.label("acquired_at"),
+                literal(None, type_=Date).label("expires_at"),
+            )
+            .join(EmployeeDeclaredSkill, EmployeeDeclaredSkill.id_employee == Employee.id_employee)
+            .join(Skill, Skill.id_skill == EmployeeDeclaredSkill.id_skill)
+            .outerjoin(Domaine, Domaine.id_domaine == Skill.id_domaine)
+            .where(
+                Employee.is_deleted.is_(False),
+                EmployeeDeclaredSkill.is_deleted.is_(False),
+                Skill.is_deleted.is_(False),
+            )
+        )
+
         validation = (
             select(
                 Employee.id_employee.label("id_employee"),
@@ -171,7 +197,7 @@ class EmployeeSkillSearchRepository:
             )
         )
 
-        return union_all(training, certification, diploma, validation).cte(
+        return union_all(training, certification, diploma, declared, validation).cte(
             "employee_skill_sources"
         )
 

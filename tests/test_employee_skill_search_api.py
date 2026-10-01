@@ -24,6 +24,7 @@ from models.domaine import Domaine
 from models.employee import Employee
 from models.employee_certification import EmployeeCertification
 from models.employee_diploma import EmployeeDiploma
+from models.employee_declared_skill import EmployeeDeclaredSkill
 from models.participation import Participation
 from models.role import Role
 from models.skill import Skill
@@ -265,6 +266,30 @@ def test_simple_requirement_returns_matching_employee(session):
     result = search(session, requirement(1, "gte", 3))
 
     assert [employee.id_employee for employee in result] == [1]
+
+
+def test_declared_acquisition_is_searchable_as_acquired(session):
+    session.add(EmployeeDeclaredSkill(
+        id_employee=2,
+        id_skill=5,
+        level=3,
+        is_deleted=False,
+    ))
+    session.commit()
+
+    result = search(session, requirement(5, "gte", 3))
+
+    assert [employee.id_employee for employee in result] == [2]
+
+
+def test_declared_acquisition_respects_level_and_soft_delete(session):
+    session.add(EmployeeDeclaredSkill(id_employee=2, id_skill=5, level=3, is_deleted=False))
+    session.commit()
+    assert [item.id_employee for item in search(session, requirement(5, "gte", 3))] == [2]
+    assert search(session, requirement(5, "gte", 4)) == []
+    session.query(EmployeeDeclaredSkill).one().is_deleted = True
+    session.commit()
+    assert search(session, requirement(5, "gte", 1)) == []
 
 
 def test_multiple_requirements_use_and_logic(session):
