@@ -31,3 +31,7 @@ files_to_count.txt
 
 # Runtime uploaded documents
 storage/
+
+.coverage
+coverage.xml
+htmlcov/
