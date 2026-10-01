@@ -166,10 +166,13 @@ def test_manager_evaluation_scope_is_direct_only():
     manager = _actor(2, 2)
     direct_report = SimpleNamespace(id_employee=3, id_manager=2)
     indirect_report = SimpleNamespace(id_employee=4, id_manager=3)
+    deeper_indirect_report = SimpleNamespace(id_employee=5, id_manager=4)
 
     EmployeeAuthorizationService.authorize_action(manager, direct_report)
     with pytest.raises(AuthorizationForbidden):
         EmployeeAuthorizationService.authorize_action(manager, indirect_report)
+    with pytest.raises(AuthorizationForbidden):
+        EmployeeAuthorizationService.authorize_action(manager, deeper_indirect_report)
 
 
 def test_skill_validation_input_does_not_accept_validator():
