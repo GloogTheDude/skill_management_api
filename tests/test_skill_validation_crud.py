@@ -162,6 +162,16 @@ def test_skill_validation_creation_scope(actor, target, allowed):
             EmployeeAuthorizationService.authorize_action(actor, target)
 
 
+def test_manager_evaluation_scope_is_direct_only():
+    manager = _actor(2, 2)
+    direct_report = SimpleNamespace(id_employee=3, id_manager=2)
+    indirect_report = SimpleNamespace(id_employee=4, id_manager=3)
+
+    EmployeeAuthorizationService.authorize_action(manager, direct_report)
+    with pytest.raises(AuthorizationForbidden):
+        EmployeeAuthorizationService.authorize_action(manager, indirect_report)
+
+
 def test_skill_validation_input_does_not_accept_validator():
     assert "id_validator" not in CreateSkillValidationDTO.model_fields
     assert "id_validator" not in UpdateSkillValidationDTO.model_fields

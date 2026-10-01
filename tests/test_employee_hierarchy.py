@@ -76,6 +76,18 @@ def test_manager_and_hr_profiles_can_manage_and_null_is_allowed(hierarchy_sessio
     service(hierarchy_session).update(2, UpdateEmployeeDTO(id_manager=1))
 
 
+def test_manager_and_hr_can_be_valid_hierarchy_roots(hierarchy_session):
+    hierarchy_session.get(Employee, 1).id_role = 2
+    hierarchy_session.get(Employee, 2).id_role = 3
+    hierarchy_session.commit()
+
+    service(hierarchy_session).update(1, UpdateEmployeeDTO(id_manager=None))
+    service(hierarchy_session).update(2, UpdateEmployeeDTO(id_manager=None))
+
+    assert hierarchy_session.get(Employee, 1).id_manager is None
+    assert hierarchy_session.get(Employee, 2).id_manager is None
+
+
 def test_missing_or_archived_manager_is_rejected(hierarchy_session):
     with pytest.raises(Exception):
         service(hierarchy_session).update(2, UpdateEmployeeDTO(id_manager=999999))
