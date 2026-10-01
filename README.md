@@ -1,29 +1,26 @@
 # Skill Management API
 
-Application web de gestion des compétences et de la formation des Employees. Elle associe une API REST FastAPI, une interface React/Vite et une base PostgreSQL.
+A web application for managing Employee skills and training. It combines a FastAPI REST API, a React/Vite frontend, and PostgreSQL.
 
-## Fonctionnalités principales
+## Main features
 
-- administration des Employees, rôles et profils de permissions ;
-- hiérarchie directe via `Employee.id_manager` ;
-- référentiels Skills, Domaines, Trainings, Diplomas et Certifications ;
-- acquisitions Training, Diploma, Certification et `DECLARED` ;
-- demandes de formation et traitement Manager/HR ;
-- Participations et acquisitions après completion ;
-- évaluations terrain `SkillValidation`, batch et historique ;
-- profil de compétences et recherche par niveaux acquis/évalués ;
-- Dashboard adapté au profil de permissions.
+- Employee, role, and permission-profile administration;
+- direct hierarchy through `Employee.id_manager`;
+- Skill, Domaine, Training, Diploma, and Certification reference data;
+- acquisitions from Training, Diploma, Certification, and `DECLARED`;
+- training requests, Participations, and completion-based acquisitions;
+- field evaluations through `SkillValidation`, including batch entry and history;
+- Employee skill profiles, skill search, and a permission-profile-specific Dashboard.
 
-## Stack technique
+## Technology stack
 
-- Python, FastAPI, SQLAlchemy, PostgreSQL et `psycopg` ;
-- Alembic pour les migrations ;
-- Redis pour le cache et les sessions ;
-- Uvicorn pour servir l’API ;
-- React 18, React Router et Vite ;
-- pytest et ESLint.
+- Python, FastAPI, SQLAlchemy, PostgreSQL, and `psycopg`;
+- Alembic migrations;
+- Redis for cache and authentication sessions;
+- Uvicorn;
+- React 18, React Router, Vite, pytest, and ESLint.
 
-Les versions explicitement fixées sont dans `requirements.txt` et `frontend/package.json`.
+Pinned versions are listed in `requirements.txt` and `frontend/package.json`.
 
 ## Architecture
 
@@ -31,33 +28,33 @@ Les versions explicitement fixées sont dans `requirements.txt` et `frontend/pac
 flowchart LR
     UI[React / Vite] --> Client[Frontend API client]
     Client --> C[FastAPI controllers]
-    C --> S[Services métier]
+    C --> S[Business services]
     S --> R[Repositories]
     R --> M[SQLAlchemy models]
     M --> DB[(PostgreSQL)]
 ```
 
-- `controllers/` : routes HTTP et adaptation des erreurs ;
-- `services/` : règles métier et orchestration ;
-- `db/repositories/` : requêtes et persistance SQLAlchemy ;
-- `models/` : modèles ORM ;
-- `dto/` : contrats d’entrée et de sortie ;
-- `migrations/` : versions Alembic ;
-- `frontend/src/` : application React ;
-- `tests/` : tests repository, service, API, lifecycle et autorisation.
+- `controllers/`: HTTP routes and error adaptation;
+- `services/`: business rules and orchestration;
+- `db/repositories/`: SQLAlchemy queries and persistence;
+- `models/`: ORM models;
+- `dto/`: input/output contracts;
+- `migrations/`: Alembic revisions;
+- `frontend/src/`: React application;
+- `tests/`: repository, service, API, lifecycle, and authorization tests.
 
-## Règles métier importantes
+## Important business rules
 
-### Acquisition et évaluation
+### Acquisition and evaluation
 
-Le profil distingue deux dimensions indépendantes :
+The Employee skill profile keeps two independent dimensions:
 
-- `acquired_level` : meilleur niveau issu des acquisitions formelles actives ;
-- `evaluated_level` : niveau issu de la `SkillValidation` courante.
+- `acquired_level`: the highest level provided by the Employee’s active acquisition sources;
+- `evaluated_level`: the level provided by the current `SkillValidation`.
 
-Les acquisitions peuvent provenir de Training, Diploma, Certification ou `DECLARED`. Une SkillValidation est une observation interne/terrain ; elle ne crée jamais une acquisition formelle.
+Acquisition sources are Training, Diploma, Certification, and `DECLARED`. A `SkillValidation` is an internal/field evaluation and never creates a formal acquisition.
 
-Les états suivants sont valides :
+Valid states include:
 
 ```text
 acquired_level = 4, evaluated_level = null
@@ -65,107 +62,117 @@ acquired_level = null, evaluated_level = 4
 acquired_level = 4, evaluated_level = 3
 ```
 
-### Acquisition DECLARED
+### DECLARED acquisition
 
-`DECLARED` est une acquisition saisie par HR, par exemple depuis un CV, un entretien, un recrutement ou une correction ultérieure du profil. Elle alimente `acquired_level` et `acquired_sources`, sans créer de SkillValidation ni `evaluated_level`.
+`DECLARED` is an acquisition entered by HR from a CV, interview, recruitment information, or a later profile correction. It contributes to `acquired_level` and `acquired_sources`, but does not create a `SkillValidation` or an `evaluated_level`.
 
-### Hiérarchie
+### Hierarchy
 
-`Employee.id_manager` représente uniquement le responsable hiérarchique direct. Un Employee possède zéro ou un manager direct, et `id_manager = NULL` est valide, y compris pour un MANAGER ou un HR.
+`Employee.id_manager` represents only the direct hierarchical manager. An Employee can have zero or one direct manager, and `id_manager = NULL` is valid, including for MANAGER and HR.
 
-La hiérarchie est indépendante de `PermissionProfile`. Il n’existe pas d’affectation automatique des Managers sous HR ni d’entité `Team` persistée.
+Hierarchy is independent from `PermissionProfile`. Managers are not automatically placed under HR, and no persistent `Team` entity is the source of truth.
 
-Les règles backend imposent notamment :
+Backend rules include:
 
-- seuls les profils MANAGER ou HR peuvent être managers ;
-- auto-management interdit ;
-- manager inexistant ou archivé interdit ;
-- cycles directs et indirects interdits ;
-- archivage ou rétrogradation d’un manager avec des directs reports actifs interdits.
+- only MANAGER or HR profiles can manage direct reports;
+- self-management is forbidden;
+- missing or archived managers are forbidden;
+- direct and indirect cycles are forbidden;
+- archiving or demoting a manager with active direct reports is forbidden.
 
-### Scope d’évaluation Manager
+### Manager evaluation scope
 
-Un Manager peut évaluer uniquement ses collaborateurs directs :
+A Manager can evaluate direct reports only:
 
 ```text
 target.id_manager == manager.id_employee
 ```
 
-Les collaborateurs indirects sont hors scope, quelle que soit la profondeur de la chaîne. HR conserve son scope global défini par le backend.
+Indirect reports are outside the scope at any depth. HR keeps the global scope defined by the backend.
 
-## Profils utilisateur
+## User profiles
 
 ### EMPLOYEE
 
-Consulte son profil de compétences, les formations disponibles, ses demandes et ses Participations. Il ne peut pas administrer les Employees, la hiérarchie ou créer des évaluations.
+An Employee can consult their skill profile, available Trainings, own requests, and Participations. They cannot administer Employees or hierarchy, or create evaluations.
 
 ### MANAGER
 
-Dispose des fonctions Employee et peut consulter `Mon équipe`, consulter les acquis de ses directs reports, les évaluer dans son scope, traiter les demandes de formation de son scope et rechercher des Employees selon les règles existantes. Il ne dispose pas des fonctions d’administration HR.
+A Manager can access `My Team`, view acquisitions for direct reports, evaluate direct reports, process in-scope training requests, and search Employees under the existing rules. HR administration functions are not available to them.
 
 ### HR
 
-Dispose du scope administratif global prévu par l’application : Employee Admin, Équipes & Managers, référentiels, Trainings, acquisitions, demandes, Participations, évaluations et recherche.
+HR has the global administrative capabilities provided by the application: Employee administration, Teams & Managers, reference data, Trainings, acquisitions, requests, Participations, evaluations, and search.
 
-Le backend reste l’autorité pour toutes les permissions.
+The backend remains the authority for all permissions.
 
-## Workflows principaux
+## Main workflows
 
-### Formation
+### Training
+
+Training configuration and execution are separate concerns:
 
 ```text
-Training
-  → TrainingSkill ou support Diploma/Certification
-  → TrainingRequest
-  → approbation ou refus
-  → Participation REGISTERED
-  → IN_PROGRESS à la date de début
-  → clôture explicite
-  → acquisition éventuelle
-  → Employee Skill Profile
+Training configuration
+  ├── TrainingSkill relations
+  └── optional Diploma / Certification support
+          ↓
+TrainingRequest
+          ↓
+approval or refusal
+          ↓
+Participation REGISTERED
+          ↓
+IN_PROGRESS at the training start date
+          ↓
+explicit closure
+          ↓
+possible acquisition
+          ↓
+Employee Skill Profile
 ```
 
-La fin calendaire d’une Training ne clôture pas automatiquement une Participation ; la clôture reste explicite.
+The calendar end of a Training does not automatically close a Participation; closure remains explicit.
 
-### Évaluation terrain
+### Field evaluation
 
 ```text
 Manager
-  → Mon équipe
+  → My Team
   → Employee
-  → Évaluer
-  → sélection volontaire de Skills
+  → evaluate
+  → voluntarily selected Skills
   → SkillValidation
-  → profil Employee
+  → Employee profile
 ```
 
-Une évaluation peut être partielle et introduire une Skill terrain-only. Les validations précédentes sont conservées selon le mécanisme de supersession.
+An evaluation can be partial and can introduce a field-only Skill. Previous validations are retained through supersession.
 
-### Acquisition déclarée
+### Declared acquisition
 
 ```text
 HR
   → Employee
-  → Acquis
-  → Compétences déclarées
-  → Skill + niveau
+  → Acquisitions
+  → Declared skills
+  → Skill + level
   → Employee Skill Profile
 ```
 
-Cette opération alimente uniquement la dimension d’acquisition.
+This operation only affects the acquisition dimension.
 
-### Hiérarchie
+### Hierarchy administration
 
 ```text
 HR
-  → Équipes & Managers
-  → affecter, réaffecter ou retirer un manager
+  → Teams & Managers
+  → assign, reassign, or remove a manager
   → Employee.id_manager
 ```
 
-L’écran administre une relation Employee existante ; il ne crée pas d’entité Team.
+This screen administers an Employee relationship; it does not create a Team entity.
 
-## Structure du repository
+## Repository structure
 
 ```text
 skill_management_api/
@@ -185,7 +192,7 @@ skill_management_api/
 
 ## Installation
 
-Prérequis : Python, Node.js/npm, PostgreSQL, Redis et Docker si les services locaux de `compose.yml` sont utilisés.
+Prerequisites: Python, Node.js/npm, PostgreSQL, Redis, and Docker if the local services from `compose.yml` are used.
 
 ```bash
 python -m venv .venv
@@ -197,7 +204,7 @@ npm install
 cd ..
 ```
 
-`compose.yml` fournit PostgreSQL sur `localhost:5433` et Redis sur `localhost:6379` :
+`compose.yml` provides PostgreSQL on `localhost:5433` and Redis on `localhost:6379`:
 
 ```bash
 docker compose up -d
@@ -205,51 +212,49 @@ docker compose up -d
 
 ## Configuration
 
-Le backend charge `.env` avec `python-dotenv`. Ce fichier local est ignoré par Git et ses valeurs ne doivent pas être publiées.
+The backend loads `.env` with `python-dotenv`. This local file is ignored by Git and its values must not be published.
 
-| Variable | Rôle | Défaut/obligation |
+| Variable | Purpose | Default/requirement |
 |---|---|---|
-| `DATABASE_URL` | URL SQLAlchemy/PostgreSQL pour l’application et Alembic | obligatoire |
-| `LOCAL_REDIS_URL` | Redis utilisé pour cache et sessions | `redis://127.0.0.1:6379/0` |
-| `CORS_ORIGINS` | origines autorisées par le backend | localhost frontend |
-| `AUTH_SESSION_TTL_SECONDS` | durée de session en secondes | `3600` |
-| `AUTH_COOKIE_SECURE` | attribut Secure du cookie | `false` |
-| `AUTH_COOKIE_SAMESITE` | attribut SameSite du cookie | `lax` |
-| `VITE_API_URL` | URL du backend utilisée par React | `http://localhost:8001` |
+| `DATABASE_URL` | SQLAlchemy/PostgreSQL URL for the application and Alembic | required |
+| `LOCAL_REDIS_URL` | Redis URL used for cache and sessions | `redis://127.0.0.1:6379/0` |
+| `CORS_ORIGINS` | backend-allowed origins | local frontend origins |
+| `AUTH_SESSION_TTL_SECONDS` | session lifetime in seconds | `3600` |
+| `AUTH_COOKIE_SECURE` | cookie Secure attribute | `false` |
+| `AUTH_COOKIE_SAMESITE` | cookie SameSite attribute | `lax` |
+| `VITE_API_URL` | backend URL used by the React API client | `http://localhost:8001` |
 
-Le code consomme `LOCAL_REDIS_URL`. Une configuration locale peut contenir un nom différent, comme `REDIS_URL`, mais ce nom n’est pas utilisé par le runtime actuel.
+## Database and migrations
 
-## Base de données et migrations
-
-Alembic est configuré par `alembic.ini` et `migrations/env.py`. Il lit `DATABASE_URL` depuis l’environnement.
+Alembic is configured through `alembic.ini` and `migrations/env.py`. It reads `DATABASE_URL` from the environment.
 
 ```bash
 alembic upgrade head
 ```
 
-Le script `reset_db.sh` recrée la base du conteneur local, applique les migrations et charge `db/sql/seed.sql`. Il est destructif et ne doit pas être utilisé sur une base à conserver.
+The destructive `reset_db.sh` script recreates the local PostgreSQL container database, applies migrations, and loads `db/sql/seed.sql`. Do not use it on a database that must be preserved.
 
-## Lancement
+The seed initializes reference data, Employees, roles, Trainings, acquisition references, Participations, TrainingRequests, and SkillValidations. It supports local exploration but does not provide a complete scripted walkthrough of every current workflow, including later `DECLARED` acquisition entry.
 
-Depuis la racine :
+## Running the project
 
 ```bash
 source .venv/bin/activate
 uvicorn main:app --reload --port 8001
 ```
 
-Le lancement direct de `main.py` utilise également le port `8001`.
+Running `main.py` directly also uses port `8001`.
 
-Dans un second terminal :
+In a second terminal:
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Vite utilise son port local par défaut, normalement `5173`, sauf configuration locale différente.
+Vite uses its default development port, normally `5173`, unless locally configured otherwise.
 
-## Tests et qualité
+## Tests and quality checks
 
 ```bash
 PYTHONPATH=. ./.venv/bin/pytest -q tests
@@ -260,36 +265,37 @@ npm run build
 npm run lint
 ```
 
-La suite backend couvre notamment les repositories, services, API, autorisations, lifecycles et règles métier. Il n’existe pas encore de suite automatisée de tests d’interaction React ; le frontend est validé par build et lint.
+The backend suite covers repositories, services, APIs, authorization, lifecycles, and business rules. There is no automated React interaction/component test suite yet; the frontend is validated through build and lint.
 
-## API et OpenAPI
+## API and OpenAPI
 
-La documentation FastAPI est disponible lorsque le backend est lancé :
+When the backend is running:
 
-- Swagger UI : `http://localhost:8001/docs` ;
-- ReDoc : `http://localhost:8001/redoc` ;
-- schéma OpenAPI : `http://localhost:8001/openapi.json`.
+- Swagger UI: `http://localhost:8001/docs`;
+- ReDoc: `http://localhost:8001/redoc`;
+- OpenAPI schema: `http://localhost:8001/openapi.json`.
 
-Les principaux préfixes sont `/auth`, `/employee`, `/skill`, `/domaine`, `/training`, `/training-requests`, `/participations`, `/skill_validation`, `/employee_diploma`, `/employee_certification`, `/employee_declared_skill` et `/dashboard`.
+Main API prefixes include `/auth`, `/employee`, `/skill`, `/domaine`, `/training`, `/training-requests`, `/participations`, `/skill_validation`, `/employee_diploma`, `/employee_certification`, `/employee_declared_skill`, and `/dashboard`.
 
-## Scénario de démonstration
+## Demo scenario
 
-En l’absence d’un dataset de démonstration portable, les données doivent être préparées dans l’environnement local.
+The repository includes a substantial SQL seed with Employees, roles, reference data, Trainings, TrainingRequests, Participations, and SkillValidations. It must be loaded through the reset script and is intended for local exploration; no separate demo-account documentation is provided.
 
-1. HR configure un Employee, un Manager et une Training avec ses Skills.
-2. L’Employee consulte les Trainings disponibles et crée une demande.
-3. Le Manager autorisé ou HR traite la demande.
-4. L’approbation crée une Participation.
-5. La Participation démarre puis est clôturée explicitement.
-6. L’acquisition apparaît dans le profil Skill.
-7. Le Manager direct ou HR ouvre l’évaluation de l’Employee et sélectionne volontairement une ou plusieurs Skills.
-8. Le profil affiche séparément les niveaux acquis et évalués.
-9. La recherche exploite les dimensions acquise et évaluée.
+1. Start local PostgreSQL and Redis.
+2. Apply or reset the database and load the seed.
+3. Log in with a seeded Employee using the development password defined in the seed file.
+4. As HR, inspect Employee administration, hierarchy, Trainings, and reference data.
+5. As an Employee, inspect available Trainings and create a request.
+6. As the relevant Manager or HR user, process the request.
+7. Inspect the resulting Participation and Skill profile.
+8. As a direct Manager or HR, evaluate selected Skills and compare acquired and evaluated levels.
+9. Use Employee skill search for the separate acquired and evaluated dimensions.
 
-## État actuel et limites
+The seed contains development credentials and must only be used locally.
 
-- le MVP métier est couvert de bout en bout par le backend et le frontend ;
-- les tests d’interaction React ne sont pas automatisés ;
-- certaines pages React restent denses et pourraient être découpées ;
-- des types historiques de validation peuvent être conservés pour l’historique, même s’ils ne sont plus proposés comme choix d’évaluation terrain.
+## Current state and limitations
 
+- the MVP business workflows are covered end to end by the backend and frontend;
+- React interaction tests are not automated yet;
+- some React pages remain dense and could be split later;
+- historical validation types may remain for history, even though they are no longer offered as arbitrary field-evaluation choices.
