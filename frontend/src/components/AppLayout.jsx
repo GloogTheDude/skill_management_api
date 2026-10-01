@@ -18,6 +18,7 @@ function navigationFor(permissionProfile) {
     ["/app/employee-search", "Recherche employés"],
     ["/app/manage-requests", "Demandes à traiter"],
     ["/app/employees", "Employees"],
+    ["/app/teams", "Équipes & Managers"],
     ["/app/training-admin", "Trainings"],
     ["/app/references", "Référentiels"],
   ];

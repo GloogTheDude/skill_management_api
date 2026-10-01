@@ -19,6 +19,7 @@ import EmployeeAdminPage from "./pages/EmployeeAdminPage";
 import ManageEvaluationsPage from "./pages/ManageEvaluationsPage";
 import EmployeeAcquisitionsPage from "./pages/EmployeeAcquisitionsPage";
 import TeamPage from "./pages/TeamPage";
+import ManagementHierarchyPage from "./pages/ManagementHierarchyPage";
 import "./styles.css";
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
             <Route path="manage-evaluations/:idEmployee" element={<ManageEvaluationsPage />} />
             <Route path="employee-search" element={<EmployeeSkillSearchPage />} />
             <Route path="team" element={<TeamPage />} />
+            <Route path="teams" element={<ManagementHierarchyPage />} />
             <Route path="employees/:idEmployee/skills" element={<EmployeeSkillProfilePage />} />
             <Route path="employees/:idEmployee/acquisitions" element={<EmployeeAcquisitionsPage />} />
             <Route path="employees" element={<EmployeeAdminPage />} />
